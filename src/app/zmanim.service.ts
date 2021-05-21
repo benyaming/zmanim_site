@@ -8,7 +8,7 @@ import {ZmanimResponse} from './zmanim-response';
 })
 export class ZmanimService {
 
-  manimUrl = 'api';
+  // manimUrl = 'api';
 
   constructor(
     private readonly httpClient: HttpClient
@@ -42,6 +42,6 @@ export class ZmanimService {
       lat: lat.toString(),
       lng: lng.toString(),
     };
-    return this.httpClient.post<ZmanimResponse>(`${this.manimUrl}/zmanim`, z, {params});
+    return this.httpClient.post<ZmanimResponse>(`zmanim`, z, {params});
   }
 }

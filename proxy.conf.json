@@ -1,10 +1,7 @@
 {
-  "/api": {
+  "/zmanim": {
     "target": "http://localhost:8000",
-    "secure": false,
-    "pathRewrite": {
-      "^/api": ""
-    }
+    "secure": false
   },
   "/maps-api": {
     "target": {

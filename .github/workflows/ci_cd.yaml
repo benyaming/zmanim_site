@@ -41,7 +41,6 @@ jobs:
           src: ./dist/*
           host: ${{ secrets.SSH_HOST }}
           remote: ${{ secrets.SSH_DIR }}
-          port: 22
           user: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
 
