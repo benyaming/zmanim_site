@@ -1,0 +1,15 @@
+{
+  "/api": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "pathRewrite": {
+      "^/api": ""
+    }
+  },
+  "/maps-api": {
+    "target": {
+      "host": "mapbox://styles/mapbox/streets-v9"
+    },
+    "secure": false
+  }
+}
