@@ -7,11 +7,14 @@ import {HttpClientModule} from '@angular/common/http';
 import {MatRadioModule} from '@angular/material/radio';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {DateAdapter, MatNativeDateModule} from '@angular/material/core';
+import {MatNativeDateModule} from '@angular/material/core';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {AgmCoreModule} from '@agm/core';
+import {AppRoutingModule} from './routs/app-routing.module';
+import {LocationMapModule} from './location/location-map.module';
+
 // import {} from 'googlemaps';
 
 @NgModule({
@@ -19,6 +22,8 @@ import {AgmCoreModule} from '@agm/core';
     AppComponent
   ],
   imports: [
+    AppRoutingModule,
+    LocationMapModule,
     BrowserModule,
     FormsModule,
     HttpClientModule,

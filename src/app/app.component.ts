@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, Validators} from '@angular/forms';
-import {ZmanimResponse} from './zmanim-response';
-import {ZmanimService} from './zmanim.service';
+import {ZmanimResponse} from './zmanim-api/dto/zmanim.response';
+import {ZmanimApiService} from './zmanim-api/zmanim-api.service';
 import {Observable, Subscription} from 'rxjs';
 import {filter, switchMap} from 'rxjs/operators';
 
@@ -20,7 +20,7 @@ export class AppComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private zmanimService: ZmanimService
+    private zmanimService: ZmanimApiService
   ) {
   }
 
