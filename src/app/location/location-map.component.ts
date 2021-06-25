@@ -1,5 +1,6 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {Marker} from './marker.type';
+import {FormBuilder, FormControl, FormGroup, Validators} from '@angular/forms';
 
 
 @Component({
@@ -9,24 +10,42 @@ import {Marker} from './marker.type';
 })
 export class LocationMapComponent implements OnInit {
 
+  @Output() outputMarker = new EventEmitter<FormGroup>();
+
+  coordinatesForm: FormGroup;
+
   // google maps zoom level
   zoom = 8;
 
-  marker: Marker = {
+  firstMarker: Marker = {
     lat: 55.5,
     lng: 37.7,
     draggable: true
   };
 
-  constructor() {}
+  constructor(
+    private fb: FormBuilder,
+  ) {}
 
-  ngOnInit(): void {}
+
+  ngOnInit(): void {
+    this.coordinatesForm = this.fb.group({
+      lat: this.fb.control(this.firstMarker.lat, Validators.required),
+      lng: this.fb.control(this.firstMarker.lng, Validators.required)
+    });
+  }
+
+  get lngControl(): FormControl {
+    return this.coordinatesForm.get('lng') as FormControl;
+  }
+
+  get latControl(): FormControl {
+    return this.coordinatesForm.get('lat') as FormControl;
+  }
 
   mapClicked($event: any): void {
-    this.marker = {
-      lat: $event.coords.lat,
-      lng: $event.coords.lng,
-      draggable: true
-    };
+    this.latControl.patchValue($event.coords.lat);
+    this.lngControl.patchValue($event.coords.lng);
+    this.outputMarker.emit(this.coordinatesForm);
   }
 }

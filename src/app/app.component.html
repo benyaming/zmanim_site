@@ -3,28 +3,11 @@
 <div class="form-main">
 
   <div>
-    debug data: <br>
-    input selected: {{ optionsForm.get('mode').value }} <br>
-    <!--    geodata: {{ geoForm.value }} <br>-->
     date selected: {{ optionsForm.get('date').value }} <br>
     lat: {{ optionsForm.get('coordinates.lat').value }}<br>
     lng: {{ optionsForm.get('coordinates.lng').value }}<br><br><br>
   </div>
-
   <form [formGroup]="optionsForm">
-
-    <div>
-
-      <label>Выберите режим:
-        <br>
-        <mat-button-toggle-group name="inputMode" aria-label="Input Mode" formControlName="mode">
-          <mat-button-toggle value="coordinates">Coordinates</mat-button-toggle>
-          <mat-button-toggle value="location">Location</mat-button-toggle>
-        </mat-button-toggle-group>
-      </label>
-
-    </div>
-
     <div>
       <mat-form-field appearance="fill">
         <mat-label>Выберите дату:</mat-label>
@@ -33,41 +16,11 @@
         <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
     </div>
-
-    <div *ngIf="optionsForm.get('mode').value === 'coordinates'" formGroupName="coordinates">
-      <mat-form-field appearance="fill">
-        <mat-label>Latitude</mat-label>
-        <input matInput formControlName="lat">
-      </mat-form-field>
-      <mat-form-field appearance="fill">
-        <mat-label>Longitude</mat-label>
-        <input matInput formControlName="lng">
-      </mat-form-field>
-    </div>
-
-    <!--    <div *ngIf="dataModeForm.value == 'location'">-->
-    <!--      <agm-map latitude="{{ coordinatesForm.controls[0]?.value }}" longitude="{{ coordinatesForm.controls[1]?.value }}">-->
-    <!--        <agm-marker></agm-marker>-->
-    <!--      </agm-map>-->
-    <!--    </div>-->
-
   </form>
-
   <div class="zmanim">
     {{ zmanim$ | async | json }}
   </div>
-
-
 </div>
+<app-location-map (outputMarker)="setCoordinates($event)"></app-location-map>
 
-<div class="" *ngIf="optionsForm.get('mode').value === 'location'">
-  <!--  <mgl-map-->
-  <!--      [style]="'mapbox://styles/mapbox/streets-v9'"-->
-  <!--      [zoom]="[9]"-->
-  <!--      [center]="[37.7, 55.5]"-->
-  <!--    >-->
-  <!--    </mgl-map>-->
-  <app-location-map></app-location-map>
-
-</div>
 
