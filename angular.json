@@ -125,5 +125,8 @@
       }
     }
   },
-  "defaultProject": "zmanim-site"
+  "defaultProject": "zmanim-site",
+  "cli": {
+    "analytics": false
+  }
 }

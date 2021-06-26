@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { ZmanimService } from './zmanim.service';
+import { ZmanimApiService } from './zmanim-api.service';
 
 describe('ZmanimService', () => {
-  let service: ZmanimService;
+  let service: ZmanimApiService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(ZmanimService);
+    service = TestBed.inject(ZmanimApiService);
   });
 
   it('should be created', () => {

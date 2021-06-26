@@ -1,8 +1,8 @@
 import {Component, OnInit} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, Validators} from '@angular/forms';
-import {ZmanimResponse} from './zmanim-response';
-import {ZmanimService} from './zmanim.service';
-import {Observable, Subscription} from 'rxjs';
+import {ZmanimResponse} from './zmanim-api/dto/zmanim.response';
+import {ZmanimApiService} from './zmanim-api/zmanim-api.service';
+import {Observable} from 'rxjs';
 import {filter, switchMap} from 'rxjs/operators';
 
 @Component({
@@ -14,19 +14,28 @@ export class AppComponent implements OnInit {
   title = 'zmanim-site';
   optionsForm: FormGroup;
 
-  formSubscribtion$: Subscription;
-
   zmanim$: Observable<ZmanimResponse> = null;
 
   constructor(
     private fb: FormBuilder,
-    private zmanimService: ZmanimService
+    private zmanimService: ZmanimApiService
   ) {
+  }
+
+  get coordinates(): FormGroup {
+    return this.optionsForm.get('coordinates') as FormGroup;
+  }
+
+  get lngControl(): FormControl {
+    return this.coordinates.get('lng') as FormControl;
+  }
+
+  get latControl(): FormControl {
+    return this.coordinates.get('lat') as FormControl;
   }
 
   ngOnInit(): void {
     this.optionsForm = this.fb.group({
-      mode: this.fb.control('', Validators.required),
       date: this.fb.control('', Validators.required),
       coordinates: this.fb.group({
         lat: this.fb.control('', Validators.required),
@@ -48,11 +57,9 @@ export class AppComponent implements OnInit {
       );
   }
 
-  // updateZmanim(): void {
-  //   this.zmanim = this.zmanimService.getZmanim(
-  //     this.coordinatesForm.controls[0].value,
-  //     this.coordinatesForm.controls[1].value,
-  //     this.dateForm.value
-  //   );
-  // }
+  setCoordinates($event: FormGroup): void {
+    this.lngControl.patchValue($event.get('lng').value);
+    this.latControl.patchValue($event.get('lat').value);
+  }
+
 }

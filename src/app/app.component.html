@@ -1,80 +1,26 @@
 <h1>Simple zmanim</h1>
 
-<div class="form-main">
-
-  <div>
-    debug data: <br>
-    input selected: {{ optionsForm.get('mode').value }} <br>
-    <!--    geodata: {{ geoForm.value }} <br>-->
-    date selected: {{ optionsForm.get('date').value }} <br>
-    lat: {{ optionsForm.get('coordinates.lat').value }}<br>
-    lng: {{ optionsForm.get('coordinates.lng').value }}<br><br><br>
-  </div>
-
-  <form [formGroup]="optionsForm">
-
+<div class="form-main" fxLayout="row">
+  <div fxFlex="0 0 50%">
     <div>
-
-      <label>Выберите режим:
-        <br>
-        <mat-button-toggle-group name="inputMode" aria-label="Input Mode" formControlName="mode">
-          <mat-button-toggle value="coordinates">Coordinates</mat-button-toggle>
-          <mat-button-toggle value="location">Location</mat-button-toggle>
-        </mat-button-toggle-group>
-      </label>
-
+      date selected: {{ optionsForm.get('date').value }} <br>
+      lat: {{ optionsForm.get('coordinates.lat').value }}<br>
+      lng: {{ optionsForm.get('coordinates.lng').value }}<br><br><br>
     </div>
-
-    <div>
-      <mat-form-field appearance="fill">
-        <mat-label>Выберите дату:</mat-label>
-        <input matInput [matDatepicker]="picker" formControlName="date">
-        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-        <mat-datepicker #picker></mat-datepicker>
-      </mat-form-field>
-    </div>
-
-    <div *ngIf="optionsForm.get('mode').value === 'coordinates'" formGroupName="coordinates">
-      <mat-form-field appearance="fill">
-        <mat-label>Latitude</mat-label>
-        <input matInput formControlName="lat">
-      </mat-form-field>
-      <mat-form-field appearance="fill">
-        <mat-label>Longitude</mat-label>
-        <input matInput formControlName="lng">
-      </mat-form-field>
-    </div>
-
-    <!--    <div *ngIf="dataModeForm.value == 'location'">-->
-    <!--      <agm-map latitude="{{ coordinatesForm.controls[0]?.value }}" longitude="{{ coordinatesForm.controls[1]?.value }}">-->
-    <!--        <agm-marker></agm-marker>-->
-    <!--      </agm-map>-->
-    <!--    </div>-->
-
-  </form>
-
-  <div class="zmanim">
-    {{ zmanim$ | async | json }}
+    <form [formGroup]="optionsForm">
+      <div>
+        <mat-form-field appearance="fill">
+          <mat-label>Выберите дату:</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="date">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </form>
   </div>
-
-
+  <div fxFlex="0 0 50%">
+    <app-zmanim [zmanim$]="zmanim$"></app-zmanim>
+  </div>
 </div>
-
-<div class="" *ngIf="optionsForm.get('mode').value === 'location'">
-  <!--  <mgl-map-->
-  <!--      [style]="'mapbox://styles/mapbox/streets-v9'"-->
-  <!--      [zoom]="[9]"-->
-  <!--      [center]="[37.7, 55.5]"-->
-  <!--    >-->
-  <!--    </mgl-map>-->
-  <agm-map
-    [latitude]="55.5"
-    [longitude]="37.7"
-    >
-    <agm-marker
-      [latitude]="55.5"
-      [longitude]="37.7"
-    ></agm-marker>
-  </agm-map>
-</div>
+<app-location-map (outputMarker)="setCoordinates($event)"></app-location-map>
 

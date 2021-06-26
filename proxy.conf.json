@@ -1,6 +1,6 @@
 {
   "/zmanim": {
-    "target": "http://localhost:8000",
+    "target": "https://api.ginzburg.io/zmanim",
     "secure": false
   },
   "/maps-api": {

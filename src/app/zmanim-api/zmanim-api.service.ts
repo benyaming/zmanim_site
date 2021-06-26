@@ -1,12 +1,15 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
-import {ZmanimResponse} from './zmanim-response';
+import {ZmanimResponse} from './dto/zmanim.response';
+import {ZmanimTimes} from './dto/zmanim-times.type';
+import {HavdalaTypes} from './dto/havdala.enum';
+import {ShabbatResponse} from './dto/shabbat.response';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ZmanimService {
+export class ZmanimApiService {
 
   // manimUrl = 'api';
 
@@ -16,7 +19,7 @@ export class ZmanimService {
   }
 
   getZmanim(lat: number, lng: number, date: string): Observable<ZmanimResponse> {
-    const z = {
+    const z: ZmanimTimes = {
       sunrise: true,
       alos: true,
       sof_zman_tefila_gra: true,
@@ -44,4 +47,18 @@ export class ZmanimService {
     };
     return this.httpClient.post<ZmanimResponse>(`zmanim`, z, {params});
   }
+
+  getShabbat(lat: number, lng: number, date: string, offset: number, elevation: number, havdala: HavdalaTypes): Observable<ShabbatResponse> {
+    const params = {
+      date,
+      lat: lat.toString(),
+      lng: lng.toString(),
+      offset: offset.toString(),
+      elevation: elevation.toString(),
+      havdala,
+    };
+    return this.httpClient.get<ShabbatResponse>(`shabbat`, {params});
+  }
+
+
 }

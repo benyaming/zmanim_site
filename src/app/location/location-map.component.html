@@ -1,0 +1,24 @@
+<form [formGroup]="coordinatesForm">
+  <mat-form-field appearance="fill">
+    <mat-label>Latitude</mat-label>
+    <input matInput formControlName="lat">
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Longitude</mat-label>
+    <input matInput formControlName="lng">
+  </mat-form-field>
+</form>
+
+<agm-map
+  [latitude]="firstMarker.lat"
+  [longitude]="firstMarker.lng"
+  [zoom]="zoom"
+  (mapClick)="mapClicked($event)"
+>
+  <agm-marker
+    [latitude]="latControl.value"
+    [longitude]="lngControl.value"
+    [markerDraggable]="true"
+  ></agm-marker>
+</agm-map>
+
