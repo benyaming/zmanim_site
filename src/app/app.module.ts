@@ -14,12 +14,15 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {AgmCoreModule} from '@agm/core';
 import {AppRoutingModule} from './routs/app-routing.module';
 import {LocationMapModule} from './location/location-map.module';
+import {ZmanimComponent} from './zmanim/zmanim.component';
+import {FlexModule} from '@angular/flex-layout';
 
 // import {} from 'googlemaps';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    ZmanimComponent
   ],
   imports: [
     AppRoutingModule,
@@ -41,7 +44,8 @@ import {LocationMapModule} from './location/location-map.module';
     AgmCoreModule.forRoot({
       apiKey: 'pk.eyJ1IjoiYmVueWFtaW5nIiwiYSI6ImNrbGUwemk5ODBueWkyeHA3YzdhNjMzMGsifQ.Kh2Zg8ob0KjLGmFXR8jluA',
       libraries: ['places']
-    })
+    }),
+    FlexModule
   ],
   providers: [],
   bootstrap: [AppComponent]

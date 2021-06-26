@@ -1,26 +1,26 @@
 <h1>Simple zmanim</h1>
 
-<div class="form-main">
-
-  <div>
-    date selected: {{ optionsForm.get('date').value }} <br>
-    lat: {{ optionsForm.get('coordinates.lat').value }}<br>
-    lng: {{ optionsForm.get('coordinates.lng').value }}<br><br><br>
-  </div>
-  <form [formGroup]="optionsForm">
+<div class="form-main" fxLayout="row">
+  <div fxFlex="0 0 50%">
     <div>
-      <mat-form-field appearance="fill">
-        <mat-label>Выберите дату:</mat-label>
-        <input matInput [matDatepicker]="picker" formControlName="date">
-        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-        <mat-datepicker #picker></mat-datepicker>
-      </mat-form-field>
+      date selected: {{ optionsForm.get('date').value }} <br>
+      lat: {{ optionsForm.get('coordinates.lat').value }}<br>
+      lng: {{ optionsForm.get('coordinates.lng').value }}<br><br><br>
     </div>
-  </form>
-  <div class="zmanim">
-    {{ zmanim$ | async | json }}
+    <form [formGroup]="optionsForm">
+      <div>
+        <mat-form-field appearance="fill">
+          <mat-label>Выберите дату:</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="date">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </form>
+  </div>
+  <div fxFlex="0 0 50%">
+    <app-zmanim [zmanim$]="zmanim$"></app-zmanim>
   </div>
 </div>
 <app-location-map (outputMarker)="setCoordinates($event)"></app-location-map>
-
 

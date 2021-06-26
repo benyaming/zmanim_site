@@ -33,6 +33,7 @@ export class LocationMapComponent implements OnInit {
       lat: this.fb.control(this.firstMarker.lat, Validators.required),
       lng: this.fb.control(this.firstMarker.lng, Validators.required)
     });
+    this.outputMarker.emit(this.coordinatesForm);
   }
 
   get lngControl(): FormControl {
