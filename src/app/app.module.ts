@@ -42,7 +42,7 @@ import {FlexModule} from '@angular/flex-layout';
     //   accessToken: 'pk.eyJ1IjoiYmVueWFtaW5nIiwiYSI6ImNrbGUwemk5ODBueWkyeHA3YzdhNjMzMGsifQ.Kh2Zg8ob0KjLGmFXR8jluA',
     // })
     AgmCoreModule.forRoot({
-      apiKey: 'pk.eyJ1IjoiYmVueWFtaW5nIiwiYSI6ImNrbGUwemk5ODBueWkyeHA3YzdhNjMzMGsifQ.Kh2Zg8ob0KjLGmFXR8jluA',
+      apiKey: 'AIzaSyBHSOffSTPz2qKI0TvYXYkJWyTQjpGNG_A',
       libraries: ['places']
     }),
     FlexModule
