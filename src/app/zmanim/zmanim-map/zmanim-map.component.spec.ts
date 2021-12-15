@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { LocationMapComponent } from './location-map.component';
+import { ZmanimMapComponent } from './zmanim-map.component';
 
 describe('LocationComponent', () => {
-  let component: LocationMapComponent;
-  let fixture: ComponentFixture<LocationMapComponent>;
+  let component: ZmanimMapComponent;
+  let fixture: ComponentFixture<ZmanimMapComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ LocationMapComponent ]
+      declarations: [ ZmanimMapComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(LocationMapComponent);
+    fixture = TestBed.createComponent(ZmanimMapComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
