@@ -1,0 +1,21 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  gap: 1rem
+}
+
+.title {
+  align-self: center;
+}
+
+.center {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 1rem
+}
+
+app-zmanim-map {
+  flex: 1;
+}
