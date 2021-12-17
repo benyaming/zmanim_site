@@ -4,6 +4,7 @@ import {CoordsModel, StoreService} from '@core/store';
 import {Subscription} from 'rxjs';
 import {debounceTime, filter, map} from 'rxjs/operators';
 import {TuiDay} from '@taiga-ui/cdk';
+import {OPTIONALLY_DECIMAL_NUMBER} from '@shared/regexp';
 
 @Component({
   selector: 'app-zmanim-form',
@@ -13,11 +14,11 @@ import {TuiDay} from '@taiga-ui/cdk';
 export class ZmanimFormComponent implements OnInit, OnDestroy {
   readonly form: FormGroup = this.fb.group({
     params: this.fb.group({
-      date: [null, Validators.required],
+      date: [null, [Validators.required]],
     }),
     coords: this.fb.group({
-      lat: [null, Validators.required],
-      lng: [null, Validators.required]
+      lat: [null, [Validators.required, Validators.pattern(OPTIONALLY_DECIMAL_NUMBER)]],
+      lng: [null, [Validators.required, Validators.pattern(OPTIONALLY_DECIMAL_NUMBER)]]
     })
   });
 

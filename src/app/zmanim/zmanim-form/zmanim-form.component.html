@@ -7,6 +7,8 @@
 
   <div tuiGroup
        formGroupName="coords">
+    <!-- NOTE Taiga UI number input forbids dots alongside with letters,
+         it seems that the only separator symbol is comma -->
     <tui-input-number formControlName="lat">
       {{'zmanim-form.latitude-placeholder' | translate}}
     </tui-input-number>
