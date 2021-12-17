@@ -1,12 +1,11 @@
 <router-outlet></router-outlet>
 
-<agm-map *ngIf="mapCoords && zoom"
+<mgl-map *ngIf="mapCoords && zoom"
          class="map"
-         [latitude]="mapCoords.lat"
-         [longitude]="mapCoords.lng"
-         [zoom]="zoom"
+         [style]="'mapbox://styles/mapbox/streets-v11'"
+         [zoom]="[zoom]"
+         [center]="mapCoords"
          (mapClick)="onMapClicked($event)">
-  <agm-marker *ngIf="markerCoords"
-              [latitude]="markerCoords.lat"
-              [longitude]="markerCoords.lng"></agm-marker>
-</agm-map>
+  <mgl-marker *ngIf="markerCoords"
+              [lngLat]="markerCoords"></mgl-marker>
+</mgl-map>

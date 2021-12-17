@@ -1,6 +1,6 @@
 interface Window {
   env?: {
-    googleApiKey: string,
+    mapboxPublicApiKey: string,
     freegeoipApiKey: string
   };
 }

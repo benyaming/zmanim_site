@@ -1,10 +1,10 @@
 import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
-import {LatLngLiteral, MouseEvent} from '@agm/core/map-types';
 import {Subscription} from 'rxjs';
 import {AppStore} from '@core/store';
 import {filter} from 'rxjs/operators';
 import {DOCUMENT} from '@angular/common';
 import {FreegeoipService} from '@core/freegeoip';
+import {EventData, LngLatLike, MapMouseEvent} from 'mapbox-gl';
 
 @Component({
   selector: 'app-root',
@@ -13,8 +13,8 @@ import {FreegeoipService} from '@core/freegeoip';
 })
 export class AppComponent implements OnInit, OnDestroy {
   zoom?: number;
-  mapCoords?: LatLngLiteral;
-  markerCoords?: LatLngLiteral;
+  mapCoords?: LngLatLike;
+  markerCoords?: LngLatLike;
 
   private readonly sub$: Subscription = new Subscription();
 
@@ -35,8 +35,8 @@ export class AppComponent implements OnInit, OnDestroy {
     this.sub$.unsubscribe();
   }
 
-  onMapClicked({coords}: MouseEvent): void {
-    this.appStore.setCoords({...coords, source: 'map'});
+  onMapClicked({lngLat}: MapMouseEvent & EventData): void {
+    this.appStore.setCoords({...lngLat, source: 'map'});
   }
 
   private initMap(): void {
