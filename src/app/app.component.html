@@ -1,1 +1,12 @@
 <router-outlet></router-outlet>
+
+<agm-map *ngIf="mapCoords && zoom"
+         class="map"
+         [latitude]="mapCoords.lat"
+         [longitude]="mapCoords.lng"
+         [zoom]="zoom"
+         (mapClick)="onMapClicked($event)">
+  <agm-marker *ngIf="markerCoords"
+              [latitude]="markerCoords.lat"
+              [longitude]="markerCoords.lng"></agm-marker>
+</agm-map>

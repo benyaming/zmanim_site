@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { ZmanimStore } from './zmanim.store';
+import { FreegeoipService } from './freegeoip.service';
 
-describe('ZmanimStateService', () => {
-  let service: ZmanimStore;
+describe('FreegeoipService', () => {
+  let service: FreegeoipService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(ZmanimStore);
+    service = TestBed.inject(FreegeoipService);
   });
 
   it('should be created', () => {

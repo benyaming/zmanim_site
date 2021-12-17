@@ -1,11 +1,20 @@
 import {BrowserModule} from '@angular/platform-browser';
 import {NgModule} from '@angular/core';
-import {HttpClientModule} from '@angular/common/http';
+import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {AgmCoreModule} from '@agm/core';
+import {AgmCoreModule, LAZY_MAPS_API_CONFIG, LazyMapsAPILoaderConfigLiteral} from '@agm/core';
 import {AppComponent} from './app.component';
 import {AppRoutingModule} from './app-routing.module';
+import {DOCUMENT} from '@angular/common';
+import {FreegeoipInterceptor} from '@core/freegeoip';
 
+
+function lazyMapsApiConfigFactory(document: Document): LazyMapsAPILoaderConfigLiteral {
+  return {
+    apiKey: document.defaultView?.env.googleApiKey,
+    libraries: ['places']
+  };
+}
 
 @NgModule({
   declarations: [
@@ -15,13 +24,13 @@ import {AppRoutingModule} from './app-routing.module';
     BrowserModule,
     HttpClientModule,
     BrowserAnimationsModule,
-    AgmCoreModule.forRoot({
-      apiKey: 'AIzaSyDj-xyg00lSu0O4SntWJHovd42BPpRhkvk',
-      libraries: ['places']
-    }),
+    AgmCoreModule.forRoot(),
     AppRoutingModule,
   ],
-  providers: [],
+  providers: [
+    {provide: LAZY_MAPS_API_CONFIG, useFactory: lazyMapsApiConfigFactory, deps: [DOCUMENT]},
+    {provide: HTTP_INTERCEPTORS, useClass: FreegeoipInterceptor, multi: true}
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule {

@@ -1,4 +1,4 @@
-<form [formGroup]="form">
+<ng-container [formGroup]="form">
   <mat-form-field>
     <mat-label>Date</mat-label>
     <input formControlName="date"
@@ -9,15 +9,17 @@
     <mat-datepicker #picker></mat-datepicker>
   </mat-form-field>
 
-  <mat-form-field>
-    <mat-label>Latitude</mat-label>
-    <input formControlName="lat"
-           matInput>
-  </mat-form-field>
+<!--  <mat-form-field>-->
+<!--    <mat-label>Latitude</mat-label>-->
+<!--    <input formControlName="lat"-->
+<!--           type="number"-->
+<!--           matInput>-->
+<!--  </mat-form-field>-->
 
-  <mat-form-field>
-    <mat-label>Longitude</mat-label>
-    <input formControlName="lng"
-           matInput>
-  </mat-form-field>
-</form>
+<!--  <mat-form-field>-->
+<!--    <mat-label>Longitude</mat-label>-->
+<!--    <input formControlName="lng"-->
+<!--           type="number"-->
+<!--           matInput>-->
+<!--  </mat-form-field>-->
+</ng-container>

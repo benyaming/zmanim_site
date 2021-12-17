@@ -1,0 +1,11 @@
+<mat-card class="title">
+  <mat-card-title>{{titleText}}</mat-card-title>
+</mat-card>
+
+<mat-card>
+  <ng-content select="[appDefaultLayoutForm]"></ng-content>
+</mat-card>
+
+<mat-card>
+  <ng-content select="[appDefaultLayoutInfo]"></ng-content>
+</mat-card>

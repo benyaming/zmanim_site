@@ -1,8 +1,8 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {ZmanimStore} from '../zmanim.store';
+import {AppStore} from '@core/store';
 import {Subscription} from 'rxjs';
-import {filter} from 'rxjs/operators';
+import {debounceTime, filter, map} from 'rxjs/operators';
 
 @Component({
   selector: 'app-zmanim-form',
@@ -12,15 +12,15 @@ import {filter} from 'rxjs/operators';
 export class ZmanimFormComponent implements OnInit, OnDestroy {
   form: FormGroup = this.fb.group({
     date: [null, Validators.required],
-    lat: [null, Validators.required],
-    lng: [null, Validators.required]
+    // lat: [null, Validators.required],
+    // lng: [null, Validators.required]
   });
 
   private readonly sub$: Subscription = new Subscription();
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly store: ZmanimStore
+    private readonly appStore: AppStore
   ) {
   }
 
@@ -34,16 +34,18 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
 
   private initForm(): void {
     this.sub$.add(
-      this.store.params$.subscribe(state => {
-        this.form.patchValue(state, {emitEvent: false});
+      this.appStore.zmanimParams$.subscribe(params => {
+        this.form.patchValue(params, {emitEvent: false});
       })
     );
 
     this.sub$.add(
       this.form.valueChanges.pipe(
-        filter(() => this.form.valid)
-      ).subscribe(value => {
-        this.store.setParams(value);
+        filter(() => this.form.valid),
+        debounceTime(100),
+        map((value) => value as {date: Date})
+      ).subscribe((value) => {
+        this.appStore.setZmanimParams(value);
       })
     );
   }

@@ -12,7 +12,8 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {ZmanimFormComponent} from './zmanim-form/zmanim-form.component';
 import {ZmanimInfoComponent} from './zmanim-info/zmanim-info.component';
 import {AgmCoreModule} from '@agm/core';
-import {ZmanimMapComponent} from './zmanim-map/zmanim-map.component';
+import {MatButtonModule} from '@angular/material/button';
+import {DefaultLayoutModule} from '@shared/layout';
 
 
 @NgModule({
@@ -20,7 +21,6 @@ import {ZmanimMapComponent} from './zmanim-map/zmanim-map.component';
     ZmanimComponent,
     ZmanimFormComponent,
     ZmanimInfoComponent,
-    ZmanimMapComponent,
   ],
   imports: [
     CommonModule,
@@ -34,6 +34,8 @@ import {ZmanimMapComponent} from './zmanim-map/zmanim-map.component';
     MatButtonToggleModule,
     AgmCoreModule,
     ZmanimRoutingModule,
+    MatButtonModule,
+    DefaultLayoutModule,
   ]
 })
 export class ZmanimModule {
