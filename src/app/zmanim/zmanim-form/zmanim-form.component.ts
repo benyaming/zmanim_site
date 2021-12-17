@@ -26,19 +26,20 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly storeService: StoreService
+    private readonly storeService: StoreService,
   ) {
   }
 
   ngOnInit(): void {
-    this.initForm();
+    this.initSyncStateToForm();
+    this.initSyncFormToState();
   }
 
   ngOnDestroy(): void {
     this.sub$.unsubscribe();
   }
 
-  private initForm(): void {
+  private initSyncStateToForm(): void {
     this.sub$.add(
       this.storeService.zmanimParams$.subscribe(({date}) => {
         const params = {date: TuiDay.fromLocalNativeDate(date)};
@@ -50,7 +51,9 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
         this.form.patchValue({coords}, {emitEvent: false});
       })
     );
+  }
 
+  private initSyncFormToState(): void {
     this.sub$.add(
       this.form.get('params').valueChanges.pipe(
         filter(() => this.form.get('params').valid),

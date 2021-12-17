@@ -1,7 +1,7 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ZmanimQueryParams, ZmanimRequestDto, ZmanimService} from '@core/zmanim';
 import {combineLatest, Subscription} from 'rxjs';
-import {StoreService} from '@core/store';
+import {CoordsModel, StoreService, ZmanimParamsModel} from '@core/store';
 import {format} from 'date-fns';
 import {map, switchMap} from 'rxjs/operators';
 import {TranslateService} from '@ngx-translate/core';
@@ -24,6 +24,14 @@ export class ZmanimComponent implements OnInit, OnDestroy {
   ) {
   }
 
+  static mapStateToQueryParams(coords: CoordsModel, params: ZmanimParamsModel): ZmanimQueryParams {
+    return {
+      date: format(params.date, 'yyyy-MM-dd'),
+      lat: coords.lat.toString(),
+      lng: coords.lng.toString()
+    };
+  }
+
   ngOnInit(): void {
     this.initZmanimFetch();
     this.initTitleChange();
@@ -39,11 +47,7 @@ export class ZmanimComponent implements OnInit, OnDestroy {
         this.storeService.coords$,
         this.storeService.zmanimParams$
       ]).pipe(
-        map(([coords, params]) => ({
-          date: format(params.date, 'yyyy-MM-dd'),
-          lat: coords.lat.toString(),
-          lng: coords.lng.toString()
-        } as ZmanimQueryParams)),
+        map(([coords, params]) => ZmanimComponent.mapStateToQueryParams(coords, params)),
         switchMap((query) => this.zmanimService.fetchZmanim(ZMANIM_BODY, query))
       ).subscribe(({settings, ...zmanim}) => {
         this.storeService.setZmanimInfo(zmanim);
