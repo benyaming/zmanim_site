@@ -22,7 +22,7 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
     })
   });
 
-  private readonly sub$: Subscription = new Subscription();
+  private readonly onDestroy$: Subscription = new Subscription();
 
   constructor(
     private readonly fb: FormBuilder,
@@ -36,17 +36,17 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.sub$.unsubscribe();
+    this.onDestroy$.unsubscribe();
   }
 
   private initSyncStateToForm(): void {
-    this.sub$.add(
+    this.onDestroy$.add(
       this.storeService.zmanimParams$.subscribe(({date}) => {
         const params = {date: TuiDay.fromLocalNativeDate(date)};
         this.form.patchValue({params}, {emitEvent: false});
       })
     );
-    this.sub$.add(
+    this.onDestroy$.add(
       this.storeService.coords$.subscribe((coords) => {
         this.form.patchValue({coords}, {emitEvent: false});
       })
@@ -54,7 +54,7 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
   }
 
   private initSyncFormToState(): void {
-    this.sub$.add(
+    this.onDestroy$.add(
       this.form.get('params').valueChanges.pipe(
         filter(() => this.form.get('params').valid),
         debounceTime(300),
@@ -64,7 +64,7 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
       })
     );
 
-    this.sub$.add(
+    this.onDestroy$.add(
       this.form.get('coords').valueChanges.pipe(
         filter(() => this.form.get('coords').valid),
         debounceTime(300),

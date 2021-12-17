@@ -16,7 +16,7 @@ export class AppComponent implements OnInit, OnDestroy {
   mapCoords?: LngLatLike;
   markerCoords?: LngLatLike;
 
-  private readonly sub$: Subscription = new Subscription();
+  private readonly onDestroy$: Subscription = new Subscription();
 
   constructor(
     @Inject(DOCUMENT) private readonly document: Document,
@@ -32,7 +32,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.sub$.unsubscribe();
+    this.onDestroy$.unsubscribe();
   }
 
   onMapClicked({lngLat}: MapMouseEvent & EventData): void {
@@ -65,7 +65,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private initCoordsFromGeoip(): void {
-    this.sub$.add(
+    this.onDestroy$.add(
       this.freegeoipService.fetchMyGeo()
         .subscribe(({latitude, longitude}) => {
           this.storeService.setCoords({lat: latitude, lng: longitude, source: 'geoip'});

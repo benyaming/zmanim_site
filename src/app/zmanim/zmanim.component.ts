@@ -3,7 +3,7 @@ import {ZmanimQueryParams, ZmanimRequestDto, ZmanimService} from '@core/zmanim';
 import {combineLatest, Subscription} from 'rxjs';
 import {CoordsModel, StoreService, ZmanimParamsModel} from '@core/store';
 import {format} from 'date-fns';
-import {map, switchMap} from 'rxjs/operators';
+import {map} from 'rxjs/operators';
 import {TranslateService} from '@ngx-translate/core';
 import {Title} from '@angular/platform-browser';
 
@@ -14,7 +14,8 @@ import {Title} from '@angular/platform-browser';
   styleUrls: ['./zmanim.component.scss']
 })
 export class ZmanimComponent implements OnInit, OnDestroy {
-  private readonly sub$: Subscription = new Subscription();
+  private readonly onDestroy$: Subscription = new Subscription();
+  private fetchSub$?: Subscription;
 
   constructor(
     private readonly zmanimService: ZmanimService,
@@ -33,30 +34,35 @@ export class ZmanimComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.initZmanimFetch();
+    this.initZmanimFetchOnStateChange();
     this.initTitleChange();
   }
 
   ngOnDestroy(): void {
-    this.sub$.unsubscribe();
+    this.onDestroy$.unsubscribe();
   }
 
-  private initZmanimFetch(): void {
-    this.sub$.add(
+  private initZmanimFetchOnStateChange(): void {
+    this.onDestroy$.add(
       combineLatest([
         this.storeService.coords$,
         this.storeService.zmanimParams$
       ]).pipe(
         map(([coords, params]) => ZmanimComponent.mapStateToQueryParams(coords, params)),
-        switchMap((query) => this.zmanimService.fetchZmanim(ZMANIM_BODY, query))
-      ).subscribe(({settings, ...zmanim}) => {
-        this.storeService.setZmanimInfo(zmanim);
-      })
+      ).subscribe((query) => this.initZmanimFetch(query))
     );
   }
 
+  private initZmanimFetch(query: ZmanimQueryParams): void {
+    this.fetchSub$?.unsubscribe();
+    this.fetchSub$ = this.zmanimService.fetchZmanim(ZMANIM_BODY, query)
+      .subscribe(({settings, ...zmanim}) => {
+        this.storeService.setZmanimInfo(zmanim);
+      });
+  }
+
   private initTitleChange(): void {
-    this.sub$.add(
+    this.onDestroy$.add(
       this.translateService.get('title')
         .subscribe(title => {
           this.title.setTitle(title);
