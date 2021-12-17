@@ -1,5 +1,14 @@
 form {
-  width: 200px;
   display: flex;
   flex-direction: column;
+  gap: .5rem;
+}
+
+.coords {
+  display: flex;
+  flex-direction: row;
+
+  & > * {
+    flex: 1;
+  }
 }

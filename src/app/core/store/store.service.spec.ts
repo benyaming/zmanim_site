@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { AppStore } from './app.store';
+import { StoreService } from './store.service';
 
 describe('ZmanimStateService', () => {
-  let service: AppStore;
+  let service: StoreService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(AppStore);
+    service = TestBed.inject(StoreService);
   });
 
   it('should be created', () => {

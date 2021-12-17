@@ -1,6 +1,6 @@
 import {Component} from '@angular/core';
 import {Observable} from 'rxjs';
-import {AppStore, ZmanimInfoModel} from '@core/store';
+import {StoreService, ZmanimInfoModel} from '@core/store';
 
 @Component({
   selector: 'app-zmanim-info',
@@ -11,7 +11,7 @@ export class ZmanimInfoComponent {
   zmanimInfo$: Observable<ZmanimInfoModel> = this.store.zmanimInfo$;
 
   constructor(
-    private readonly store: AppStore
+    private readonly store: StoreService
   ) {
   }
 

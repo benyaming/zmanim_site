@@ -1,8 +1,9 @@
-import {Component, OnDestroy} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ZmanimQueryParams, ZmanimRequestDto, ZmanimService} from '@core/zmanim';
-import {Subscription} from 'rxjs';
-import {AppStore, CoordsModel, ZmanimParamsModel} from '@core/store';
+import {combineLatest, Subscription} from 'rxjs';
+import {StoreService} from '@core/store';
 import {format} from 'date-fns';
+import {map, switchMap} from 'rxjs/operators';
 
 
 @Component({
@@ -10,31 +11,37 @@ import {format} from 'date-fns';
   templateUrl: './zmanim.component.html',
   styleUrls: ['./zmanim.component.scss']
 })
-export class ZmanimComponent implements OnDestroy {
+export class ZmanimComponent implements OnInit, OnDestroy {
   private readonly sub$: Subscription = new Subscription();
 
   constructor(
     private readonly zmanimService: ZmanimService,
-    private readonly appStore: AppStore
+    private readonly storeService: StoreService
   ) {
+  }
+
+  ngOnInit(): void {
+    this.initZmanimFetch();
   }
 
   ngOnDestroy(): void {
     this.sub$.unsubscribe();
   }
 
-  fetchZmanim(): void {
-    const {date}: ZmanimParamsModel = this.appStore.getZmanimParamsSnapshot();
-    const {lat, lng}: CoordsModel = this.appStore.getCoordsSnapshot();
-    const query: ZmanimQueryParams = {
-      date: format(date, 'yyyy-MM-dd'),
-      lat: lat.toString(),
-      lng: lng.toString()
-    };
-
+  private initZmanimFetch(): void {
     this.sub$.add(
-      this.zmanimService.fetchZmanim(ZMANIM_BODY, query).subscribe((zmanim) => {
-        this.appStore.setZmanimInfo(zmanim);
+      combineLatest([
+        this.storeService.coords$,
+        this.storeService.zmanimParams$
+      ]).pipe(
+        map(([coords, params]) => ({
+          date: format(params.date, 'yyyy-MM-dd'),
+          lat: coords.lat.toString(),
+          lng: coords.lng.toString()
+        } as ZmanimQueryParams)),
+        switchMap((query) => this.zmanimService.fetchZmanim(ZMANIM_BODY, query))
+      ).subscribe((zmanim) => {
+        this.storeService.setZmanimInfo(zmanim);
       })
     );
   }

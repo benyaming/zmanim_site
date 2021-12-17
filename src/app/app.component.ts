@@ -1,6 +1,6 @@
 import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
 import {Subscription} from 'rxjs';
-import {AppStore} from '@core/store';
+import {StoreService} from '@core/store';
 import {filter} from 'rxjs/operators';
 import {DOCUMENT} from '@angular/common';
 import {FreegeoipService} from '@core/freegeoip';
@@ -20,7 +20,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(
     @Inject(DOCUMENT) private readonly document: Document,
-    private readonly appStore: AppStore,
+    private readonly storeService: StoreService,
     private readonly freegeoipService: FreegeoipService
   ) {
   }
@@ -36,11 +36,11 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   onMapClicked({lngLat}: MapMouseEvent & EventData): void {
-    this.appStore.setCoords({...lngLat, source: 'map'});
+    this.storeService.setCoords({...lngLat, source: 'map'});
   }
 
   private initMap(): void {
-    this.appStore.coords$.pipe(
+    this.storeService.coords$.pipe(
       filter(({lat, lng, source}) => !!(lat && lng && source)),
     ).subscribe(({lat, lng, source}) => {
       switch (source) {
@@ -60,7 +60,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private initCoordsFromNavigator(): void {
     this.document.defaultView.navigator.geolocation
       .getCurrentPosition(({coords}) => {
-        this.appStore.setCoords({lat: coords.latitude, lng: coords.longitude, source: 'navigator'});
+        this.storeService.setCoords({lat: coords.latitude, lng: coords.longitude, source: 'navigator'});
       });
   }
 
@@ -68,7 +68,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.sub$.add(
       this.freegeoipService.fetchMyGeo()
         .subscribe(({latitude, longitude}) => {
-          this.appStore.setCoords({lat: latitude, lng: longitude, source: 'geoip'});
+          this.storeService.setCoords({lat: latitude, lng: longitude, source: 'geoip'});
         })
     );
   }

@@ -1,9 +1,11 @@
-import {Directive, HostBinding} from '@angular/core';
+import {Directive} from '@angular/core';
 
 @Directive({
-  selector: '[appDefaultLayoutForm]'
+  selector: '[appDefaultLayoutForm]',
+  // tslint:disable-next-line:no-host-metadata-property
+  host: {
+    '[style.z-index]': '"2"'
+  }
 })
 export class DefaultLayoutFormDirective {
-  @HostBinding('style.display') display = 'flex';
-  @HostBinding('style.flex-direction') flexDirection = 'column';
 }

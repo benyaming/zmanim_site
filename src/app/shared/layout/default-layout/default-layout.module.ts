@@ -1,10 +1,9 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {DefaultLayoutComponent} from './default-layout.component';
-import {MatButtonModule} from '@angular/material/button';
 import {DefaultLayoutFormDirective} from './default-layout-form.directive';
 import {DefaultLayoutInfoDirective} from './default-layout-info.directive';
-import {MatCardModule} from '@angular/material/card';
+import {TuiIslandModule} from '@taiga-ui/kit';
 
 
 @NgModule({
@@ -20,8 +19,7 @@ import {MatCardModule} from '@angular/material/card';
   ],
   imports: [
     CommonModule,
-    MatButtonModule,
-    MatCardModule
+    TuiIslandModule
   ]
 })
 export class DefaultLayoutModule {

@@ -1,25 +1,17 @@
-<ng-container [formGroup]="form">
-  <mat-form-field>
-    <mat-label>Date</mat-label>
-    <input formControlName="date"
-           matInput
-           [matDatepicker]="picker">
-    <mat-datepicker-toggle matSuffix
-                           [for]="picker"></mat-datepicker-toggle>
-    <mat-datepicker #picker></mat-datepicker>
-  </mat-form-field>
+<form [formGroup]="form">
+  <ng-container formGroupName="params">
+    <tui-input-date formControlName="date">
+      Date
+    </tui-input-date>
+  </ng-container>
 
-<!--  <mat-form-field>-->
-<!--    <mat-label>Latitude</mat-label>-->
-<!--    <input formControlName="lat"-->
-<!--           type="number"-->
-<!--           matInput>-->
-<!--  </mat-form-field>-->
-
-<!--  <mat-form-field>-->
-<!--    <mat-label>Longitude</mat-label>-->
-<!--    <input formControlName="lng"-->
-<!--           type="number"-->
-<!--           matInput>-->
-<!--  </mat-form-field>-->
-</ng-container>
+  <div tuiGroup
+       formGroupName="coords">
+    <tui-input-number formControlName="lat">
+      Latitude
+    </tui-input-number>
+    <tui-input-number formControlName="lng">
+      Longitude
+    </tui-input-number>
+  </div>
+</form>

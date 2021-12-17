@@ -5,7 +5,7 @@
   gap: 1rem;
   padding: 1rem;
 
-  mat-card {
+  & > * {
     z-index: 2;
   }
 }
