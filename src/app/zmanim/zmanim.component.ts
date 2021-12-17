@@ -4,6 +4,8 @@ import {combineLatest, Subscription} from 'rxjs';
 import {StoreService} from '@core/store';
 import {format} from 'date-fns';
 import {map, switchMap} from 'rxjs/operators';
+import {TranslateService} from '@ngx-translate/core';
+import {Title} from '@angular/platform-browser';
 
 
 @Component({
@@ -16,12 +18,15 @@ export class ZmanimComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly zmanimService: ZmanimService,
-    private readonly storeService: StoreService
+    private readonly storeService: StoreService,
+    private readonly translateService: TranslateService,
+    private readonly title: Title
   ) {
   }
 
   ngOnInit(): void {
     this.initZmanimFetch();
+    this.initTitleChange();
   }
 
   ngOnDestroy(): void {
@@ -40,9 +45,18 @@ export class ZmanimComponent implements OnInit, OnDestroy {
           lng: coords.lng.toString()
         } as ZmanimQueryParams)),
         switchMap((query) => this.zmanimService.fetchZmanim(ZMANIM_BODY, query))
-      ).subscribe((zmanim) => {
+      ).subscribe(({settings, ...zmanim}) => {
         this.storeService.setZmanimInfo(zmanim);
       })
+    );
+  }
+
+  private initTitleChange(): void {
+    this.sub$.add(
+      this.translateService.get('title')
+        .subscribe(title => {
+          this.title.setTitle(title);
+        })
     );
   }
 }

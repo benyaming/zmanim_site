@@ -1,17 +1,17 @@
 <form [formGroup]="form">
   <ng-container formGroupName="params">
     <tui-input-date formControlName="date">
-      Date
+      {{'zmanim-form.date-placeholder' | translate}}
     </tui-input-date>
   </ng-container>
 
   <div tuiGroup
        formGroupName="coords">
     <tui-input-number formControlName="lat">
-      Latitude
+      {{'zmanim-form.latitude-placeholder' | translate}}
     </tui-input-number>
     <tui-input-number formControlName="lng">
-      Longitude
+      {{'zmanim-form.longitude-placeholder' | translate}}
     </tui-input-number>
   </div>
 </form>

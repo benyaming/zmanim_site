@@ -7,7 +7,8 @@
     "start_prod": "ng serve --aot --vendor-chunk --common-chunk --prod",
     "build": "ng build",
     "test": "ng test",
-    "lint": "ng lint --fix",
+    "lint": "ng lint",
+    "lint:fix": "ng lint --fix",
     "e2e": "ng e2e"
   },
   "private": true,
@@ -20,6 +21,8 @@
     "@angular/platform-browser": "~11.0.5",
     "@angular/platform-browser-dynamic": "~11.0.5",
     "@angular/router": "~11.0.5",
+    "@ngx-translate/core": "^13.0.0",
+    "@ngx-translate/http-loader": "^6.0.0",
     "@taiga-ui/addon-charts": "^2.27.1",
     "@taiga-ui/addon-commerce": "^2.27.1",
     "@taiga-ui/addon-doc": "^2.27.1",

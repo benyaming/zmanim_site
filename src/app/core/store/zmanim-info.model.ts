@@ -1,3 +1,3 @@
 import {ZmanimResponseDto} from '../zmanim/zmanim.response-dto';
 
-export type ZmanimInfoModel = ZmanimResponseDto;
+export type ZmanimInfoModel = Omit<ZmanimResponseDto, 'settings'>;

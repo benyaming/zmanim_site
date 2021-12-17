@@ -8,11 +8,14 @@ import {StoreService, ZmanimInfoModel} from '@core/store';
   styleUrls: ['./zmanim-info.component.scss']
 })
 export class ZmanimInfoComponent {
-  zmanimInfo$: Observable<ZmanimInfoModel> = this.store.zmanimInfo$;
+  readonly zmanimInfo$: Observable<ZmanimInfoModel> = this.storeService.zmanimInfo$;
+
+  readonly columns: string[] = ['key', 'value'];
 
   constructor(
-    private readonly store: StoreService
+    private readonly storeService: StoreService
   ) {
   }
 
+  readonly compareWith = () => 0;
 }

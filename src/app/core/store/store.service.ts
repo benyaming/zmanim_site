@@ -10,27 +10,16 @@ import {filter} from 'rxjs/operators';
 })
 export class StoreService {
   private readonly _coords$: BehaviorSubject<CoordsModel | null> = new BehaviorSubject<CoordsModel>(null);
-  coords$: Observable<CoordsModel> = this._coords$.pipe(
+  readonly coords$: Observable<CoordsModel> = this._coords$.pipe(
     filter((coords) => !!coords)
   );
 
   private readonly _zmanimParams$: BehaviorSubject<ZmanimParamsModel> = new BehaviorSubject<ZmanimParamsModel>({
     date: new Date()
   });
-  zmanimParams$: Observable<ZmanimParamsModel> = this._zmanimParams$.asObservable();
+  readonly zmanimParams$: Observable<ZmanimParamsModel> = this._zmanimParams$.asObservable();
 
   private readonly _zmanimInfo$: BehaviorSubject<ZmanimInfoModel> = new BehaviorSubject<ZmanimInfoModel>({
-    settings: {
-      date: null,
-      jewish_date: null,
-      holiday_name: null,
-      cl_offset: null,
-      havdala_opinion: null,
-      coordinates: [],
-      elevation: null,
-      fast_name: null,
-      yomtov_name: null
-    },
     alos: null,
     sunrise: null,
     misheyakir_10_2: null,
@@ -51,7 +40,7 @@ export class StoreService {
     astronomical_hour_ma: null,
     astronomical_hour_gra: null
   });
-  zmanimInfo$: Observable<ZmanimInfoModel> = this._zmanimInfo$.asObservable();
+  readonly zmanimInfo$: Observable<ZmanimInfoModel> = this._zmanimInfo$.asObservable();
 
   setCoords(coords: CoordsModel): void {
     const state: CoordsModel | null = this._coords$.value;
@@ -84,13 +73,5 @@ export class StoreService {
 
   setZmanimInfo(zmanim: ZmanimInfoModel): void {
     this._zmanimInfo$.next(zmanim);
-  }
-
-  getCoordsSnapshot(): CoordsModel {
-    return this._coords$.value;
-  }
-
-  getZmanimParamsSnapshot(): ZmanimParamsModel {
-    return this._zmanimParams$.value;
   }
 }

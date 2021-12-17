@@ -1,22 +1,30 @@
-<div *ngIf="zmanimInfo$ | async as zmanim"
-     class="zmanim">
-  sunrise: {{zmanim.sunrise}} <br>
-  alos: {{zmanim.alos}} <br>
-  sof_zman_tefila_gra: {{zmanim.sof_zman_tefila_gra}} <br>
-  sof_zman_tefila_ma: {{zmanim.sof_zman_tefila_ma}} <br>
-  misheyakir_10_2: {{zmanim.misheyakir_10_2}} <br>
-  sof_zman_shema_gra: {{zmanim.sof_zman_shema_gra}} <br>
-  sof_zman_shema_ma: {{zmanim.sof_zman_shema_ma}} <br>
-  chatzos: {{zmanim.chatzos}} <br>
-  mincha_ketana: {{zmanim.mincha_ketana}} <br>
-  mincha_gedola: {{zmanim.mincha_gedola}} <br>
-  plag_mincha: {{zmanim.plag_mincha}} <br>
-  sunset: {{zmanim.sunset}} <br>
-  tzeis_8_5_degrees: {{zmanim.tzeis_8_5_degrees}} <br>
-  tzeis_72_minutes: {{zmanim.tzeis_72_minutes}} <br>
-  tzeis_42_minutes: {{zmanim.tzeis_42_minutes}} <br>
-  tzeis_5_95_degrees: {{zmanim.tzeis_5_95_degrees}} <br>
-  chatzot_laila: {{zmanim.chatzot_laila}} <br>
-  astronomical_hour_ma: {{zmanim.astronomical_hour_ma}} <br>
-  astronomical_hour_gra: {{zmanim.astronomical_hour_gra}} <br>
-</div>
+<table *ngIf="zmanimInfo$ | async as info"
+       tuiTable
+       [columns]="columns">
+  <thead>
+  <tr tuiThGroup>
+    <th tuiTh>{{'zmanim-info.zman' | translate}}</th>
+    <th tuiTh>{{'zmanim-info.time' | translate}}</th>
+  </tr>
+  </thead>
+  <tbody tuiTbody [data]="info | keyvalue:compareWith">
+  <tr *tuiRow="let keyvalue of info" tuiTr>
+    <td *tuiCell="'key'" tuiTd>
+      {{keyvalue.key | translate}}
+    </td>
+    <td *tuiCell="'value'" tuiTd>
+      <ng-container [ngSwitch]="keyvalue.key">
+        <ng-container *ngSwitchCase="'astronomical_hour_ma'">
+          {{keyvalue.value}}
+        </ng-container>
+        <ng-container *ngSwitchCase="'astronomical_hour_gra'">
+          {{keyvalue.value}}
+        </ng-container>
+        <ng-container *ngSwitchDefault>
+          {{keyvalue.value | date:'shortTime'}}
+        </ng-container>
+      </ng-container>
+    </td>
+  </tr>
+  </tbody>
+</table>

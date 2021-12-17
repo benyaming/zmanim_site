@@ -2,16 +2,22 @@ import {NgDompurifySanitizer} from '@tinkoff/ng-dompurify';
 import {TUI_SANITIZER, TuiDialogModule, TuiNotificationsModule, TuiRootModule} from '@taiga-ui/core';
 import {BrowserModule} from '@angular/platform-browser';
 import {NgModule} from '@angular/core';
-import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
+import {HTTP_INTERCEPTORS, HttpClient, HttpClientModule} from '@angular/common/http';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {AppComponent} from './app.component';
 import {AppRoutingModule} from './app-routing.module';
 import {DOCUMENT} from '@angular/common';
 import {FreegeoipInterceptor} from '@core/freegeoip';
 import {MAPBOX_API_KEY, NgxMapboxGLModule} from 'ngx-mapbox-gl';
+import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
+import {TranslateHttpLoader} from '@ngx-translate/http-loader';
 
 function mapboxApiKeyFactory(document: Document): string {
   return document.defaultView.env.mapboxPublicApiKey;
+}
+
+export function translateLoaderFactory(http: HttpClient): TranslateLoader {
+  return new TranslateHttpLoader(http);
 }
 
 @NgModule({
@@ -26,7 +32,16 @@ function mapboxApiKeyFactory(document: Document): string {
     AppRoutingModule,
     TuiRootModule,
     TuiDialogModule,
-    TuiNotificationsModule
+    TuiNotificationsModule,
+    TranslateModule.forRoot({
+      loader: {
+        provide: TranslateLoader,
+        useFactory: translateLoaderFactory,
+        deps: [HttpClient]
+      },
+      useDefaultLang: true,
+      defaultLanguage: 'en',
+    })
   ],
   providers: [
     {provide: MAPBOX_API_KEY, useFactory: mapboxApiKeyFactory, deps: [DOCUMENT]},
