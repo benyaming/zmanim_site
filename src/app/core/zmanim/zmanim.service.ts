@@ -12,7 +12,7 @@ import {ZmanimQueryParams} from './zmanim.query-params';
   providedIn: 'root'
 })
 export class ZmanimService {
-  readonly urlPrefix = `api/zmanim/`;
+  readonly urlPrefix = `zmanim/`;
 
   constructor(
     private readonly http: HttpClient

@@ -1,10 +1,7 @@
 {
-  "/api/zmanim": {
-    "target": "https://api.ginzburg.io/zmanim",
+  "/zmanim": {
+    "target": "https://api.ginzburg.io",
     "secure": false,
-    "pathRewrite": {
-      "^/api/zmanim": ""
-    },
     "logLevel": "debug"
   }
 }
