@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ZmanimMapComponent } from './zmanim-map.component';
+import { DefaultLayoutComponent } from './default-layout.component';
 
-describe('LocationComponent', () => {
-  let component: ZmanimMapComponent;
-  let fixture: ComponentFixture<ZmanimMapComponent>;
+describe('DefaultComponent', () => {
+  let component: DefaultLayoutComponent;
+  let fixture: ComponentFixture<DefaultLayoutComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ZmanimMapComponent ]
+      declarations: [ DefaultLayoutComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(ZmanimMapComponent);
+    fixture = TestBed.createComponent(DefaultLayoutComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

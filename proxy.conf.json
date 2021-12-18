@@ -1,12 +1,7 @@
 {
   "/zmanim": {
-    "target": "https://api.ginzburg.io/zmanim",
-    "secure": false
-  },
-  "/maps-api": {
-    "target": {
-      "host": "mapbox://styles/mapbox/streets-v9"
-    },
-    "secure": false
+    "target": "https://api.ginzburg.io",
+    "secure": false,
+    "logLevel": "debug"
   }
 }

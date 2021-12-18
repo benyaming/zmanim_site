@@ -1,1 +1,13 @@
-<router-outlet></router-outlet>
+<tui-root>
+  <router-outlet></router-outlet>
+
+  <mgl-map *ngIf="mapCoords && zoom"
+           class="map"
+           [style]="'mapbox://styles/mapbox/streets-v11'"
+           [zoom]="[zoom]"
+           [center]="mapCoords"
+           (mapClick)="onMapClicked($event)">
+    <mgl-marker *ngIf="markerCoords"
+                [lngLat]="markerCoords"></mgl-marker>
+  </mgl-map>
+</tui-root>

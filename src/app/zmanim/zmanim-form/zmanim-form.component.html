@@ -1,23 +1,19 @@
 <form [formGroup]="form">
-  <mat-form-field>
-    <mat-label>Date</mat-label>
-    <input formControlName="date"
-           matInput
-           [matDatepicker]="picker">
-    <mat-datepicker-toggle matSuffix
-                           [for]="picker"></mat-datepicker-toggle>
-    <mat-datepicker #picker></mat-datepicker>
-  </mat-form-field>
+  <ng-container formGroupName="params">
+    <tui-input-date formControlName="date">
+      {{'zmanim-form.date-placeholder' | translate}}
+    </tui-input-date>
+  </ng-container>
 
-  <mat-form-field>
-    <mat-label>Latitude</mat-label>
-    <input formControlName="lat"
-           matInput>
-  </mat-form-field>
-
-  <mat-form-field>
-    <mat-label>Longitude</mat-label>
-    <input formControlName="lng"
-           matInput>
-  </mat-form-field>
+  <div tuiGroup
+       formGroupName="coords">
+    <!-- NOTE Taiga UI number input forbids dots alongside with letters,
+         it seems that the only separator symbol is comma -->
+    <tui-input-number formControlName="lat">
+      {{'zmanim-form.latitude-placeholder' | translate}}
+    </tui-input-number>
+    <tui-input-number formControlName="lng">
+      {{'zmanim-form.longitude-placeholder' | translate}}
+    </tui-input-number>
+  </div>
 </form>

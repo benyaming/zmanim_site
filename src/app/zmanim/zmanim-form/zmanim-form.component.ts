@@ -1,8 +1,10 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {ZmanimStore} from '../zmanim.store';
+import {CoordsModel, StoreService} from '@core/store';
 import {Subscription} from 'rxjs';
-import {filter} from 'rxjs/operators';
+import {debounceTime, filter, map} from 'rxjs/operators';
+import {TuiDay} from '@taiga-ui/cdk';
+import {OPTIONALLY_DECIMAL_NUMBER} from '@shared/regexp';
 
 @Component({
   selector: 'app-zmanim-form',
@@ -10,40 +12,65 @@ import {filter} from 'rxjs/operators';
   styleUrls: ['./zmanim-form.component.scss']
 })
 export class ZmanimFormComponent implements OnInit, OnDestroy {
-  form: FormGroup = this.fb.group({
-    date: [null, Validators.required],
-    lat: [null, Validators.required],
-    lng: [null, Validators.required]
+  readonly form: FormGroup = this.fb.group({
+    params: this.fb.group({
+      date: [null, [Validators.required]],
+    }),
+    coords: this.fb.group({
+      lat: [null, [Validators.required, Validators.pattern(OPTIONALLY_DECIMAL_NUMBER)]],
+      lng: [null, [Validators.required, Validators.pattern(OPTIONALLY_DECIMAL_NUMBER)]]
+    })
   });
 
-  private readonly sub$: Subscription = new Subscription();
+  private readonly onDestroy$: Subscription = new Subscription();
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly store: ZmanimStore
+    private readonly storeService: StoreService,
   ) {
   }
 
   ngOnInit(): void {
-    this.initForm();
+    this.initSyncStateToForm();
+    this.initSyncFormToState();
   }
 
   ngOnDestroy(): void {
-    this.sub$.unsubscribe();
+    this.onDestroy$.unsubscribe();
   }
 
-  private initForm(): void {
-    this.sub$.add(
-      this.store.params$.subscribe(state => {
-        this.form.patchValue(state, {emitEvent: false});
+  private initSyncStateToForm(): void {
+    this.onDestroy$.add(
+      this.storeService.zmanimParams$.subscribe(({date}) => {
+        const params = {date: TuiDay.fromLocalNativeDate(date)};
+        this.form.patchValue({params}, {emitEvent: false});
+      })
+    );
+    this.onDestroy$.add(
+      this.storeService.coords$.subscribe((coords) => {
+        this.form.patchValue({coords}, {emitEvent: false});
+      })
+    );
+  }
+
+  private initSyncFormToState(): void {
+    this.onDestroy$.add(
+      this.form.get('params').valueChanges.pipe(
+        filter(() => this.form.get('params').valid),
+        debounceTime(300),
+        map(({date}) => (date as TuiDay).toLocalNativeDate())
+      ).subscribe((date) => {
+        this.storeService.setZmanimParams({date});
       })
     );
 
-    this.sub$.add(
-      this.form.valueChanges.pipe(
-        filter(() => this.form.valid)
-      ).subscribe(value => {
-        this.store.setParams(value);
+    this.onDestroy$.add(
+      this.form.get('coords').valueChanges.pipe(
+        filter(() => this.form.get('coords').valid),
+        debounceTime(300),
+        map((coords) => coords as Pick<CoordsModel, 'lat' | 'lng'>)
+      ).subscribe(({lat, lng}) => {
+        this.storeService.setCoords({lat, lng, source: 'manual'});
       })
     );
   }

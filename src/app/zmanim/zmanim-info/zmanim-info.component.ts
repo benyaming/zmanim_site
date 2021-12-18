@@ -1,7 +1,6 @@
 import {Component} from '@angular/core';
 import {Observable} from 'rxjs';
-import {ZmanimResponseDto} from '../dto/zmanim-response.dto';
-import {ZmanimStore} from '../zmanim.store';
+import {StoreService, ZmanimInfoModel} from '@core/store';
 
 @Component({
   selector: 'app-zmanim-info',
@@ -9,11 +8,14 @@ import {ZmanimStore} from '../zmanim.store';
   styleUrls: ['./zmanim-info.component.scss']
 })
 export class ZmanimInfoComponent {
-  zmanim$: Observable<ZmanimResponseDto> = this.store.zmanim$;
+  readonly zmanimInfo$: Observable<ZmanimInfoModel> = this.storeService.zmanimInfo$;
+
+  readonly columns: string[] = ['key', 'value'];
 
   constructor(
-    private readonly store: ZmanimStore
+    private readonly storeService: StoreService
   ) {
   }
 
+  readonly compareWith = () => 0;
 }
