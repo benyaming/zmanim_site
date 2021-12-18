@@ -36,7 +36,7 @@ jobs:
         run: npm run build
         
       - name: Save env file
-        run: cat "${{ secrets.ENV_FILE }}" | base64 -d > assets/env.js
+        run: echo ${{ secrets.ENV_FILE }} | base64 -d > assets/env.js
 
       - name: Publish
         uses: nogsantos/scp-deploy@master
