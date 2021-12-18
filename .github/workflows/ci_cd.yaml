@@ -36,7 +36,7 @@ jobs:
         run: npm run build
         
       - name: Save env file
-        run: echo "${{ secrets.ENV_FILE }}" > assets/env.js
+        run: echo -e "${{ secrets.ENV_FILE }}" > assets/env.js
 
       - name: Publish
         uses: nogsantos/scp-deploy@master
