@@ -36,7 +36,7 @@ jobs:
         run: npm run build
         
       - name: Save env file
-        run: ls -la && echo ${{ secrets.ENV_FILE }} | base64 -d > assets/env.js
+        run: echo ${{ secrets.ENV_FILE }} | base64 -d > ./dist/zmanim-site/assets/env.js
 
       - name: Publish
         uses: nogsantos/scp-deploy@master
