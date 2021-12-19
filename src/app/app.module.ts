@@ -6,15 +6,10 @@ import {HTTP_INTERCEPTORS, HttpClient, HttpClientModule} from '@angular/common/h
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {AppComponent} from './app.component';
 import {AppRoutingModule} from './app-routing.module';
-import {DOCUMENT} from '@angular/common';
 import {FreegeoipInterceptor} from '@core/freegeoip';
-import {MAPBOX_API_KEY, NgxMapboxGLModule} from 'ngx-mapbox-gl';
+import {NgxMapboxGLModule} from 'ngx-mapbox-gl';
 import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
 import {TranslateHttpLoader} from '@ngx-translate/http-loader';
-
-function mapboxApiKeyFactory(document: Document): string {
-  return document.defaultView.env.mapboxPublicApiKey;
-}
 
 export function translateLoaderFactory(http: HttpClient): TranslateLoader {
   return new TranslateHttpLoader(http);
@@ -28,7 +23,9 @@ export function translateLoaderFactory(http: HttpClient): TranslateLoader {
     BrowserModule,
     HttpClientModule,
     BrowserAnimationsModule,
-    NgxMapboxGLModule,
+    NgxMapboxGLModule.withConfig({
+      accessToken: window.env.mapboxPublicApiKey
+    }),
     AppRoutingModule,
     TuiRootModule,
     TuiDialogModule,
@@ -44,7 +41,6 @@ export function translateLoaderFactory(http: HttpClient): TranslateLoader {
     })
   ],
   providers: [
-    {provide: MAPBOX_API_KEY, useFactory: mapboxApiKeyFactory, deps: [DOCUMENT]},
     {provide: HTTP_INTERCEPTORS, useClass: FreegeoipInterceptor, multi: true},
     {provide: TUI_SANITIZER, useClass: NgDompurifySanitizer}
   ],
