@@ -1,10 +1,10 @@
-import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {StoreService} from '@core/store';
 import {filter} from 'rxjs/operators';
-import {DOCUMENT} from '@angular/common';
 import {FreegeoipService} from '@core/freegeoip';
 import {EventData, LngLatLike, MapMouseEvent} from 'mapbox-gl';
+import {Result} from '@mapbox/mapbox-gl-geocoder';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +19,6 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly onDestroy$: Subscription = new Subscription();
 
   constructor(
-    @Inject(DOCUMENT) private readonly document: Document,
     private readonly storeService: StoreService,
     private readonly freegeoipService: FreegeoipService
   ) {
@@ -37,6 +36,14 @@ export class AppComponent implements OnInit, OnDestroy {
 
   onMapClicked({lngLat}: MapMouseEvent & EventData): void {
     this.storeService.setCoords({...lngLat, source: 'map'});
+  }
+
+  onGeocoderResult({result}: { result: Result }): void {
+    this.storeService.setCoords({
+      lat: result.center[1],
+      lng: result.center[0],
+      source: 'map'
+    });
   }
 
   private initMap(): void {
@@ -58,7 +65,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private initCoordsFromNavigator(): void {
-    this.document.defaultView.navigator.geolocation
+    window.navigator.geolocation
       .getCurrentPosition(({coords}) => {
         this.storeService.setCoords({lat: coords.latitude, lng: coords.longitude, source: 'navigator'});
       });

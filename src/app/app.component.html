@@ -7,6 +7,8 @@
            [zoom]="[zoom]"
            [center]="mapCoords"
            (mapClick)="onMapClicked($event)">
+    <mgl-control mglGeocoder
+                 (geocoderResult)="onGeocoderResult($event)"></mgl-control>
     <mgl-marker *ngIf="markerCoords"
                 [lngLat]="markerCoords"></mgl-marker>
   </mgl-map>
