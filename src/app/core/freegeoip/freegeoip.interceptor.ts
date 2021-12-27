@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {HttpEvent, HttpHandler, HttpInterceptor, HttpRequest} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {FreegeoipService} from './freegeoip.service';
-import {FreegeoipQueryParams} from './freegeoip.query-params';
+
 
 @Injectable()
 export class FreegeoipInterceptor implements HttpInterceptor {
@@ -17,7 +17,7 @@ export class FreegeoipInterceptor implements HttpInterceptor {
       return next.handle(request);
     }
 
-    const params: FreegeoipQueryParams = {
+    const params = {
       apikey: window.env.freegeoipApiKey
     };
     return next.handle(request.clone({setParams: params}));

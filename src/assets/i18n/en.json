@@ -1,8 +1,10 @@
 {
-  "title": "Zmanim",
+  "default-layout.title": "Zmanim",
+  "default-layout.location": "Location",
   "zmanim-form.date-placeholder": "Date",
   "zmanim-form.latitude-placeholder": "Latitude",
   "zmanim-form.longitude-placeholder": "Longitude",
   "zmanim-info.zman": "Zman",
-  "zmanim-info.time": "Time"
+  "zmanim-info.time": "Time",
+  "zmanim.tab-title": "Zmanim | Zmanim"
 }

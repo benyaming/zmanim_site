@@ -51,16 +51,15 @@ export class StoreService {
     // when the app gets the response from geoip it should not override coordinates that are already stored
     switch (coords.source) {
       case 'map':
-      case 'manual':
         this._coords$.next(coords);
         break;
       case 'navigator':
-        if (state?.source !== 'map' && state?.source !== 'manual') {
+        if (state?.source !== 'map') {
           this._coords$.next(coords);
         }
         break;
       case 'geoip':
-        if (state?.source !== 'map' && state?.source !== 'manual' && state?.source !== 'navigator') {
+        if (state?.source !== 'map' && state?.source !== 'navigator') {
           this._coords$.next(coords);
         }
         break;

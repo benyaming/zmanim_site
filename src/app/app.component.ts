@@ -1,10 +1,9 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {StoreService} from '@core/store';
-import {filter} from 'rxjs/operators';
 import {FreegeoipService} from '@core/freegeoip';
-import {EventData, LngLatLike, MapMouseEvent} from 'mapbox-gl';
 import {Result} from '@mapbox/mapbox-gl-geocoder';
+import {MapboxService} from '@core/mapbox';
 
 @Component({
   selector: 'app-root',
@@ -12,20 +11,17 @@ import {Result} from '@mapbox/mapbox-gl-geocoder';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit, OnDestroy {
-  zoom?: number;
-  mapCoords?: LngLatLike;
-  markerCoords?: LngLatLike;
 
   private readonly onDestroy$: Subscription = new Subscription();
 
   constructor(
     private readonly storeService: StoreService,
-    private readonly freegeoipService: FreegeoipService
+    private readonly freegeoipService: FreegeoipService,
+    private readonly mapboxService: MapboxService
   ) {
   }
 
   ngOnInit(): void {
-    this.initMap();
     this.initCoordsFromNavigator();
     this.initCoordsFromGeoip();
   }
@@ -34,48 +30,41 @@ export class AppComponent implements OnInit, OnDestroy {
     this.onDestroy$.unsubscribe();
   }
 
-  onMapClicked({lngLat}: MapMouseEvent & EventData): void {
-    this.storeService.setCoords({...lngLat, source: 'map'});
-  }
-
-  onGeocoderResult({result}: { result: Result }): void {
-    this.storeService.setCoords({
-      lat: result.center[1],
-      lng: result.center[0],
-      source: 'map'
-    });
-  }
-
-  private initMap(): void {
-    this.storeService.coords$.pipe(
-      filter(({lat, lng, source}) => !!(lat && lng && source)),
-    ).subscribe(({lat, lng, source}) => {
-      switch (source) {
-        case 'navigator':
-        case 'geoip':
-          this.zoom = 8;
-          this.mapCoords = {lat, lng};
-          this.markerCoords = {lat, lng};
-          break;
-        case 'map':
-          this.markerCoords = {lat, lng};
-          break;
-      }
-    });
-  }
-
   private initCoordsFromNavigator(): void {
     window.navigator.geolocation
       .getCurrentPosition(({coords}) => {
-        this.storeService.setCoords({lat: coords.latitude, lng: coords.longitude, source: 'navigator'});
+        this.onDestroy$.add(
+          this.mapboxService.places({lat: coords.latitude, lng: coords.longitude}, {limit: '1'})
+            .subscribe(res => {
+              const place: Result = res.features[0];
+              if (!place) {
+                console.warn(`received no places for given coords from navigator: lat [${coords.latitude}], lng [${coords.longitude}]`);
+                return;
+              }
+
+              const city = place.context.find(({id}) => id.startsWith('place'));
+
+              this.storeService.setCoords({
+                lat: coords.latitude,
+                lng: coords.longitude,
+                cityName: city?.text ?? place.text,
+                source: 'navigator'
+              });
+            })
+        );
       });
   }
 
   private initCoordsFromGeoip(): void {
     this.onDestroy$.add(
       this.freegeoipService.fetchMyGeo()
-        .subscribe(({latitude, longitude}) => {
-          this.storeService.setCoords({lat: latitude, lng: longitude, source: 'geoip'});
+        .subscribe(({latitude, longitude, city}) => {
+          this.storeService.setCoords({
+            lat: latitude,
+            lng: longitude,
+            cityName: city,
+            source: 'geoip'
+          });
         })
     );
   }
