@@ -1,7 +1,19 @@
-<h1 class="tui-text_h2">{{titleText | translate}}</h1>
+<header>
+  <h1 class="tui-text_h4">{{'default-layout.title' | translate}}</h1>
+  <button type="button"
+          tuiButton
+          size="s"
+          appearance="flat"
+          (click)="openMap()">
+    <tui-svg src="tuiIconPin"></tui-svg>
+    {{cityName || ('default-layout.location' | translate)}}
+  </button>
+</header>
 
-<ng-content select="[appDefaultLayoutForm]"></ng-content>
+<main>
+  <ng-content select="[appDefaultLayoutForm]"></ng-content>
 
-<tui-island>
-  <ng-content select="[appDefaultLayoutInfo]"></ng-content>
-</tui-island>
+  <tui-island>
+    <ng-content select="[appDefaultLayoutInfo]"></ng-content>
+  </tui-island>
+</main>

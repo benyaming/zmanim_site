@@ -10,6 +10,9 @@ import {FreegeoipInterceptor} from '@core/freegeoip';
 import {NgxMapboxGLModule} from 'ngx-mapbox-gl';
 import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
 import {TranslateHttpLoader} from '@ngx-translate/http-loader';
+import {TUI_NUMBER_FORMAT} from '@taiga-ui/core';
+import {MapboxInterceptor} from '@core/mapbox';
+
 
 export function translateLoaderFactory(http: HttpClient): TranslateLoader {
   return new TranslateHttpLoader(http);
@@ -42,7 +45,9 @@ export function translateLoaderFactory(http: HttpClient): TranslateLoader {
   ],
   providers: [
     {provide: HTTP_INTERCEPTORS, useClass: FreegeoipInterceptor, multi: true},
-    {provide: TUI_SANITIZER, useClass: NgDompurifySanitizer}
+    {provide: HTTP_INTERCEPTORS, useClass: MapboxInterceptor, multi: true},
+    {provide: TUI_SANITIZER, useClass: NgDompurifySanitizer},
+    {provide: TUI_NUMBER_FORMAT, useValue: {decimalSeparator: '.'}},
   ],
   bootstrap: [AppComponent]
 })

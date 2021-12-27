@@ -1,11 +1,29 @@
+@use "node_modules/@taiga-ui/core/styles/mixins/mixins.scss";
+
 :host {
   display: flex;
   flex-direction: column;
-  max-width: 300px;
   gap: 1rem;
-  padding: 1rem;
+}
 
-  & > * {
-    z-index: 2;
-  }
+header {
+  @include mixins.shadow(6);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: var(--tui-base-01);
+
+  padding: 0 1.5rem;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+main {
+  align-self: center;
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
 }

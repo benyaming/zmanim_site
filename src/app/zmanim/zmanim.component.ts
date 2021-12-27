@@ -63,7 +63,7 @@ export class ZmanimComponent implements OnInit, OnDestroy {
 
   private initTitleChange(): void {
     this.onDestroy$.add(
-      this.translateService.get('title')
+      this.translateService.get('zmanim.tab-title')
         .subscribe(title => {
           this.title.setTitle(title);
         })

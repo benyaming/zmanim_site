@@ -1,19 +1,5 @@
 <form [formGroup]="form">
-  <ng-container formGroupName="params">
-    <tui-input-date formControlName="date">
-      {{'zmanim-form.date-placeholder' | translate}}
-    </tui-input-date>
-  </ng-container>
-
-  <div tuiGroup
-       formGroupName="coords">
-    <!-- NOTE Taiga UI number input forbids dots alongside with letters,
-         it seems that the only separator symbol is comma -->
-    <tui-input-number formControlName="lat">
-      {{'zmanim-form.latitude-placeholder' | translate}}
-    </tui-input-number>
-    <tui-input-number formControlName="lng">
-      {{'zmanim-form.longitude-placeholder' | translate}}
-    </tui-input-number>
-  </div>
+  <tui-input-date formControlName="date">
+    {{'zmanim-form.date-placeholder' | translate}}
+  </tui-input-date>
 </form>
