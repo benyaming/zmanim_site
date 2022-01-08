@@ -1,5 +1,4 @@
-import {LocationWithoutSourceModel, ZmanimFormModel} from "./app.models";
-
+import { LocationWithoutSourceModel, ZmanimFormModel } from './app.models';
 
 export class FetchLocationFromNavigator {
   static readonly type = '[App] Fetch Location from Navigator';
@@ -12,14 +11,11 @@ export class FetchLocationFromFreegeoip {
 export class SetLocationManually {
   static readonly type = '[App] Set location';
 
-  constructor(public readonly location: LocationWithoutSourceModel) {
-  }
+  constructor(public readonly location: LocationWithoutSourceModel) {}
 }
 
 export class FetchZmanim {
   static readonly type = '[App] Fetch Zmanim Info';
 
-  constructor(public readonly form: ZmanimFormModel) {
-  }
+  constructor(public readonly form: ZmanimFormModel) {}
 }
-

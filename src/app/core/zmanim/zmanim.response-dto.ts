@@ -8,7 +8,7 @@ export interface ZmanimResponseDto {
     coordinates?: string[];
     elevation?: number;
     fast_name?: string;
-    yomtov_name?: string
+    yomtov_name?: string;
   };
   alos: string | null;
   sunrise: string | null;

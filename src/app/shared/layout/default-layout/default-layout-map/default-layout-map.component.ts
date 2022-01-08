@@ -1,13 +1,13 @@
-import {Component, Inject, OnDestroy} from '@angular/core';
-import {EventData, MapMouseEvent} from 'mapbox-gl';
-import {Result} from '@mapbox/mapbox-gl-geocoder';
-import {Subscription} from 'rxjs';
-import {MapboxService} from '@core/mapbox';
-import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
-import {TuiDialogContext} from '@taiga-ui/core';
-import {LocationModel, LocationWithoutSourceModel} from "@core/state";
+import { Component, Inject, OnDestroy } from '@angular/core';
+import { EventData, MapMouseEvent } from 'mapbox-gl';
+import { Result } from '@mapbox/mapbox-gl-geocoder';
+import { Subscription } from 'rxjs';
+import { MapboxService } from '@core/mapbox';
+import { POLYMORPHEUS_CONTEXT } from '@tinkoff/ng-polymorpheus';
+import { TuiDialogContext } from '@taiga-ui/core';
+import { LocationWithoutSourceModel } from '@core/state';
 
-// For some reason when mapbox is used inside a tui dialog and markerCoords is changed asynchronously
+// NOTE: For some reason when mapbox is used inside a tui dialog and markerCoords is changed asynchronously
 // (e.g. it is updated via subscription a store or updated inside mapbox.places subscribe callback)
 // it bugs in the following way:
 //   first map click changes store, but not marker on the map
@@ -18,7 +18,7 @@ import {LocationModel, LocationWithoutSourceModel} from "@core/state";
 @Component({
   selector: 'app-default-layout-map',
   templateUrl: './default-layout-map.component.html',
-  styleUrls: ['./default-layout-map.component.scss']
+  styleUrls: ['./default-layout-map.component.scss'],
 })
 export class DefaultLayoutMapComponent implements OnDestroy {
   mapCoords: { lng: number; lat: number } = this.context.data;
@@ -30,45 +30,52 @@ export class DefaultLayoutMapComponent implements OnDestroy {
 
   constructor(
     private readonly mapboxService: MapboxService,
-    @Inject(POLYMORPHEUS_CONTEXT) private readonly context: TuiDialogContext<LocationWithoutSourceModel, LocationWithoutSourceModel>,
-  ) {
-  }
+    @Inject(POLYMORPHEUS_CONTEXT)
+    private readonly context: TuiDialogContext<
+      LocationWithoutSourceModel,
+      LocationWithoutSourceModel
+    >,
+  ) {}
 
   ngOnDestroy(): void {
     this.onDestroy$.unsubscribe();
   }
 
-  onMapClicked({lngLat}: MapMouseEvent & EventData): void {
+  onMapClicked({ lngLat }: MapMouseEvent & EventData): void {
     this.markerCoords = lngLat;
 
     this.onDestroy$.add(
-      this.mapboxService.places(lngLat, {limit: '1'})
-        .subscribe(res => {
-          const place: Result = res.features[0];
-          if (!place) {
-            console.error(`received no places for given coords from map click: lat [${lngLat.lat}], lng [${lngLat.lng}]`);
-            this.cityName = null;
-            return;
-          }
+      this.mapboxService.places(lngLat, { limit: '1' }).subscribe((res) => {
+        const place: Result = res.features[0];
+        if (!place) {
+          console.error(
+            `received no places for given coords from map click: lat [${lngLat.lat}], lng [${lngLat.lng}]`,
+          );
+          this.cityName = null;
+          return;
+        }
 
-          const city = place.context.find(({id}) => id.startsWith('place'));
+        const city = place.context.find(({ id }) => id.startsWith('place'));
 
-          this.cityName = city?.text ?? place.text;
-        })
+        this.cityName = city?.text ?? place.text;
+      }),
     );
   }
 
-  onGeocoderResulted({result}: { result: Result }): void {
-    const city = result.context.find(({id}) => id.startsWith('place'));
+  onGeocoderResulted({ result }: { result: Result }): void {
+    const city = result.context.find(({ id }) => id.startsWith('place'));
 
     this.markerCoords = {
       lat: result.center[1],
-      lng: result.center[0]
+      lng: result.center[0],
     };
     this.cityName = city?.text ?? result.text;
   }
 
   onSubmitClicked(): void {
-    this.context.completeWith({...this.markerCoords, cityName: this.cityName})
+    this.context.completeWith({
+      ...this.markerCoords,
+      cityName: this.cityName,
+    });
   }
 }

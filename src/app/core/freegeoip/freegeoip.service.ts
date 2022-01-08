@@ -1,10 +1,10 @@
-import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
-import {FreegeoipResponseDto} from './freegeoip.response-dto';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { FreegeoipResponseDto } from './freegeoip.response-dto';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class FreegeoipService {
   // NOTE: We have to use here absolute path and not just prefix like in ZmanimService,
@@ -16,10 +16,7 @@ export class FreegeoipService {
   //  2) To configure nginx to set http-header that tells the browser to allow CORS with https://api.freegeoip.app/
   readonly urlPrefix = 'https://api.freegeoip.app/';
 
-  constructor(
-    private readonly http: HttpClient
-  ) {
-  }
+  constructor(private readonly http: HttpClient) {}
 
   fetchMyGeo(): Observable<FreegeoipResponseDto> {
     return this.http.get<FreegeoipResponseDto>(`${this.urlPrefix}json`);

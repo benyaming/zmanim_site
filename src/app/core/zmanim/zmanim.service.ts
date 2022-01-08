@@ -1,26 +1,27 @@
-import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
-import {Observable} from 'rxjs';
-import {ZmanimResponseDto} from './zmanim.response-dto';
-import {ZmanimRequestDto} from './zmanim.request-dto';
-import {ZmanimQueryParams} from './zmanim.query-params';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { ZmanimResponseDto } from './zmanim.response-dto';
+import { ZmanimRequestDto } from './zmanim.request-dto';
+import { ZmanimQueryParams } from './zmanim.query-params';
 
 // NOTE: In terms of project the word "zmanim" has two meanings: the API itself and one of its endpoints.
 // The current service is named after the whole API itself,
 // but the method zmanimService.fetchZmanim() and ZmanimModule are named after the endpoint
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ZmanimService {
   readonly urlPrefix = `zmanim/`;
 
-  constructor(
-    private readonly http: HttpClient
-  ) {
-  }
+  constructor(private readonly http: HttpClient) {}
 
   fetchZmanim(params: ZmanimQueryParams): Observable<ZmanimResponseDto> {
-    return this.http.post<ZmanimResponseDto>(`${this.urlPrefix}zmanim`, ZMANIM_BODY, {params});
+    return this.http.post<ZmanimResponseDto>(
+      `${this.urlPrefix}zmanim`,
+      ZMANIM_BODY,
+      { params },
+    );
   }
 }
 
@@ -43,5 +44,5 @@ const ZMANIM_BODY: ZmanimRequestDto = {
   tzeis_5_95_degrees: true,
   chatzot_laila: true,
   astronomical_hour_ma: true,
-  astronomical_hour_gra: true
+  astronomical_hour_gra: true,
 };

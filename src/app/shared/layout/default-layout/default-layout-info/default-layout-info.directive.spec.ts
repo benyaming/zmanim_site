@@ -1,4 +1,4 @@
-import {DefaultLayoutInfoDirective} from './default-layout-info.directive';
+import { DefaultLayoutInfoDirective } from './default-layout-info.directive';
 
 describe('DefaultLayoutInfoDirective', () => {
   it('should create an instance', () => {

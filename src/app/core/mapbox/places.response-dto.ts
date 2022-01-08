@@ -1,4 +1,4 @@
-import {Result} from '@mapbox/mapbox-gl-geocoder';
+import { Result } from '@mapbox/mapbox-gl-geocoder';
 
 export interface PlacesResponseDto {
   type: string;

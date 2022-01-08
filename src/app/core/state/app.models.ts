@@ -1,9 +1,8 @@
-import {ZmanimResponseDto} from "@core/zmanim";
-
+import { ZmanimResponseDto } from '@core/zmanim';
 
 export interface AppStateModel {
   location: LocationModel | null;
-  zmanim: ZmanimStateModel
+  zmanim: ZmanimStateModel;
 }
 
 export interface LocationModel {
@@ -17,7 +16,7 @@ export type LocationWithoutSourceModel = Omit<LocationModel, 'source'>;
 
 export interface ZmanimStateModel {
   form: ZmanimFormModel;
-  info: ZmanimInfoModel | null
+  info: ZmanimInfoModel | null;
 }
 
 export interface ZmanimFormModel {
