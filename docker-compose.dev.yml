@@ -4,7 +4,7 @@ services:
   zmanim_site:
     build:
       context: .
-      dockerfile: dev.Dockerfile
+      dockerfile: zmanim_site.dev.Dockerfile
     container_name: zmanim_site
     ports:
       - '80:80'
