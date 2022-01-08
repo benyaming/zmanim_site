@@ -1,5 +1,5 @@
 interface Window {
-  env?: {
+  env: {
     mapboxPublicApiKey: string,
     freegeoipApiKey: string
   };

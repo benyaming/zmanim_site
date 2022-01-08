@@ -1,11 +1,10 @@
-<mgl-map (mapClick)="onMapClicked($event)"
-         *ngIf="mapCoords && zoom"
+<mgl-map *ngIf="mapCoords"
          [center]="mapCoords"
          [style]="'mapbox://styles/mapbox/streets-v11'"
-         [zoom]="[zoom]">
-  <mgl-control (geocoderResult)="onGeocoderResult($event)"
+         [zoom]="[8]"
+         (mapClick)="onMapClicked($event)">
+  <mgl-control mglGeocoder
                [proximity]="{latitude: mapCoords.lat, longitude: mapCoords.lng}"
-               mglGeocoder></mgl-control>
-  <mgl-marker *ngIf="markerCoords"
-              [lngLat]="markerCoords"></mgl-marker>
+               (geocoderResult)="onGeocoderResult($event)"></mgl-control>
+  <mgl-marker [lngLat]="markerCoords ?? mapCoords"></mgl-marker>
 </mgl-map>

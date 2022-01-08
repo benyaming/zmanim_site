@@ -1,7 +1,6 @@
 {
   "/zmanim": {
     "target": "https://api.ginzburg.io",
-    "secure": false,
-    "logLevel": "debug"
+    "secure": false
   }
 }

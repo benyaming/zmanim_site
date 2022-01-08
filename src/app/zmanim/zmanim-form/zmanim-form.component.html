@@ -3,9 +3,3 @@
     {{'zmanim-form.date-placeholder' | translate}}
   </tui-input-date>
 </form>
-
-<ng-container *ngIf="coords$ | async as coords">
-  <app-default-layout-map *ngIf="coords"
-                          [mapCoords]="coords"
-                          [cityName]="coords.cityName"></app-default-layout-map>
-</ng-container>

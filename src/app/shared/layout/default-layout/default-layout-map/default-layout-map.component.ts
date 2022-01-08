@@ -1,5 +1,5 @@
-import {Component, Inject, Input, OnDestroy, OnInit, Optional} from '@angular/core';
-import {EventData, LngLatLike, MapMouseEvent} from 'mapbox-gl';
+import {Component, Inject, OnDestroy} from '@angular/core';
+import {EventData, MapMouseEvent} from 'mapbox-gl';
 import {Result} from '@mapbox/mapbox-gl-geocoder';
 import {CoordsModel} from '@core/store';
 import {Subscription} from 'rxjs';
@@ -13,31 +13,20 @@ import {TuiDialogContext} from '@taiga-ui/core';
   templateUrl: './default-layout-map.component.html',
   styleUrls: ['./default-layout-map.component.scss']
 })
-export class DefaultLayoutMapComponent implements OnInit, OnDestroy {
-  zoom = 8;
-  @Input() mapCoords: LngLatLike;
-  @Input() cityName: string;
-  markerCoords: LngLatLike;
+export class DefaultLayoutMapComponent implements OnDestroy {
+  mapCoords: { lng: number; lat: number };
+  markerCoords: { lng: number; lat: number };
+  cityName: string | null;
 
   private readonly onDestroy$: Subscription = new Subscription();
 
   constructor(
     private readonly mapboxService: MapboxService,
-    @Optional() @Inject(POLYMORPHEUS_CONTEXT) private readonly context?: TuiDialogContext<CoordsModel, CoordsModel>,
+    @Inject(POLYMORPHEUS_CONTEXT) private readonly context: TuiDialogContext<CoordsModel, CoordsModel>,
   ) {
-  }
-
-  ngOnInit(): void {
-    if (this.context) {
-      this.mapCoords = {
-        lat: this.context.data.lat,
-        lng: this.context.data.lng
-      };
-      this.cityName = this.context.data.cityName;
-    }
-    this.markerCoords = {
-      ...this.mapCoords
-    };
+    this.mapCoords = this.context.data;
+    this.markerCoords = this.mapCoords;
+    this.cityName = this.context.data.cityName;
   }
 
   ngOnDestroy(): void {
@@ -45,18 +34,20 @@ export class DefaultLayoutMapComponent implements OnInit, OnDestroy {
   }
 
   onMapClicked({lngLat}: MapMouseEvent & EventData): void {
+    this.markerCoords = lngLat;
+
     this.onDestroy$.add(
       this.mapboxService.places(lngLat, {limit: '1'})
         .subscribe(res => {
           const place: Result = res.features[0];
           if (!place) {
-            console.warn(`received no places for given coords from map click: lat [${lngLat.lat}], lng [${lngLat.lng}]`);
+            console.error(`received no places for given coords from map click: lat [${lngLat.lat}], lng [${lngLat.lng}]`);
+            this.cityName = null;
             return;
           }
 
           const city = place.context.find(({id}) => id.startsWith('place'));
 
-          this.markerCoords = lngLat;
           this.cityName = city?.text ?? place.text;
         })
     );

@@ -3,13 +3,17 @@ import {BehaviorSubject, Observable} from 'rxjs';
 import {ZmanimParamsModel} from './zmanim-params.model';
 import {ZmanimInfoModel} from './zmanim-info.model';
 import {CoordsModel} from './coords.model';
+import {filter, map} from "rxjs/operators";
 
 @Injectable({
   providedIn: 'root'
 })
 export class StoreService {
-  private readonly _coords$: BehaviorSubject<CoordsModel | null> = new BehaviorSubject<CoordsModel>(null);
-  readonly coords$: Observable<CoordsModel | null> = this._coords$.asObservable();
+  private readonly _coords$: BehaviorSubject<CoordsModel | null> = new BehaviorSubject<CoordsModel | null>(null);
+  readonly coords$: Observable<CoordsModel> = this._coords$.pipe(
+    filter(coords => !!coords),
+    map(coords => coords as CoordsModel)
+  );
 
   private readonly _zmanimParams$: BehaviorSubject<ZmanimParamsModel> = new BehaviorSubject<ZmanimParamsModel>({
     date: new Date()

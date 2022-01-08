@@ -7,24 +7,25 @@
     <th tuiTh>{{'zmanim-info.time' | translate}}</th>
   </tr>
   </thead>
-  <tbody [data]="info | keyvalue:compareWith" tuiTbody>
-  <tr *tuiRow="let keyvalue of info" tuiTr>
-    <td *tuiCell="'key'" tuiTd>
-      {{keyvalue.key | translate}}
-    </td>
-    <td *tuiCell="'value'" tuiTd>
-      <ng-container [ngSwitch]="keyvalue.key">
-        <ng-container *ngSwitchCase="'astronomical_hour_ma'">
-          {{keyvalue.value}}
-        </ng-container>
-        <ng-container *ngSwitchCase="'astronomical_hour_gra'">
-          {{keyvalue.value}}
-        </ng-container>
-        <ng-container *ngSwitchDefault>
-          {{keyvalue.value | date:'shortTime'}}
-        </ng-container>
-      </ng-container>
-    </td>
-  </tr>
-  </tbody>
+<!--  <tbody tuiTbody-->
+<!--         [data]="info | keyvalue:compareWith">-->
+<!--  <tr *tuiRow="let keyvalue of info" tuiTr>-->
+<!--    <td *tuiCell="'key'" tuiTd>-->
+<!--      {{keyvalue.key | translate}}-->
+<!--    </td>-->
+<!--    <td *tuiCell="'value'" tuiTd>-->
+<!--      <ng-container [ngSwitch]="keyvalue.key">-->
+<!--        <ng-container *ngSwitchCase="'astronomical_hour_ma'">-->
+<!--          {{keyvalue.value}}-->
+<!--        </ng-container>-->
+<!--        <ng-container *ngSwitchCase="'astronomical_hour_gra'">-->
+<!--          {{keyvalue.value}}-->
+<!--        </ng-container>-->
+<!--        <ng-container *ngSwitchDefault>-->
+<!--          {{keyvalue.value | date:'shortTime'}}-->
+<!--        </ng-container>-->
+<!--      </ng-container>-->
+<!--    </td>-->
+<!--  </tr>-->
+<!--  </tbody>-->
 </table>

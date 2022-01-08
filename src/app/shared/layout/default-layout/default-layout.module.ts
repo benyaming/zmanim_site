@@ -8,6 +8,7 @@ import {TranslateModule} from '@ngx-translate/core';
 import {TuiButtonModule, TuiSvgModule} from '@taiga-ui/core';
 import {DefaultLayoutMapComponent} from './default-layout-map/default-layout-map.component';
 import {NgxMapboxGLModule} from 'ngx-mapbox-gl';
+import {NgxMapboxGlGeocoderControlModule} from "ngx-mapbox-gl-geocoder-control";
 
 
 @NgModule({
@@ -29,7 +30,8 @@ import {NgxMapboxGLModule} from 'ngx-mapbox-gl';
     TranslateModule,
     TuiButtonModule,
     TuiSvgModule,
-    NgxMapboxGLModule
+    NgxMapboxGLModule,
+    NgxMapboxGlGeocoderControlModule
   ]
 })
 export class DefaultLayoutModule {
