@@ -6,7 +6,7 @@ import {DefaultLayoutInfoDirective} from './default-layout-info/default-layout-i
 import {TuiIslandModule} from '@taiga-ui/kit';
 import {TranslateModule} from '@ngx-translate/core';
 import {TuiButtonModule, TuiSvgModule} from '@taiga-ui/core';
-import { DefaultLayoutMapComponent } from './default-layout-map/default-layout-map.component';
+import {DefaultLayoutMapComponent} from './default-layout-map/default-layout-map.component';
 import {NgxMapboxGLModule} from 'ngx-mapbox-gl';
 
 
@@ -20,7 +20,8 @@ import {NgxMapboxGLModule} from 'ngx-mapbox-gl';
   exports: [
     DefaultLayoutComponent,
     DefaultLayoutFormDirective,
-    DefaultLayoutInfoDirective
+    DefaultLayoutInfoDirective,
+    DefaultLayoutMapComponent
   ],
   imports: [
     CommonModule,

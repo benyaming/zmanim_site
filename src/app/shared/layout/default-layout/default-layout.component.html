@@ -1,10 +1,10 @@
 <header>
   <h1 class="tui-text_h4">{{'default-layout.title' | translate}}</h1>
-  <button type="button"
-          tuiButton
-          size="s"
+  <button (click)="openMap()"
           appearance="flat"
-          (click)="openMap()">
+          size="s"
+          tuiButton
+          type="button">
     <tui-svg src="tuiIconPin"></tui-svg>
     {{cityName || ('default-layout.location' | translate)}}
   </button>

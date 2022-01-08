@@ -1,6 +1,6 @@
-import { TestBed } from '@angular/core/testing';
+import {TestBed} from '@angular/core/testing';
 
-import { FreegeoipService } from './freegeoip.service';
+import {FreegeoipService} from './freegeoip.service';
 
 describe('FreegeoipService', () => {
   let service: FreegeoipService;

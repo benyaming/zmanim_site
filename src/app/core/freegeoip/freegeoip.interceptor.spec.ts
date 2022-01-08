@@ -1,12 +1,12 @@
-import { TestBed } from '@angular/core/testing';
+import {TestBed} from '@angular/core/testing';
 
-import { FreegeoipInterceptor } from './freegeoip.interceptor';
+import {FreegeoipInterceptor} from './freegeoip.interceptor';
 
 describe('FreegeoipInterceptor', () => {
   beforeEach(() => TestBed.configureTestingModule({
     providers: [
       FreegeoipInterceptor
-      ]
+    ]
   }));
 
   it('should be created', () => {

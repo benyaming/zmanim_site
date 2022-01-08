@@ -8,9 +8,9 @@ describe('ZmanimComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ZmanimComponent ]
+      declarations: [ZmanimComponent]
     })
-    .compileComponents();
+      .compileComponents();
   });
 
   beforeEach(() => {

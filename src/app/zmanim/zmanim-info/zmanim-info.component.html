@@ -1,13 +1,13 @@
 <table *ngIf="zmanimInfo$ | async as info"
-       tuiTable
-       [columns]="columns">
+       [columns]="columns"
+       tuiTable>
   <thead>
   <tr tuiThGroup>
     <th tuiTh>{{'zmanim-info.zman' | translate}}</th>
     <th tuiTh>{{'zmanim-info.time' | translate}}</th>
   </tr>
   </thead>
-  <tbody tuiTbody [data]="info | keyvalue:compareWith">
+  <tbody [data]="info | keyvalue:compareWith" tuiTbody>
   <tr *tuiRow="let keyvalue of info" tuiTr>
     <td *tuiCell="'key'" tuiTd>
       {{keyvalue.key | translate}}

@@ -1,12 +1,12 @@
-import { TestBed } from '@angular/core/testing';
+import {TestBed} from '@angular/core/testing';
 
-import { MapboxInterceptor } from './mapbox.interceptor';
+import {MapboxInterceptor} from './mapbox.interceptor';
 
 describe('MapboxInterceptor', () => {
   beforeEach(() => TestBed.configureTestingModule({
     providers: [
       MapboxInterceptor
-      ]
+    ]
   }));
 
   it('should be created', () => {

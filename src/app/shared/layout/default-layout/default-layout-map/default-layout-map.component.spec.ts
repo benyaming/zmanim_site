@@ -1,6 +1,6 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
 
-import { DefaultLayoutMapComponent } from './default-layout-map.component';
+import {DefaultLayoutMapComponent} from './default-layout-map.component';
 
 describe('DefaultLayoutMapComponent', () => {
   let component: DefaultLayoutMapComponent;
@@ -8,9 +8,9 @@ describe('DefaultLayoutMapComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ DefaultLayoutMapComponent ]
+      declarations: [DefaultLayoutMapComponent]
     })
-    .compileComponents();
+      .compileComponents();
   });
 
   beforeEach(() => {

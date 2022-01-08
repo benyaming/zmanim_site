@@ -3,7 +3,7 @@ import {ZmanimQueryParams, ZmanimRequestDto, ZmanimService} from '@core/zmanim';
 import {combineLatest, Subscription} from 'rxjs';
 import {CoordsModel, StoreService, ZmanimParamsModel} from '@core/store';
 import {format} from 'date-fns';
-import {map} from 'rxjs/operators';
+import {filter, map} from 'rxjs/operators';
 import {TranslateService} from '@ngx-translate/core';
 import {Title} from '@angular/platform-browser';
 
@@ -48,6 +48,7 @@ export class ZmanimComponent implements OnInit, OnDestroy {
         this.storeService.coords$,
         this.storeService.zmanimParams$
       ]).pipe(
+        filter(([coords]) => !!coords),
         map(([coords, params]) => ZmanimComponent.mapStateToQueryParams(coords, params)),
       ).subscribe((query) => this.initZmanimFetch(query))
     );

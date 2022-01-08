@@ -1,10 +1,11 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, Inject, Input, OnDestroy, OnInit, Optional} from '@angular/core';
 import {EventData, LngLatLike, MapMouseEvent} from 'mapbox-gl';
 import {Result} from '@mapbox/mapbox-gl-geocoder';
-import {filter} from 'rxjs/operators';
-import {StoreService} from '@core/store';
+import {CoordsModel} from '@core/store';
 import {Subscription} from 'rxjs';
 import {MapboxService} from '@core/mapbox';
+import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
+import {TuiDialogContext} from '@taiga-ui/core';
 
 
 @Component({
@@ -13,20 +14,30 @@ import {MapboxService} from '@core/mapbox';
   styleUrls: ['./default-layout-map.component.scss']
 })
 export class DefaultLayoutMapComponent implements OnInit, OnDestroy {
-  zoom?: number;
-  mapCoords?: LngLatLike;
-  markerCoords?: LngLatLike;
+  zoom = 8;
+  @Input() mapCoords: LngLatLike;
+  @Input() cityName: string;
+  markerCoords: LngLatLike;
 
   private readonly onDestroy$: Subscription = new Subscription();
 
   constructor(
-    private readonly storeService: StoreService,
-    private readonly mapboxService: MapboxService
+    private readonly mapboxService: MapboxService,
+    @Optional() @Inject(POLYMORPHEUS_CONTEXT) private readonly context?: TuiDialogContext<CoordsModel, CoordsModel>,
   ) {
   }
 
   ngOnInit(): void {
-    this.initMap();
+    if (this.context) {
+      this.mapCoords = {
+        lat: this.context.data.lat,
+        lng: this.context.data.lng
+      };
+      this.cityName = this.context.data.cityName;
+    }
+    this.markerCoords = {
+      ...this.mapCoords
+    };
   }
 
   ngOnDestroy(): void {
@@ -45,12 +56,8 @@ export class DefaultLayoutMapComponent implements OnInit, OnDestroy {
 
           const city = place.context.find(({id}) => id.startsWith('place'));
 
-          this.storeService.setCoords({
-            lat: lngLat.lat,
-            lng: lngLat.lng,
-            cityName: city?.text ?? place.text,
-            source: 'map'
-          });
+          this.markerCoords = lngLat;
+          this.cityName = city?.text ?? place.text;
         })
     );
   }
@@ -58,31 +65,10 @@ export class DefaultLayoutMapComponent implements OnInit, OnDestroy {
   onGeocoderResult({result}: { result: Result }): void {
     const city = result.context.find(({id}) => id.startsWith('place'));
 
-    this.storeService.setCoords({
+    this.markerCoords = {
       lat: result.center[1],
-      lng: result.center[0],
-      cityName: city?.text ?? result.text,
-      source: 'map'
-    });
-  }
-
-  private initMap(): void {
-    this.onDestroy$.add(
-      this.storeService.coords$.pipe(
-        filter(({lat, lng, source}) => !!(lat && lng && source)),
-      ).subscribe(({lat, lng, source}) => {
-        switch (source) {
-          case 'navigator':
-          case 'geoip':
-            this.zoom = 8;
-            this.mapCoords = {lat, lng};
-            this.markerCoords = {lat, lng};
-            break;
-          case 'map':
-            this.markerCoords = {lat, lng};
-            break;
-        }
-      })
-    );
+      lng: result.center[0]
+    };
+    this.cityName = city?.text ?? result.text;
   }
 }

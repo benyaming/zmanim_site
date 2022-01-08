@@ -1,6 +1,6 @@
-import { TestBed } from '@angular/core/testing';
+import {TestBed} from '@angular/core/testing';
 
-import { StoreService } from './store.service';
+import {StoreService} from './store.service';
 
 describe('ZmanimStateService', () => {
   let service: StoreService;

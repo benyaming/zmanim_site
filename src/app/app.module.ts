@@ -1,5 +1,5 @@
 import {NgDompurifySanitizer} from '@tinkoff/ng-dompurify';
-import {TUI_SANITIZER, TuiDialogModule, TuiNotificationsModule, TuiRootModule} from '@taiga-ui/core';
+import {TUI_NUMBER_FORMAT, TUI_SANITIZER, TuiDialogModule, TuiNotificationsModule, TuiRootModule} from '@taiga-ui/core';
 import {BrowserModule} from '@angular/platform-browser';
 import {NgModule} from '@angular/core';
 import {HTTP_INTERCEPTORS, HttpClient, HttpClientModule} from '@angular/common/http';
@@ -10,7 +10,6 @@ import {FreegeoipInterceptor} from '@core/freegeoip';
 import {NgxMapboxGLModule} from 'ngx-mapbox-gl';
 import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
 import {TranslateHttpLoader} from '@ngx-translate/http-loader';
-import {TUI_NUMBER_FORMAT} from '@taiga-ui/core';
 import {MapboxInterceptor} from '@core/mapbox';
 
 
