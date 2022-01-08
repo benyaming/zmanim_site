@@ -1,3 +1,3 @@
 export enum AppRoute {
-  zmanim = 'zmanim'
+  zmanim = 'zmanim',
 }

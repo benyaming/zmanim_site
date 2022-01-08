@@ -1,16 +1,19 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {StoreService} from '@core/store';
-import {Subscription} from 'rxjs';
-import {debounceTime, filter, map} from 'rxjs/operators';
-import {TuiDay} from '@taiga-ui/cdk';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AppState, FetchZmanim, ZmanimStateModel } from '@core/state';
+import { Observable, Subscription } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { TuiDay } from '@taiga-ui/cdk';
+import { Select, Store } from '@ngxs/store';
 
 @Component({
   selector: 'app-zmanim-form',
   templateUrl: './zmanim-form.component.html',
-  styleUrls: ['./zmanim-form.component.scss']
+  styleUrls: ['./zmanim-form.component.scss'],
 })
 export class ZmanimFormComponent implements OnInit, OnDestroy {
+  @Select(AppState.zmanim) state$!: Observable<ZmanimStateModel>;
+
   readonly form: FormGroup = this.fb.group({
     date: [null, [Validators.required]],
   });
@@ -19,13 +22,11 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly storeService: StoreService,
-  ) {
-  }
+    private readonly store: Store,
+  ) {}
 
   ngOnInit(): void {
     this.initSyncStateToForm();
-    this.initSyncFormToState();
   }
 
   ngOnDestroy(): void {
@@ -34,21 +35,17 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
 
   private initSyncStateToForm(): void {
     this.onDestroy$.add(
-      this.storeService.zmanimParams$.subscribe(({date}) => {
-        this.form.patchValue({date: TuiDay.fromLocalNativeDate(date)}, {emitEvent: false});
-      })
+      this.state$.pipe(map(({ form }) => form)).subscribe(({ date }) => {
+        this.form.patchValue({ date: TuiDay.fromLocalNativeDate(date) });
+      }),
     );
   }
 
-  private initSyncFormToState(): void {
-    this.onDestroy$.add(
-      this.form.valueChanges.pipe(
-        filter(() => this.form.valid),
-        debounceTime(300),
-        map(({date}) => (date as TuiDay).toLocalNativeDate())
-      ).subscribe((date) => {
-        this.storeService.setZmanimParams({date});
-      })
+  onGetClicked() {
+    this.store.dispatch(
+      new FetchZmanim({
+        date: (this.form.value.date as TuiDay).toLocalNativeDate(),
+      }),
     );
   }
 }

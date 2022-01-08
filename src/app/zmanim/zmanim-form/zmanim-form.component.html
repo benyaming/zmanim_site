@@ -3,3 +3,11 @@
     {{'zmanim-form.date-placeholder' | translate}}
   </tui-input-date>
 </form>
+
+<button tuiButton
+        size="s"
+        [disabled]="form.invalid"
+        type="button"
+        (click)="onGetClicked()">
+  {{'zmanim-form.get-zmanim-button' | translate}}
+</button>

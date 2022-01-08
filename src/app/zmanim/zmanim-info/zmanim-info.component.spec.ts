@@ -8,9 +8,8 @@ describe('ZmanimInfoComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ZmanimInfoComponent ]
-    })
-    .compileComponents();
+      declarations: [ZmanimInfoComponent],
+    }).compileComponents();
   });
 
   beforeEach(() => {

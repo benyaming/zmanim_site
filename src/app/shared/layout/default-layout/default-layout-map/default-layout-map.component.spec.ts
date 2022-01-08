@@ -8,9 +8,8 @@ describe('DefaultLayoutMapComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ DefaultLayoutMapComponent ]
-    })
-    .compileComponents();
+      declarations: [DefaultLayoutMapComponent],
+    }).compileComponents();
   });
 
   beforeEach(() => {

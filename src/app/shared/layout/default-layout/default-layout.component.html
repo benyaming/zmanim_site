@@ -1,19 +1,17 @@
 <header>
-  <h1 class="tui-text_h4">{{'default-layout.title' | translate}}</h1>
-  <button type="button"
+  <h1 class='tui-text_h4'>{{'default-layout.title' | translate}}</h1>
+  <button *ngIf='location$ | async as location'
           tuiButton
-          size="s"
-          appearance="flat"
-          (click)="openMap()">
-    <tui-svg src="tuiIconPin"></tui-svg>
-    {{cityName || ('default-layout.location' | translate)}}
+          appearance='flat'
+          size='s'
+          type='button'
+          (click)='openMapDialog()'>
+    <tui-svg src='tuiIconPin'></tui-svg>
+    {{location?.cityName || ('default-layout.location' | translate)}}
   </button>
 </header>
 
-<main>
-  <ng-content select="[appDefaultLayoutForm]"></ng-content>
-
-  <tui-island>
-    <ng-content select="[appDefaultLayoutInfo]"></ng-content>
-  </tui-island>
+<main [class.headset]='isHandset$ | async'>
+  <ng-content select='[appDefaultLayoutForm]'></ng-content>
+  <ng-content select='[appDefaultLayoutInfo]'></ng-content>
 </main>

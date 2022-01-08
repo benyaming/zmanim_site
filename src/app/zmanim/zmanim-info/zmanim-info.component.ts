@@ -1,21 +1,14 @@
-import {Component} from '@angular/core';
-import {Observable} from 'rxjs';
-import {StoreService, ZmanimInfoModel} from '@core/store';
+import { Component } from '@angular/core';
+import { Observable } from 'rxjs';
+import { AppState, ZmanimStateModel } from '@core/state';
+import { Select } from '@ngxs/store';
 
 @Component({
   selector: 'app-zmanim-info',
   templateUrl: './zmanim-info.component.html',
-  styleUrls: ['./zmanim-info.component.scss']
+  styleUrls: ['./zmanim-info.component.scss'],
 })
 export class ZmanimInfoComponent {
-  readonly zmanimInfo$: Observable<ZmanimInfoModel> = this.storeService.zmanimInfo$;
-
-  readonly columns: string[] = ['key', 'value'];
-
-  constructor(
-    private readonly storeService: StoreService
-  ) {
-  }
-
+  @Select(AppState.zmanim) state$!: Observable<ZmanimStateModel>;
   readonly compareWith = () => 0;
 }

@@ -1,88 +1,91 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {EventData, LngLatLike, MapMouseEvent} from 'mapbox-gl';
-import {Result} from '@mapbox/mapbox-gl-geocoder';
-import {filter} from 'rxjs/operators';
-import {StoreService} from '@core/store';
-import {Subscription} from 'rxjs';
-import {MapboxService} from '@core/mapbox';
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
+import { EventData, MapMouseEvent } from 'mapbox-gl';
+import { Result } from '@mapbox/mapbox-gl-geocoder';
+import { Observable, Subscription } from 'rxjs';
+import { MapboxService } from '@core/mapbox';
+import { POLYMORPHEUS_CONTEXT } from '@tinkoff/ng-polymorpheus';
+import { TuiDialogContext } from '@taiga-ui/core';
+import { LocationWithoutSourceModel } from '@core/state';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { map, shareReplay } from 'rxjs/operators';
 
-
+// NOTE: For some reason when mapbox is used inside a tui dialog and markerCoords is changed asynchronously
+// (e.g. it is updated via subscription to a store or updated inside mapbox.places subscribe callback)
+// it bugs the map in the following way:
+//   first map click changes store, but not marker on the map
+//   second map click also changes store, but now map shows marker at position after the first click
+//   third click - marker will be at second click and so on
+// Therefore this component receives and returns data via dialog context interface and not via store
+// and also it updates marker position in onMapClicked method before it gets response from mapboxService
 @Component({
   selector: 'app-default-layout-map',
   templateUrl: './default-layout-map.component.html',
-  styleUrls: ['./default-layout-map.component.scss']
+  styleUrls: ['./default-layout-map.component.scss'],
 })
-export class DefaultLayoutMapComponent implements OnInit, OnDestroy {
-  zoom?: number;
-  mapCoords?: LngLatLike;
-  markerCoords?: LngLatLike;
+export class DefaultLayoutMapComponent implements OnDestroy {
+  mapCoords: { lng: number; lat: number } = this.context.data;
+  markerCoords: { lng: number; lat: number } = this.mapCoords;
+
+  readonly isHandset$: Observable<boolean> = this.breakpointObserver
+    .observe(Breakpoints.Handset)
+    .pipe(
+      map((result) => result.matches),
+      shareReplay(),
+    );
+
+  private cityName: string | null = this.context.data.cityName;
 
   private readonly onDestroy$: Subscription = new Subscription();
 
   constructor(
-    private readonly storeService: StoreService,
-    private readonly mapboxService: MapboxService
-  ) {
-  }
-
-  ngOnInit(): void {
-    this.initMap();
-  }
+    private readonly mapboxService: MapboxService,
+    @Inject(POLYMORPHEUS_CONTEXT)
+    private readonly context: TuiDialogContext<
+      LocationWithoutSourceModel,
+      LocationWithoutSourceModel
+    >,
+    private readonly breakpointObserver: BreakpointObserver,
+  ) {}
 
   ngOnDestroy(): void {
     this.onDestroy$.unsubscribe();
   }
 
-  onMapClicked({lngLat}: MapMouseEvent & EventData): void {
+  onMapClicked({ lngLat }: MapMouseEvent & EventData): void {
+    this.markerCoords = lngLat;
+
     this.onDestroy$.add(
-      this.mapboxService.places(lngLat, {limit: '1'})
-        .subscribe(res => {
-          const place: Result = res.features[0];
-          if (!place) {
-            console.warn(`received no places for given coords from map click: lat [${lngLat.lat}], lng [${lngLat.lng}]`);
-            return;
-          }
+      this.mapboxService.places(lngLat, { limit: '1' }).subscribe((res) => {
+        const place: Result = res.features[0];
+        if (!place) {
+          console.error(
+            `received no places for given coords from map click: lat [${lngLat.lat}], lng [${lngLat.lng}]`,
+          );
+          this.cityName = null;
+          return;
+        }
 
-          const city = place.context.find(({id}) => id.startsWith('place'));
+        const city = place.context.find(({ id }) => id.startsWith('place'));
 
-          this.storeService.setCoords({
-            lat: lngLat.lat,
-            lng: lngLat.lng,
-            cityName: city?.text ?? place.text,
-            source: 'map'
-          });
-        })
+        this.cityName = city?.text ?? place.text;
+      }),
     );
   }
 
-  onGeocoderResult({result}: { result: Result }): void {
-    const city = result.context.find(({id}) => id.startsWith('place'));
+  onGeocoderResulted({ result }: { result: Result }): void {
+    const city = result.context.find(({ id }) => id.startsWith('place'));
 
-    this.storeService.setCoords({
+    this.markerCoords = {
       lat: result.center[1],
       lng: result.center[0],
-      cityName: city?.text ?? result.text,
-      source: 'map'
-    });
+    };
+    this.cityName = city?.text ?? result.text;
   }
 
-  private initMap(): void {
-    this.onDestroy$.add(
-      this.storeService.coords$.pipe(
-        filter(({lat, lng, source}) => !!(lat && lng && source)),
-      ).subscribe(({lat, lng, source}) => {
-        switch (source) {
-          case 'navigator':
-          case 'geoip':
-            this.zoom = 8;
-            this.mapCoords = {lat, lng};
-            this.markerCoords = {lat, lng};
-            break;
-          case 'map':
-            this.markerCoords = {lat, lng};
-            break;
-        }
-      })
-    );
+  onSubmitClicked(): void {
+    this.context.completeWith({
+      ...this.markerCoords,
+      cityName: this.cityName,
+    });
   }
 }

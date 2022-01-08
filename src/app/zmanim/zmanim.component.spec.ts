@@ -1,6 +1,6 @@
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import {ZmanimComponent} from './zmanim.component';
+import { ZmanimComponent } from './zmanim.component';
 
 describe('ZmanimComponent', () => {
   let component: ZmanimComponent;
@@ -8,9 +8,8 @@ describe('ZmanimComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ZmanimComponent ]
-    })
-    .compileComponents();
+      declarations: [ZmanimComponent],
+    }).compileComponents();
   });
 
   beforeEach(() => {
