@@ -6,7 +6,6 @@
   "default-layout-map.geocoder-placeholder": "Search for a places",
   "zmanim-form.date-placeholder": "Date",
   "zmanim-form.get-zmanim-button": "Get Zmanim",
-  "zmanim-info.zman": "Zman",
-  "zmanim-info.time": "Time",
+  "zmanim-info.title": "Zmanim",
   "zmanim.tab-title": "Zmanim | Zmanim"
 }

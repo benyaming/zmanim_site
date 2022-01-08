@@ -26,4 +26,8 @@ main {
   display: flex;
   flex-direction: row;
   gap: 1rem;
+
+  &.headset {
+    flex-direction: column;
+  }
 }

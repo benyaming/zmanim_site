@@ -1,31 +1,20 @@
-<table *ngIf="zmanimState$ | async as state"
-       [columns]="columns"
-       tuiTable>
-  <thead>
-  <tr tuiThGroup>
-    <th tuiTh>{{'zmanim-info.zman' | translate}}</th>
-    <th tuiTh>{{'zmanim-info.time' | translate}}</th>
-  </tr>
-  </thead>
-<!--  <tbody tuiTbody-->
-<!--         [data]="info | keyvalue:compareWith">-->
-<!--  <tr *tuiRow="let keyvalue of info" tuiTr>-->
-<!--    <td *tuiCell="'key'" tuiTd>-->
-<!--      {{keyvalue.key | translate}}-->
-<!--    </td>-->
-<!--    <td *tuiCell="'value'" tuiTd>-->
-<!--      <ng-container [ngSwitch]="keyvalue.key">-->
-<!--        <ng-container *ngSwitchCase="'astronomical_hour_ma'">-->
-<!--          {{keyvalue.value}}-->
-<!--        </ng-container>-->
-<!--        <ng-container *ngSwitchCase="'astronomical_hour_gra'">-->
-<!--          {{keyvalue.value}}-->
-<!--        </ng-container>-->
-<!--        <ng-container *ngSwitchDefault>-->
-<!--          {{keyvalue.value | date:'shortTime'}}-->
-<!--        </ng-container>-->
-<!--      </ng-container>-->
-<!--    </td>-->
-<!--  </tr>-->
-<!--  </tbody>-->
-</table>
+<tui-island *ngIf='state$ | async as state'>
+  <h3 class='tui-island__title'>{{'zmanim-info.title' | translate}}</h3>
+  <ng-container *ngIf='state.info as info'>
+    <p *ngFor='let keyvalue of info | keyvalue:compareWith'
+       class='tui-island__paragraph zmanim-info-row'>
+      <b>{{keyvalue.key}}</b>
+      <span [ngSwitch]='keyvalue.key'>
+        <ng-container *ngSwitchCase="'astronomical_hour_ma'">
+          {{keyvalue.value}}
+        </ng-container>
+        <ng-container *ngSwitchCase="'astronomical_hour_gra'">
+          {{keyvalue.value}}
+        </ng-container>
+        <ng-container *ngSwitchDefault>
+          {{keyvalue.value | date:'shortTime'}}
+        </ng-container>
+      </span>
+    </p>
+  </ng-container>
+</tui-island>

@@ -15,7 +15,7 @@ export class SetLocationManually {
 }
 
 export class FetchZmanim {
-  static readonly type = '[App] Fetch Zmanim Info';
+  static readonly type = '[App] Fetch Zmanim';
 
   constructor(public readonly form: ZmanimFormModel) {}
 }

@@ -1,4 +1,4 @@
-import { Component, Inject, Injector, OnDestroy } from '@angular/core';
+import { Component, Inject, Injector, OnDestroy, OnInit } from '@angular/core';
 import { TuiDialogService } from '@taiga-ui/core';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 import { DefaultLayoutMapComponent } from './default-layout-map/default-layout-map.component';
@@ -11,7 +11,8 @@ import {
   SetLocationManually,
 } from '@core/state';
 import { TranslateService } from '@ngx-translate/core';
-import { switchMap } from 'rxjs/operators';
+import { map, shareReplay, switchMap } from 'rxjs/operators';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
 @Component({
   selector: 'app-default-layout',
@@ -21,6 +22,13 @@ import { switchMap } from 'rxjs/operators';
 export class DefaultLayoutComponent implements OnDestroy {
   @Select(AppState.location) location$!: Observable<LocationModel>;
 
+  readonly isHandset$: Observable<boolean> = this.breakpointObserver
+    .observe(Breakpoints.Handset)
+    .pipe(
+      map((result) => result.matches),
+      shareReplay(),
+    );
+
   private readonly onDestroy$: Subscription = new Subscription();
 
   constructor(
@@ -28,6 +36,7 @@ export class DefaultLayoutComponent implements OnDestroy {
     @Inject(Injector) private readonly injector: Injector,
     private readonly store: Store,
     private readonly translateService: TranslateService,
+    private readonly breakpointObserver: BreakpointObserver,
   ) {}
 
   ngOnDestroy(): void {

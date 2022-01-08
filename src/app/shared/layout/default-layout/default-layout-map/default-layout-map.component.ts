@@ -1,15 +1,17 @@
-import { Component, Inject, OnDestroy } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { EventData, MapMouseEvent } from 'mapbox-gl';
 import { Result } from '@mapbox/mapbox-gl-geocoder';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { MapboxService } from '@core/mapbox';
 import { POLYMORPHEUS_CONTEXT } from '@tinkoff/ng-polymorpheus';
 import { TuiDialogContext } from '@taiga-ui/core';
 import { LocationWithoutSourceModel } from '@core/state';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { map, shareReplay } from 'rxjs/operators';
 
 // NOTE: For some reason when mapbox is used inside a tui dialog and markerCoords is changed asynchronously
-// (e.g. it is updated via subscription a store or updated inside mapbox.places subscribe callback)
-// it bugs in the following way:
+// (e.g. it is updated via subscription to a store or updated inside mapbox.places subscribe callback)
+// it bugs the map in the following way:
 //   first map click changes store, but not marker on the map
 //   second map click also changes store, but now map shows marker at position after the first click
 //   third click - marker will be at second click and so on
@@ -24,6 +26,13 @@ export class DefaultLayoutMapComponent implements OnDestroy {
   mapCoords: { lng: number; lat: number } = this.context.data;
   markerCoords: { lng: number; lat: number } = this.mapCoords;
 
+  readonly isHandset$: Observable<boolean> = this.breakpointObserver
+    .observe(Breakpoints.Handset)
+    .pipe(
+      map((result) => result.matches),
+      shareReplay(),
+    );
+
   private cityName: string | null = this.context.data.cityName;
 
   private readonly onDestroy$: Subscription = new Subscription();
@@ -35,6 +44,7 @@ export class DefaultLayoutMapComponent implements OnDestroy {
       LocationWithoutSourceModel,
       LocationWithoutSourceModel
     >,
+    private readonly breakpointObserver: BreakpointObserver,
   ) {}
 
   ngOnDestroy(): void {

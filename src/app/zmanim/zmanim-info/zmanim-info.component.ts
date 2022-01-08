@@ -9,11 +9,6 @@ import { Select } from '@ngxs/store';
   styleUrls: ['./zmanim-info.component.scss'],
 })
 export class ZmanimInfoComponent {
-  @Select(AppState.zmanim) zmanimState$!: Observable<ZmanimStateModel>;
-
-  readonly columns: string[] = ['key', 'value'];
-
-  constructor() {}
-
+  @Select(AppState.zmanim) state$!: Observable<ZmanimStateModel>;
   readonly compareWith = () => 0;
 }

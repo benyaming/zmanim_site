@@ -7,6 +7,10 @@
 mgl-map {
   height: 30rem;
   width: 100%;
+
+  &.headset {
+    height: 20rem;
+  }
 }
 
 button {

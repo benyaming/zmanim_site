@@ -2,3 +2,10 @@
   display: flex;
   flex-direction: column;
 }
+
+.zmanim-info-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 1rem;
+}
