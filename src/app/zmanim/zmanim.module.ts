@@ -7,7 +7,7 @@ import {ZmanimFormComponent} from './zmanim-form/zmanim-form.component';
 import {ZmanimInfoComponent} from './zmanim-info/zmanim-info.component';
 import {DefaultLayoutModule} from '@shared/layout';
 import {TuiInputDateModule, TuiInputNumberModule} from '@taiga-ui/kit';
-import {TuiGroupModule} from '@taiga-ui/core';
+import {TuiButtonModule, TuiGroupModule} from '@taiga-ui/core';
 import {TranslateModule} from '@ngx-translate/core';
 import {TuiTableModule} from '@taiga-ui/addon-table';
 
@@ -29,6 +29,7 @@ import {TuiTableModule} from '@taiga-ui/addon-table';
     TuiGroupModule,
     TranslateModule,
     TuiTableModule,
+    TuiButtonModule,
   ]
 })
 export class ZmanimModule {

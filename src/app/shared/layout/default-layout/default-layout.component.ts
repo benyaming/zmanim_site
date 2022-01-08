@@ -1,59 +1,54 @@
-import {Component, Inject, Injector, OnDestroy, OnInit} from '@angular/core';
+import {Component, Inject, Injector, OnDestroy} from '@angular/core';
 import {TuiDialogService} from '@taiga-ui/core';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {DefaultLayoutMapComponent} from './default-layout-map/default-layout-map.component';
-import {Subscription} from 'rxjs';
-import {StoreService} from '@core/store';
-import {filter, switchMap, take} from 'rxjs/operators';
+import {Observable, Subscription} from 'rxjs';
+import {Select, Store} from "@ngxs/store";
+import {AppState, LocationModel, LocationWithoutSourceModel, SetLocationManually} from "@core/state";
+import {TranslateService} from "@ngx-translate/core";
+import {switchMap} from "rxjs/operators";
 
 @Component({
   selector: 'app-default-layout',
   templateUrl: './default-layout.component.html',
   styleUrls: ['./default-layout.component.scss']
 })
-export class DefaultLayoutComponent implements OnInit, OnDestroy {
-  cityName?: string;
+export class DefaultLayoutComponent implements OnDestroy {
+  @Select(AppState.location) location$!: Observable<LocationModel>;
 
   private readonly onDestroy$: Subscription = new Subscription();
 
   constructor(
     @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
     @Inject(Injector) private readonly injector: Injector,
-    private readonly storeService: StoreService
+    private readonly store: Store,
+    private readonly translateService: TranslateService
   ) {
-  }
-
-  ngOnInit(): void {
-    this.initCityName();
   }
 
   ngOnDestroy(): void {
     this.onDestroy$.unsubscribe();
   }
 
-  openMap(): void {
-    this.onDestroy$.add(
-      this.storeService.coords$.pipe(
-        take(1),
-        switchMap(coords =>
-          this.dialogService.open(
-            new PolymorpheusComponent(DefaultLayoutMapComponent, this.injector),
-            {
-              dismissible: true,
-              data: coords
-            }
-          ))
-      ).subscribe()
-    );
-  }
+  openMapDialog(): void {
+    const location: LocationModel | null = this.store.selectSnapshot(AppState.location);
+    if (!location) {
+      return;
+    }
 
-  private initCityName(): void {
     this.onDestroy$.add(
-      this.storeService.coords$.pipe(
-        filter((coords) => !!coords),
-      ).subscribe(({cityName}) => {
-        this.cityName = cityName;
+      this.translateService.get('default-layout.map-dialog-heading').pipe(
+        switchMap(heading => this.dialogService.open<LocationWithoutSourceModel>(
+          new PolymorpheusComponent(DefaultLayoutMapComponent, this.injector),
+          {
+            dismissible: true,
+            data: location,
+            label: heading
+          }
+        ))
+      ).subscribe((location) => {
+        this.store.dispatch(new SetLocationManually(location));
       })
-    );
+    )
   }
 }

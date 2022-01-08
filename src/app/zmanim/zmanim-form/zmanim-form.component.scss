@@ -1,14 +1,16 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 form {
   display: flex;
   flex-direction: column;
   gap: .5rem;
 }
 
-.coords {
-  display: flex;
-  flex-direction: row;
 
-  & > * {
-    flex: 1;
-  }
+button {
+  align-self: end;
 }

@@ -11,6 +11,10 @@ import {NgxMapboxGLModule} from 'ngx-mapbox-gl';
 import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
 import {TranslateHttpLoader} from '@ngx-translate/http-loader';
 import {MapboxInterceptor} from '@core/mapbox';
+import {NgxsModule} from "@ngxs/store";
+import {environment} from "../environments/environment";
+import {NgxsReduxDevtoolsPluginModule} from "@ngxs/devtools-plugin";
+import {AppState} from "@core/state";
 
 
 export function translateLoaderFactory(http: HttpClient): TranslateLoader {
@@ -40,7 +44,11 @@ export function translateLoaderFactory(http: HttpClient): TranslateLoader {
       },
       useDefaultLang: true,
       defaultLanguage: 'en',
-    })
+    }),
+    NgxsModule.forRoot([AppState], {
+      developmentMode: !environment.production
+    }),
+    NgxsReduxDevtoolsPluginModule.forRoot()
   ],
   providers: [
     {provide: HTTP_INTERCEPTORS, useClass: FreegeoipInterceptor, multi: true},

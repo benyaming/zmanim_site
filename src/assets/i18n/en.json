@@ -1,9 +1,11 @@
 {
   "default-layout.title": "Zmanim",
   "default-layout.location": "Location",
+  "default-layout.map-dialog-heading": "Update your location",
+  "default-layout-map.submit-dialog-button": "Submit",
+  "default-layout-map.geocoder-placeholder": "Search for a places",
   "zmanim-form.date-placeholder": "Date",
-  "zmanim-form.latitude-placeholder": "Latitude",
-  "zmanim-form.longitude-placeholder": "Longitude",
+  "zmanim-form.get-zmanim-button": "Get Zmanim",
   "zmanim-info.zman": "Zman",
   "zmanim-info.time": "Time",
   "zmanim.tab-title": "Zmanim | Zmanim"

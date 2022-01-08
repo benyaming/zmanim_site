@@ -1,12 +1,13 @@
 <header>
   <h1 class="tui-text_h4">{{'default-layout.title' | translate}}</h1>
-  <button (click)="openMap()"
+  <button *ngIf="location$ | async as location"
+          tuiButton
           appearance="flat"
           size="s"
-          tuiButton
-          type="button">
+          type="button"
+          (click)="openMapDialog()">
     <tui-svg src="tuiIconPin"></tui-svg>
-    {{cityName || ('default-layout.location' | translate)}}
+    {{location?.cityName || ('default-layout.location' | translate)}}
   </button>
 </header>
 
