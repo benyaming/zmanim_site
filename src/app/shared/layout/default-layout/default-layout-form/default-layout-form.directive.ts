@@ -2,7 +2,7 @@ import {Directive} from '@angular/core';
 
 @Directive({
   selector: '[appDefaultLayoutForm]',
-  // tslint:disable-next-line:no-host-metadata-property
+  // eslint-disable-next-line @angular-eslint/no-host-metadata-property
   host: {
     '[style.min-width]': '"200px"',
   }
