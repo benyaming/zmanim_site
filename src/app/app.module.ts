@@ -23,40 +23,12 @@ import {
   TranslateModule,
   TranslateService,
 } from '@ngx-translate/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { MapboxInterceptor } from '@core/mapbox';
 import { NgxsModule, Store } from '@ngxs/store';
 import { environment } from '../environments/environment';
 import { NgxsReduxDevtoolsPluginModule } from '@ngxs/devtools-plugin';
-import {
-  AppState,
-  FetchLocationFromFreegeoip,
-  FetchLocationFromNavigator,
-} from '@core/state';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
-
-export function translateLoaderFactory(http: HttpClient): TranslateLoader {
-  return new TranslateHttpLoader(http);
-}
-
-export function appInitializerFactory(
-  store: Store,
-  translateService: TranslateService,
-  title: Title,
-): () => Observable<any> {
-  return () => {
-    store.dispatch([
-      new FetchLocationFromNavigator(),
-      new FetchLocationFromFreegeoip(),
-    ]);
-
-    const { browserTabTitle } = store.selectSnapshot(AppState);
-    return translateService
-      .get(browserTabTitle)
-      .pipe(tap((translated) => title.setTitle(translated)));
-  };
-}
+import { AppState } from '@core/state';
+import { AppService } from './app.service';
 
 @NgModule({
   declarations: [AppComponent],
@@ -74,11 +46,11 @@ export function appInitializerFactory(
     TranslateModule.forRoot({
       loader: {
         provide: TranslateLoader,
-        useFactory: translateLoaderFactory,
-        deps: [HttpClient],
+        useFactory: (appService: AppService, http: HttpClient) =>
+          appService.getTranslateLoader(http),
+        deps: [AppService, HttpClient],
       },
       useDefaultLang: true,
-      defaultLanguage: 'en',
     }),
     NgxsModule.forRoot([AppState], {
       developmentMode: !environment.production,
@@ -89,11 +61,20 @@ export function appInitializerFactory(
     { provide: HTTP_INTERCEPTORS, useClass: FreegeoipInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: MapboxInterceptor, multi: true },
     { provide: TUI_SANITIZER, useClass: NgDompurifySanitizer },
-    { provide: TUI_NUMBER_FORMAT, useValue: { decimalSeparator: '.' } },
+    {
+      provide: TUI_NUMBER_FORMAT,
+      useFactory: (appService: AppService) => appService.tuiNumberFormat,
+      deps: [AppService],
+    },
     {
       provide: APP_INITIALIZER,
-      useFactory: appInitializerFactory,
-      deps: [Store, TranslateService, Title],
+      useFactory: (
+        appService: AppService,
+        store: Store,
+        translateService: TranslateService,
+        title: Title,
+      ) => appService.initApp(store, translateService, title),
+      deps: [AppService, Store, TranslateService, Title],
       multi: true,
     },
   ],
