@@ -1,6 +1,7 @@
 import { ZmanimResponseDto } from '@core/zmanim';
 
 export interface AppStateModel {
+  browserTabTitle: string;
   location: LocationModel | null;
   zmanim: ZmanimStateModel;
 }

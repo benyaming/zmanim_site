@@ -7,5 +7,6 @@
   "zmanim-form.date-placeholder": "Date",
   "zmanim-form.get-zmanim-button": "Get Zmanim",
   "zmanim-info.title": "Zmanim",
-  "zmanim.tab-title": "Zmanim | Zmanim"
+  "app.browser-tab-title": "Zmanim",
+  "zmanim.browser-tab-title": "Zmanim | Zmanim"
 }

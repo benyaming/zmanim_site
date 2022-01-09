@@ -3,6 +3,7 @@ import { Action, Selector, State, StateContext } from '@ngxs/store';
 import { AppStateModel, LocationModel, ZmanimStateModel } from './app.models';
 import { APP_DEFAULTS } from './app.defaults';
 import {
+  ChangeBrowserTabTitle,
   FetchLocationFromFreegeoip,
   FetchLocationFromNavigator,
   FetchZmanim,
@@ -15,6 +16,8 @@ import { Result } from '@mapbox/mapbox-gl-geocoder';
 import { FreegeoipService } from '@core/freegeoip';
 import { ZmanimQueryParams, ZmanimService } from '@core/zmanim';
 import { format } from 'date-fns';
+import { TranslateService } from '@ngx-translate/core';
+import { Title } from '@angular/platform-browser';
 
 @State<AppStateModel>({
   name: 'app',
@@ -36,7 +39,20 @@ export class AppState {
     private readonly mapboxService: MapboxService,
     private readonly freegeoipService: FreegeoipService,
     private readonly zmanimService: ZmanimService,
+    private readonly translateService: TranslateService,
+    private readonly title: Title,
   ) {}
+
+  @Action(ChangeBrowserTabTitle)
+  changeBrowserTabTitle(
+    ctx: StateContext<AppStateModel>,
+    { browserTabTitle }: ChangeBrowserTabTitle,
+  ): Observable<any> {
+    return this.translateService.get(browserTabTitle).pipe(
+      tap((translated) => ctx.patchState({ browserTabTitle: translated })),
+      tap((translated) => this.title.setTitle(translated)),
+    );
+  }
 
   @Action(FetchLocationFromNavigator)
   fetchLocationFromNavigator(
