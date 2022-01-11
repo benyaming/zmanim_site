@@ -42,9 +42,8 @@ import { AppService } from './app.service';
     TranslateModule.forRoot({
       loader: {
         provide: TranslateLoader,
-        useFactory: (appService: AppService, http: HttpClient) =>
-          appService.getTranslateLoader(http),
-        deps: [AppService, HttpClient],
+        useFactory: (http: HttpClient) => AppService.getTranslateLoader(http),
+        deps: [HttpClient],
       },
       useDefaultLang: true,
     }),
@@ -57,20 +56,15 @@ import { AppService } from './app.service';
     { provide: HTTP_INTERCEPTORS, useClass: FreegeoipInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: MapboxInterceptor, multi: true },
     { provide: TUI_SANITIZER, useClass: NgDompurifySanitizer },
-    {
-      provide: TUI_NUMBER_FORMAT,
-      useFactory: (appService: AppService) => appService.tuiNumberFormat,
-      deps: [AppService],
-    },
+    { provide: TUI_NUMBER_FORMAT, useValue: AppService.tuiNumberFormat },
     {
       provide: APP_INITIALIZER,
       useFactory: (
-        appService: AppService,
         store: Store,
         translateService: TranslateService,
         title: Title,
-      ) => appService.initApp(store, translateService, title),
-      deps: [AppService, Store, TranslateService, Title],
+      ) => AppService.initApp(store, translateService, title),
+      deps: [Store, TranslateService, Title],
       multi: true,
     },
   ],

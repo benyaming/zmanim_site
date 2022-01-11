@@ -18,11 +18,11 @@ import { NumberFormatSettings } from '@taiga-ui/core/interfaces/number-format-se
   providedIn: 'root',
 })
 export class AppService {
-  readonly tuiNumberFormat: Partial<NumberFormatSettings> = {
+  static readonly tuiNumberFormat: Partial<NumberFormatSettings> = {
     decimalSeparator: '.',
   };
 
-  initApp(
+  static initApp(
     store: Store,
     translateService: TranslateService,
     title: Title,
@@ -48,7 +48,7 @@ export class AppService {
     };
   }
 
-  getTranslateLoader(http: HttpClient): TranslateLoader {
+  static getTranslateLoader(http: HttpClient): TranslateLoader {
     return new TranslateHttpLoader(http);
   }
 }
