@@ -12,16 +12,11 @@ import {
 import { tap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { NumberFormatSettings } from '@taiga-ui/core/interfaces/number-format-settings';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AppService {
-  static readonly tuiNumberFormat: Partial<NumberFormatSettings> = {
-    decimalSeparator: '.',
-  };
-
   static initApp(
     store: Store,
     translateService: TranslateService,

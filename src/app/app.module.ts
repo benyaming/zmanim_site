@@ -56,7 +56,7 @@ import { AppService } from './app.service';
     { provide: HTTP_INTERCEPTORS, useClass: FreegeoipInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: MapboxInterceptor, multi: true },
     { provide: TUI_SANITIZER, useClass: NgDompurifySanitizer },
-    { provide: TUI_NUMBER_FORMAT, useValue: AppService.tuiNumberFormat },
+    { provide: TUI_NUMBER_FORMAT, useValue: { decimalSeparator: '.' } },
     {
       provide: APP_INITIALIZER,
       useFactory: (
