@@ -1,19 +1,2 @@
-<mgl-map *ngIf="mapCoords"
-         [class.headset]='isHandset$ | async'
-         [center]="mapCoords"
-         [style]="'mapbox://styles/mapbox/streets-v11'"
-         [zoom]="[12]"
-         (mapClick)="onMapClicked($event)">
-  <mgl-control mglGeocoder
-               [placeholder]="'default-layout-map.geocoder-placeholder' | translate"
-               [proximity]="{latitude: mapCoords.lat, longitude: mapCoords.lng}"
-               (geocoderResult)="onGeocoderResulted($event)"></mgl-control>
-  <mgl-marker [lngLat]="markerCoords ?? mapCoords"></mgl-marker>
-</mgl-map>
-
-<button tuiButton
-        size="m"
-        type="button"
-        (click)="onSubmitClicked()">
-  {{'default-layout-map.submit-dialog-button' | translate}}
-</button>
+<div id='map'
+     [class.headset]='isHandset$ | async'></div>

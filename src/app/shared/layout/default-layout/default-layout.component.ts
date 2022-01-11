@@ -1,15 +1,10 @@
-import { Component, Inject, Injector, OnDestroy, OnInit } from '@angular/core';
+import { Component, Inject, Injector, OnDestroy } from '@angular/core';
 import { TuiDialogService } from '@taiga-ui/core';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 import { DefaultLayoutMapComponent } from './default-layout-map/default-layout-map.component';
 import { Observable, Subscription } from 'rxjs';
 import { Select, Store } from '@ngxs/store';
-import {
-  AppState,
-  LocationModel,
-  LocationWithoutSourceModel,
-  SetLocationManually,
-} from '@core/state';
+import { AppState, LocationModel } from '@core/state';
 import { TranslateService } from '@ngx-translate/core';
 import { map, shareReplay, switchMap } from 'rxjs/operators';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
@@ -44,34 +39,24 @@ export class DefaultLayoutComponent implements OnDestroy {
   }
 
   openMapDialog(): void {
-    const location: LocationModel | null = this.store.selectSnapshot(
-      AppState.location,
-    );
-    if (!location) {
-      return;
-    }
-
     this.onDestroy$.add(
       this.translateService
         .get('default-layout.map-dialog-heading')
         .pipe(
           switchMap((heading) =>
-            this.dialogService.open<LocationWithoutSourceModel>(
+            this.dialogService.open(
               new PolymorpheusComponent(
                 DefaultLayoutMapComponent,
                 this.injector,
               ),
               {
                 dismissible: true,
-                data: location,
                 label: heading,
               },
             ),
           ),
         )
-        .subscribe((location) => {
-          this.store.dispatch(new SetLocationManually(location));
-        }),
+        .subscribe(),
     );
   }
 }

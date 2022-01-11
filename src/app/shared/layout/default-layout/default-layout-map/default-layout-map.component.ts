@@ -1,30 +1,28 @@
-import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { EventData, MapMouseEvent } from 'mapbox-gl';
-import { Result } from '@mapbox/mapbox-gl-geocoder';
+import { AfterViewInit, Component, OnDestroy } from '@angular/core';
+import mapboxgl, { EventData, Map, MapMouseEvent, Marker } from 'mapbox-gl';
 import { Observable, Subscription } from 'rxjs';
 import { MapboxService } from '@core/mapbox';
-import { POLYMORPHEUS_CONTEXT } from '@tinkoff/ng-polymorpheus';
-import { TuiDialogContext } from '@taiga-ui/core';
-import { LocationWithoutSourceModel } from '@core/state';
+import {
+  AppState,
+  AppStateModel,
+  LocationModel,
+  SetLocationManually,
+} from '@core/state';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { map, shareReplay } from 'rxjs/operators';
+import { filter, map, shareReplay } from 'rxjs/operators';
+import { Select, Store } from '@ngxs/store';
+import MapboxGeocoder, { Result } from '@mapbox/mapbox-gl-geocoder';
+// @ts-ignore
+import MapboxLanguage from '@mapbox/mapbox-gl-language';
 
-// NOTE: For some reason when mapbox is used inside a tui dialog and markerCoords is changed asynchronously
-// (e.g. it is updated via subscription to a store or updated inside mapbox.places subscribe callback)
-// it bugs the map in the following way:
-//   first map click changes store, but not marker on the map
-//   second map click also changes store, but now map shows marker at position after the first click
-//   third click - marker will be at second click and so on
-// Therefore this component receives and returns data via dialog context interface and not via store
-// and also it updates marker position in onMapClicked method before it gets response from mapboxService
 @Component({
   selector: 'app-default-layout-map',
   templateUrl: './default-layout-map.component.html',
   styleUrls: ['./default-layout-map.component.scss'],
 })
-export class DefaultLayoutMapComponent implements OnDestroy {
-  mapCoords: { lng: number; lat: number } = this.context.data;
-  markerCoords: { lng: number; lat: number } = this.mapCoords;
+export class DefaultLayoutMapComponent implements AfterViewInit, OnDestroy {
+  @Select(AppState.location)
+  private location$!: Observable<LocationModel | null>;
 
   readonly isHandset$: Observable<boolean> = this.breakpointObserver
     .observe(Breakpoints.Handset)
@@ -33,27 +31,84 @@ export class DefaultLayoutMapComponent implements OnDestroy {
       shareReplay(),
     );
 
-  private cityName: string | null = this.context.data.cityName;
+  private map!: Map;
+  private marker!: Marker;
+  private language!: MapboxLanguage;
+  private geocoder!: MapboxGeocoder;
+  // private geolocate!: GeolocateControl;
 
   private readonly onDestroy$: Subscription = new Subscription();
 
   constructor(
     private readonly mapboxService: MapboxService,
-    @Inject(POLYMORPHEUS_CONTEXT)
-    private readonly context: TuiDialogContext<
-      LocationWithoutSourceModel,
-      LocationWithoutSourceModel
-    >,
     private readonly breakpointObserver: BreakpointObserver,
+    private readonly store: Store,
   ) {}
+
+  ngAfterViewInit(): void {
+    this.subForLocationChange();
+  }
 
   ngOnDestroy(): void {
     this.onDestroy$.unsubscribe();
   }
 
-  onMapClicked({ lngLat }: MapMouseEvent & EventData): void {
-    this.markerCoords = lngLat;
+  private subForLocationChange() {
+    this.onDestroy$.add(
+      this.location$
+        .pipe(
+          filter((location) => !!location),
+          map((location) => location as LocationModel),
+        )
+        .subscribe((location) => {
+          this.map ? this.updateMarker(location) : this.initMap(location);
+        }),
+    );
+  }
 
+  private initMap(location: LocationModel): void {
+    const { language } = this.store.selectSnapshot<AppStateModel>(AppState);
+    mapboxgl.accessToken = window.env.mapboxPublicApiKey;
+
+    this.map = new Map({
+      container: 'map',
+      center: location,
+      zoom: 13,
+      style: 'mapbox://styles/mapbox/streets-v11',
+    });
+
+    this.marker = new Marker().setLngLat(location).addTo(this.map);
+
+    this.language = new MapboxLanguage({ defaultLanguage: language });
+
+    this.geocoder = new MapboxGeocoder({
+      accessToken: mapboxgl.accessToken,
+      mapboxgl: this.map,
+      language,
+    });
+
+    // this.geolocate = new GeolocateControl({
+    //   positionOptions: {
+    //     enableHighAccuracy: true,
+    //   },
+    //   showUserLocation: false,
+    //   showAccuracyCircle: false,
+    // });
+
+    this.map.addControl(this.language);
+    this.map.addControl(this.geocoder);
+    // this.map.addControl(this.geolocate);
+
+    this.map.on('click', ($event) => this.onMapClicked($event));
+    this.geocoder.on('result', ($event) => this.onGeocoderResulted($event));
+    // this.geolocate.on('geolocate', ($event) => this.onGeolocateGeolocated($event));
+  }
+
+  private updateMarker(location: LocationModel): void {
+    this.marker.setLngLat(location);
+  }
+
+  private onMapClicked({ lngLat }: MapMouseEvent & EventData): void {
     this.onDestroy$.add(
       this.mapboxService.places(lngLat, { limit: '1' }).subscribe((res) => {
         const place: Result = res.features[0];
@@ -61,31 +116,33 @@ export class DefaultLayoutMapComponent implements OnDestroy {
           console.error(
             `received no places for given coords from map click: lat [${lngLat.lat}], lng [${lngLat.lng}]`,
           );
-          this.cityName = null;
           return;
         }
 
         const city = place.context.find(({ id }) => id.startsWith('place'));
-
-        this.cityName = city?.text ?? place.text;
+        this.store.dispatch(
+          new SetLocationManually({
+            ...lngLat,
+            cityName: city?.text ?? place.text,
+          }),
+        );
       }),
     );
   }
 
-  onGeocoderResulted({ result }: { result: Result }): void {
+  private onGeocoderResulted({ result }: { result: Result }): void {
     const city = result.context.find(({ id }) => id.startsWith('place'));
 
-    this.markerCoords = {
-      lat: result.center[1],
-      lng: result.center[0],
-    };
-    this.cityName = city?.text ?? result.text;
+    this.store.dispatch(
+      new SetLocationManually({
+        lat: result.center[1],
+        lng: result.center[0],
+        cityName: city?.text ?? result.text,
+      }),
+    );
   }
 
-  onSubmitClicked(): void {
-    this.context.completeWith({
-      ...this.markerCoords,
-      cityName: this.cityName,
-    });
-  }
+  // private onGeolocateGeolocated($event?: object): void {
+  //   console.log($event);
+  // }
 }

@@ -17,7 +17,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { FreegeoipInterceptor } from '@core/freegeoip';
-import { NgxMapboxGLModule } from 'ngx-mapbox-gl';
 import {
   TranslateLoader,
   TranslateModule,
@@ -36,9 +35,6 @@ import { AppService } from './app.service';
     BrowserModule,
     HttpClientModule,
     BrowserAnimationsModule,
-    NgxMapboxGLModule.withConfig({
-      accessToken: window.env.mapboxPublicApiKey,
-    }),
     AppRoutingModule,
     TuiRootModule,
     TuiDialogModule,
