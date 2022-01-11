@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { AppState, FetchZmanim, ZmanimStateModel } from '@core/state';
+import { AppState, FetchZmanim, ZmanimModel } from '@core/state';
 import { Observable, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { TuiDay } from '@taiga-ui/cdk';
@@ -13,7 +13,7 @@ import { Select, Store } from '@ngxs/store';
 })
 export class ZmanimFormComponent implements OnInit, OnDestroy {
   @Select(AppState.zmanim)
-  private readonly state$!: Observable<ZmanimStateModel>;
+  private readonly zmanim$!: Observable<ZmanimModel>;
 
   readonly form: FormGroup = this.fb.group({
     date: [null, [Validators.required]],
@@ -36,7 +36,7 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
 
   private initSyncStateToForm(): void {
     this.onDestroy$.add(
-      this.state$.pipe(map(({ form }) => form)).subscribe(({ date }) => {
+      this.zmanim$.pipe(map(({ form }) => form)).subscribe(({ date }) => {
         this.form.patchValue({ date: TuiDay.fromLocalNativeDate(date) });
       }),
     );

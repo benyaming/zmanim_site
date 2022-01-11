@@ -2,10 +2,16 @@ import { ZmanimZmanimResponseDto } from '@core/zmanim';
 
 export interface AppStateModel {
   readonly browserTabTitle: string;
-  readonly currentLanguage: string;
-  readonly supportedLanguages: string[];
+  readonly currentLanguage: LanguageModel;
+  readonly supportedLanguages: LanguageModel[];
   readonly location: LocationModel | null;
-  readonly zmanim: ZmanimStateModel;
+  readonly zmanim: ZmanimModel;
+}
+
+export interface LanguageModel {
+  name: string;
+  direction: string;
+  country: string;
 }
 
 export interface LocationModel {
@@ -17,7 +23,7 @@ export interface LocationModel {
 
 export type LocationWithoutSourceModel = Omit<LocationModel, 'source'>;
 
-export interface ZmanimStateModel {
+export interface ZmanimModel {
   readonly form: ZmanimFormModel;
   readonly info: ZmanimInfoModel | null;
 }

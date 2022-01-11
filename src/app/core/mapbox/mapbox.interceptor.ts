@@ -30,7 +30,7 @@ export class MapboxInterceptor implements HttpInterceptor {
 
     const params = {
       access_token: window.env.mapboxPublicApiKey,
-      language: currentLanguage,
+      language: currentLanguage.name,
     };
     return next.handle(request.clone({ setParams: params }));
   }

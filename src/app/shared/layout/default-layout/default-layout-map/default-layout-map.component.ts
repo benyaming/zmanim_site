@@ -2,7 +2,12 @@ import { AfterViewInit, Component, OnDestroy } from '@angular/core';
 import mapboxgl, { EventData, Map, MapMouseEvent, Marker } from 'mapbox-gl';
 import { Observable, Subscription } from 'rxjs';
 import { MapboxService } from '@core/mapbox';
-import { AppState, LocationModel, SetLocationManually } from '@core/state';
+import {
+  AppState,
+  AppStateModel,
+  LocationModel,
+  SetLocationManually,
+} from '@core/state';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { filter, map, shareReplay } from 'rxjs/operators';
 import { Select, Store } from '@ngxs/store';
@@ -62,9 +67,8 @@ export class DefaultLayoutMapComponent implements AfterViewInit, OnDestroy {
   }
 
   private initMap(location: LocationModel): void {
-    const language = this.store.selectSnapshot<string>(
-      AppState.currentLanguage,
-    );
+    const { currentLanguage }: AppStateModel =
+      this.store.selectSnapshot(AppState);
     mapboxgl.accessToken = window.env.mapboxPublicApiKey;
 
     this.map = new Map({
@@ -76,12 +80,14 @@ export class DefaultLayoutMapComponent implements AfterViewInit, OnDestroy {
 
     this.marker = new Marker().setLngLat(location).addTo(this.map);
 
-    this.language = new MapboxLanguage({ defaultLanguage: language });
+    this.language = new MapboxLanguage({
+      defaultLanguage: currentLanguage.name,
+    });
 
     this.geocoder = new MapboxGeocoder({
       accessToken: mapboxgl.accessToken,
       mapboxgl: this.map,
-      language,
+      language: currentLanguage.name,
     });
 
     // this.geolocate = new GeolocateControl({

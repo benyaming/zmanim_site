@@ -10,7 +10,12 @@ import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 import { DefaultLayoutMapComponent } from './default-layout-map/default-layout-map.component';
 import { Observable, Subscription } from 'rxjs';
 import { Select, Store } from '@ngxs/store';
-import { AppState, ChangeCurrentLanguage, LocationModel } from '@core/state';
+import {
+  AppState,
+  SetCurrentLanguage,
+  LocationModel,
+  LanguageModel,
+} from '@core/state';
 import { TranslateService } from '@ngx-translate/core';
 import { map, shareReplay, switchMap } from 'rxjs/operators';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
@@ -22,9 +27,10 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 })
 export class DefaultLayoutComponent implements OnDestroy {
   @Select(AppState.location) location$!: Observable<LocationModel>;
-  @Select(AppState.currentLanguage) currentLanguage$!: Observable<string>;
+  @Select(AppState.currentLanguage)
+  currentLanguage$!: Observable<LanguageModel>;
   @Select(AppState.supportedLanguages) supportedLanguages$!: Observable<
-    string[]
+    LanguageModel[]
   >;
 
   @ViewChild(TuiHostedDropdownComponent)
@@ -73,8 +79,8 @@ export class DefaultLayoutComponent implements OnDestroy {
     );
   }
 
-  onChangeLanguageButtonClicked(language: string): void {
-    this.store.dispatch(new ChangeCurrentLanguage(language));
+  onSetCurrentLanguageButtonClicked(newLanguage: LanguageModel): void {
+    this.store.dispatch(new SetCurrentLanguage(newLanguage));
     this.dropdown.open = false;
     this.dropdown.nativeFocusableElement?.focus();
   }

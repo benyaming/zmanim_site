@@ -4,7 +4,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
 import {
   AppState,
-  ChangeBrowserTabTitle,
+  SetBrowserTabTitle,
   FetchZmanim,
   LocationModel,
 } from '@core/state';
@@ -47,6 +47,6 @@ export class ZmanimComponent implements OnInit {
   }
 
   private setBrowserTabTitle(): void {
-    this.store.dispatch(new ChangeBrowserTabTitle('zmanim.browser-tab-title'));
+    this.store.dispatch(new SetBrowserTabTitle('zmanim.browser-tab-title'));
   }
 }

@@ -1,11 +1,16 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { Action, Selector, State, StateContext } from '@ngxs/store';
-import { AppStateModel, LocationModel, ZmanimStateModel } from './app.models';
+import {
+  AppStateModel,
+  LanguageModel,
+  LocationModel,
+  ZmanimModel,
+} from './app.models';
 import { APP_DEFAULTS } from './app.defaults';
 import {
-  ChangeBrowserTabTitle,
-  ChangeCurrentLanguage,
   FetchZmanim,
+  SetBrowserTabTitle,
+  SetCurrentLanguage,
   SetLocationFromGeoip,
   SetLocationFromNavigator,
   SetLocationManually,
@@ -15,10 +20,11 @@ import { Observable, of } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
 import { Result } from '@mapbox/mapbox-gl-geocoder';
 import { FreegeoipService } from '@core/freegeoip';
-import { ZmanimZmanimQueryParams, ZmanimService } from '@core/zmanim';
+import { ZmanimService, ZmanimZmanimQueryParams } from '@core/zmanim';
 import { format } from 'date-fns';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
+import { DOCUMENT } from '@angular/common';
 
 @State<AppStateModel>({
   name: 'app',
@@ -32,17 +38,17 @@ export class AppState {
   }
 
   @Selector()
-  static currentLanguage(state: AppStateModel): string {
+  static currentLanguage(state: AppStateModel): LanguageModel {
     return state.currentLanguage;
   }
 
   @Selector()
-  static supportedLanguages(state: AppStateModel): string[] {
+  static supportedLanguages(state: AppStateModel): LanguageModel[] {
     return state.supportedLanguages;
   }
 
   @Selector()
-  static zmanim(state: AppStateModel): ZmanimStateModel {
+  static zmanim(state: AppStateModel): ZmanimModel {
     return state.zmanim;
   }
 
@@ -52,35 +58,44 @@ export class AppState {
     private readonly zmanimService: ZmanimService,
     private readonly translateService: TranslateService,
     private readonly title: Title,
+    @Inject(DOCUMENT) private readonly document: Document,
   ) {}
 
-  @Action(ChangeBrowserTabTitle)
-  private changeBrowserTabTitle(
+  @Action(SetBrowserTabTitle)
+  private setBrowserTabTitle(
     ctx: StateContext<AppStateModel>,
-    { browserTabTitle }: ChangeBrowserTabTitle,
+    { payload }: SetBrowserTabTitle,
   ): Observable<any> {
-    return this.translateService.get(browserTabTitle).pipe(
-      tap((translated) => ctx.patchState({ browserTabTitle: translated })),
-      tap((translated) => this.title.setTitle(translated)),
+    return this.translateService.get(payload).pipe(
+      tap((browserTabTitle) => ctx.patchState({ browserTabTitle })),
+      tap((browserTabTitle) => this.title.setTitle(browserTabTitle)),
     );
   }
 
-  @Action(ChangeCurrentLanguage)
-  private changeCurrentLanguage(
+  @Action(SetCurrentLanguage)
+  private setCurrentLanguage(
     ctx: StateContext<AppStateModel>,
-    { currentLanguage }: ChangeCurrentLanguage,
+    { payload }: SetCurrentLanguage,
   ): Observable<any> {
-    const { supportedLanguages, location } = ctx.getState();
-    if (!supportedLanguages.includes(currentLanguage)) {
-      const supportedLanguagesString = supportedLanguages.join(', ');
+    const { supportedLanguages, location }: AppStateModel = ctx.getState();
+    const isPayloadLanguageSupported: boolean = !!supportedLanguages.find(
+      ({ name }) => name === payload.name,
+    );
+    if (!isPayloadLanguageSupported) {
+      const supportedLanguageNamesString: string = supportedLanguages
+        .map(({ name }) => name)
+        .join(', ');
       throw new Error(
-        `Can't change language, since [${currentLanguage}] is not in supported languages list [${supportedLanguagesString}]`,
+        `Can't change language, since [${payload.name}] is not in supported languages list [${supportedLanguageNamesString}]`,
       );
     }
 
-    return this.translateService.use(currentLanguage).pipe(
-      tap(() => localStorage.setItem('language', currentLanguage)),
-      tap(() => ctx.patchState({ currentLanguage: currentLanguage })),
+    return this.translateService.use(payload.name).pipe(
+      tap(() => {
+        this.document.documentElement.dir = payload.direction;
+        this.document.documentElement.lang = payload.name;
+      }),
+      tap(() => ctx.patchState({ currentLanguage: payload })),
       switchMap(() => {
         if (!location) {
           return of();
@@ -130,33 +145,37 @@ export class AppState {
   @Action(SetLocationManually)
   private setLocationManually(
     ctx: StateContext<AppStateModel>,
-    { location }: SetLocationManually,
+    { payload }: SetLocationManually,
   ): void {
-    this.setLocation(ctx, { ...location, source: 'manual' });
+    this.setLocation(ctx, { ...payload, source: 'manual' });
   }
 
   @Action(FetchZmanim)
   private fetchZmanim(
     ctx: StateContext<AppStateModel>,
-    { form }: FetchZmanim,
+    { payload }: FetchZmanim,
   ): Observable<any> {
-    const current: LocationModel | null = ctx.getState().location;
-    if (!current) {
+    const { location, zmanim }: AppStateModel = ctx.getState();
+    if (!location) {
       throw new Error(
         `You are trying to fetch zmanim when there is no location in the store`,
       );
     }
 
     const query: ZmanimZmanimQueryParams = {
-      date: format(form.date, 'yyyy-MM-dd'),
-      lat: current.lat.toString(),
-      lng: current.lng.toString(),
+      date: format(payload.date, 'yyyy-MM-dd'),
+      lat: location.lat.toString(),
+      lng: location.lng.toString(),
     };
 
     return this.zmanimService.fetchZmanim(query).pipe(
       tap(({ settings, ...info }) => {
         ctx.patchState({
-          zmanim: { form, info },
+          zmanim: {
+            ...zmanim,
+            form: payload,
+            info,
+          },
         });
       }),
     );

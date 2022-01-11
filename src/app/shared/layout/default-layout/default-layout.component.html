@@ -18,7 +18,7 @@
             appearance='flat'
             size='s'
             type='button'>
-      <span class='fi fi-{{currentLanguage | languageToCountry}}'></span>
+      <span class='fi fi-{{currentLanguage.country}}'></span>
     </button>
   </tui-hosted-dropdown>
 </header>
@@ -33,10 +33,10 @@
   <tui-data-list>
     <button *ngFor='let supportedLanguage of supportedLanguages$ | async'
             tuiOption
-            class='change-language-button'
-            (click)='onChangeLanguageButtonClicked(supportedLanguage)'>
-      <span class='fi fi-{{supportedLanguage | languageToCountry}}'></span>
-      {{'default-layout.language-label-' + supportedLanguage | translate}}
+            class='set-current-language-button'
+            (click)='onSetCurrentLanguageButtonClicked(supportedLanguage)'>
+      <span class='fi fi-{{supportedLanguage.country}}'></span>
+      {{'default-layout.language-label-' + supportedLanguage.name | translate}}
     </button>
   </tui-data-list>
 </ng-template>

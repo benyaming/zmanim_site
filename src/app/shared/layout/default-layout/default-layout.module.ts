@@ -11,7 +11,6 @@ import {
   TuiSvgModule,
 } from '@taiga-ui/core';
 import { DefaultLayoutMapComponent } from './default-layout-map/default-layout-map.component';
-import { I18nModule } from '@shared/i18n';
 
 @NgModule({
   declarations: [
@@ -30,7 +29,6 @@ import { I18nModule } from '@shared/i18n';
     CommonModule,
     TranslateModule,
     TuiSvgModule,
-    I18nModule,
     TuiButtonModule,
     TuiHostedDropdownModule,
     TuiDataListModule,

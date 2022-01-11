@@ -21,6 +21,7 @@ export class AppService {
     store: Store,
     translateService: TranslateService,
     title: Title,
+    document: Document,
   ): () => Observable<any> {
     return () => {
       store.dispatch([
@@ -34,8 +35,11 @@ export class AppService {
         supportedLanguages,
       }: AppStateModel = store.selectSnapshot(AppState);
 
-      translateService.langs = supportedLanguages;
-      translateService.setDefaultLang(currentLanguage);
+      translateService.langs = supportedLanguages.map(({ name }) => name);
+      translateService.setDefaultLang(currentLanguage.name);
+
+      document.documentElement.dir = currentLanguage.direction;
+      document.documentElement.lang = currentLanguage.name;
 
       return translateService
         .get(browserTabTitle)

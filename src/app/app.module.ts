@@ -28,6 +28,7 @@ import { environment } from '../environments/environment';
 import { NgxsReduxDevtoolsPluginModule } from '@ngxs/devtools-plugin';
 import { AppState } from '@core/state';
 import { AppService } from './app.service';
+import { DOCUMENT } from '@angular/common';
 
 @NgModule({
   declarations: [AppComponent],
@@ -63,8 +64,9 @@ import { AppService } from './app.service';
         store: Store,
         translateService: TranslateService,
         title: Title,
-      ) => AppService.initApp(store, translateService, title),
-      deps: [Store, TranslateService, Title],
+        document: Document,
+      ) => AppService.initApp(store, translateService, title, document),
+      deps: [Store, TranslateService, Title, DOCUMENT],
       multi: true,
     },
   ],

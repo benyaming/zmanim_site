@@ -1,15 +1,19 @@
-import { LocationWithoutSourceModel, ZmanimFormModel } from './app.models';
+import {
+  LanguageModel,
+  LocationWithoutSourceModel,
+  ZmanimFormModel,
+} from './app.models';
 
-export class ChangeBrowserTabTitle {
-  static readonly type = '[App] Change browser tab title';
+export class SetBrowserTabTitle {
+  static readonly type = '[App] Set browser tab title';
 
-  constructor(public readonly browserTabTitle: string) {}
+  constructor(public readonly payload: string) {}
 }
 
-export class ChangeCurrentLanguage {
-  static readonly type = '[App] Change current language';
+export class SetCurrentLanguage {
+  static readonly type = '[App] Set current language';
 
-  constructor(public readonly currentLanguage: string) {}
+  constructor(public readonly payload: LanguageModel) {}
 }
 
 export class SetLocationFromNavigator {
@@ -23,11 +27,11 @@ export class SetLocationFromGeoip {
 export class SetLocationManually {
   static readonly type = '[App] Set location';
 
-  constructor(public readonly location: LocationWithoutSourceModel) {}
+  constructor(public readonly payload: LocationWithoutSourceModel) {}
 }
 
 export class FetchZmanim {
   static readonly type = '[App] Fetch zmanim';
 
-  constructor(public readonly form: ZmanimFormModel) {}
+  constructor(public readonly payload: ZmanimFormModel) {}
 }
