@@ -33,11 +33,7 @@ import {
   SetLocationFromNavigator,
 } from '@core/state';
 import { DOCUMENT } from '@angular/common';
-import {
-  TUI_ENGLISH_LANGUAGE,
-  TUI_LANGUAGE,
-  TUI_RUSSIAN_LANGUAGE,
-} from '@taiga-ui/i18n';
+import { TUI_LANGUAGE } from '@taiga-ui/i18n';
 import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
@@ -78,17 +74,9 @@ function appInitializerFactory(
 }
 
 function tuiLanguageFactory(store: Store): Observable<Language> {
-  return store.select(AppState.currentLanguage).pipe(
-    map(({ name }) => {
-      switch (name) {
-        case 'ru':
-          return TUI_RUSSIAN_LANGUAGE;
-        case 'en':
-        default:
-          return TUI_ENGLISH_LANGUAGE;
-      }
-    }),
-  );
+  return store
+    .select(AppState.currentLanguage)
+    .pipe(map(({ tuiLanguage }) => tuiLanguage));
 }
 
 @NgModule({

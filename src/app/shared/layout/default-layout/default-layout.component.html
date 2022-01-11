@@ -34,7 +34,7 @@
     <button *ngFor='let supportedLanguage of supportedLanguages$ | async'
             tuiOption
             class='set-current-language-button'
-            (click)='onSetCurrentLanguageButtonClicked(supportedLanguage)'>
+            (click)='onSetCurrentLanguageButtonClicked(supportedLanguage.name)'>
       <span class='fi fi-{{supportedLanguage.country}}'></span>
       {{'default-layout.language-label-' + supportedLanguage.name | translate}}
     </button>

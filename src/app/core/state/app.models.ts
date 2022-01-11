@@ -1,4 +1,5 @@
 import { ZmanimZmanimResponseDto } from '@core/zmanim';
+import { Language } from '@taiga-ui/i18n/interfaces';
 
 export interface AppStateModel {
   readonly browserTabTitle: string;
@@ -12,6 +13,7 @@ export interface LanguageModel {
   name: string;
   direction: string;
   country: string;
+  tuiLanguage: Language;
 }
 
 export interface LocationModel {

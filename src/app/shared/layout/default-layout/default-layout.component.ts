@@ -79,7 +79,7 @@ export class DefaultLayoutComponent implements OnDestroy {
     );
   }
 
-  onSetCurrentLanguageButtonClicked(newLanguage: LanguageModel): void {
+  onSetCurrentLanguageButtonClicked(newLanguage: string): void {
     this.store.dispatch(new SetCurrentLanguage(newLanguage));
     this.dropdown.open = false;
     this.dropdown.nativeFocusableElement?.focus();

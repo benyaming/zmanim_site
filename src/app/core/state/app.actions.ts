@@ -1,8 +1,4 @@
-import {
-  LanguageModel,
-  LocationWithoutSourceModel,
-  ZmanimFormModel,
-} from './app.models';
+import { LocationWithoutSourceModel, ZmanimFormModel } from './app.models';
 
 export class SetBrowserTabTitle {
   static readonly type = '[App] Set browser tab title';
@@ -13,7 +9,7 @@ export class SetBrowserTabTitle {
 export class SetCurrentLanguage {
   static readonly type = '[App] Set current language';
 
-  constructor(public readonly payload: LanguageModel) {}
+  constructor(public readonly payload: string) {}
 }
 
 export class SetLocationFromNavigator {

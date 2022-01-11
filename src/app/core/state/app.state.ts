@@ -78,24 +78,24 @@ export class AppState {
     { payload }: SetCurrentLanguage,
   ): Observable<any> {
     const { supportedLanguages, location }: AppStateModel = ctx.getState();
-    const isPayloadLanguageSupported: boolean = !!supportedLanguages.find(
-      ({ name }) => name === payload.name,
+    const language: LanguageModel | undefined = supportedLanguages.find(
+      ({ name }) => name === payload,
     );
-    if (!isPayloadLanguageSupported) {
+    if (!language) {
       const supportedLanguageNamesString: string = supportedLanguages
         .map(({ name }) => name)
         .join(', ');
       throw new Error(
-        `Can't change language, since [${payload.name}] is not in supported languages list [${supportedLanguageNamesString}]`,
+        `Can't change language, since [${payload}] is not in supported languages list [${supportedLanguageNamesString}]`,
       );
     }
 
-    return this.translateService.use(payload.name).pipe(
+    return this.translateService.use(language.name).pipe(
       tap(() => {
-        this.document.documentElement.dir = payload.direction;
-        this.document.documentElement.lang = payload.name;
+        this.document.documentElement.dir = language.direction;
+        this.document.documentElement.lang = language.name;
       }),
-      tap(() => ctx.patchState({ currentLanguage: payload })),
+      tap(() => ctx.patchState({ currentLanguage: language })),
       switchMap(() => {
         if (!location) {
           return of();
