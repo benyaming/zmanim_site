@@ -26,9 +26,70 @@ import { MapboxInterceptor } from '@core/mapbox';
 import { NgxsModule, Store } from '@ngxs/store';
 import { environment } from '../environments/environment';
 import { NgxsReduxDevtoolsPluginModule } from '@ngxs/devtools-plugin';
-import { AppState } from '@core/state';
-import { AppService } from './app.service';
+import {
+  AppState,
+  AppStateModel,
+  SetLocationFromGeoip,
+  SetLocationFromNavigator,
+} from '@core/state';
 import { DOCUMENT } from '@angular/common';
+import {
+  TUI_ENGLISH_LANGUAGE,
+  TUI_LANGUAGE,
+  TUI_RUSSIAN_LANGUAGE,
+} from '@taiga-ui/i18n';
+import { Observable } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+import { Language } from '@taiga-ui/i18n/interfaces';
+
+function translateLoaderFactory(http: HttpClient): TranslateLoader {
+  return new TranslateHttpLoader(http);
+}
+
+function appInitializerFactory(
+  store: Store,
+  translateService: TranslateService,
+  title: Title,
+  document: Document,
+): () => Observable<any> {
+  return () => {
+    store.dispatch([
+      new SetLocationFromNavigator(),
+      new SetLocationFromGeoip(),
+    ]);
+
+    const {
+      browserTabTitle,
+      currentLanguage,
+      supportedLanguages,
+    }: AppStateModel = store.selectSnapshot(AppState);
+
+    translateService.langs = supportedLanguages.map(({ name }) => name);
+    translateService.setDefaultLang(currentLanguage.name);
+
+    document.documentElement.dir = currentLanguage.direction;
+    document.documentElement.lang = currentLanguage.name;
+
+    return translateService
+      .get(browserTabTitle)
+      .pipe(tap((translated) => title.setTitle(translated)));
+  };
+}
+
+function tuiLanguageFactory(store: Store): Observable<Language> {
+  return store.select(AppState.currentLanguage).pipe(
+    map(({ name }) => {
+      switch (name) {
+        case 'ru':
+          return TUI_RUSSIAN_LANGUAGE;
+        case 'en':
+        default:
+          return TUI_ENGLISH_LANGUAGE;
+      }
+    }),
+  );
+}
 
 @NgModule({
   declarations: [AppComponent],
@@ -43,7 +104,7 @@ import { DOCUMENT } from '@angular/common';
     TranslateModule.forRoot({
       loader: {
         provide: TranslateLoader,
-        useFactory: (http: HttpClient) => AppService.getTranslateLoader(http),
+        useFactory: translateLoaderFactory,
         deps: [HttpClient],
       },
       useDefaultLang: true,
@@ -60,14 +121,14 @@ import { DOCUMENT } from '@angular/common';
     { provide: TUI_NUMBER_FORMAT, useValue: { decimalSeparator: '.' } },
     {
       provide: APP_INITIALIZER,
-      useFactory: (
-        store: Store,
-        translateService: TranslateService,
-        title: Title,
-        document: Document,
-      ) => AppService.initApp(store, translateService, title, document),
+      useFactory: appInitializerFactory,
       deps: [Store, TranslateService, Title, DOCUMENT],
       multi: true,
+    },
+    {
+      provide: TUI_LANGUAGE,
+      useFactory: tuiLanguageFactory,
+      deps: [Store],
     },
   ],
   bootstrap: [AppComponent],
