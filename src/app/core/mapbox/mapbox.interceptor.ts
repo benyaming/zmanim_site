@@ -25,11 +25,12 @@ export class MapboxInterceptor implements HttpInterceptor {
       return next.handle(request);
     }
 
-    const { language }: AppStateModel = this.store.selectSnapshot(AppState);
+    const { currentLanguage }: AppStateModel =
+      this.store.selectSnapshot(AppState);
 
     const params = {
       access_token: window.env.mapboxPublicApiKey,
-      language,
+      language: currentLanguage,
     };
     return next.handle(request.clone({ setParams: params }));
   }

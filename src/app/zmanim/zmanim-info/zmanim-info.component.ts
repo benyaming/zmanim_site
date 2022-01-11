@@ -9,6 +9,6 @@ import { Select } from '@ngxs/store';
   styleUrls: ['./zmanim-info.component.scss'],
 })
 export class ZmanimInfoComponent {
-  @Select(AppState.zmanim) state$!: Observable<ZmanimStateModel>;
+  @Select(AppState.zmanim) readonly state$!: Observable<ZmanimStateModel>;
   readonly compareWith = () => 0;
 }

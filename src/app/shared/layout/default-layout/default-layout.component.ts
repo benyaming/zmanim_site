@@ -1,10 +1,16 @@
-import { Component, Inject, Injector, OnDestroy } from '@angular/core';
-import { TuiDialogService } from '@taiga-ui/core';
+import {
+  Component,
+  Inject,
+  Injector,
+  OnDestroy,
+  ViewChild,
+} from '@angular/core';
+import { TuiDialogService, TuiHostedDropdownComponent } from '@taiga-ui/core';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 import { DefaultLayoutMapComponent } from './default-layout-map/default-layout-map.component';
 import { Observable, Subscription } from 'rxjs';
 import { Select, Store } from '@ngxs/store';
-import { AppState, LocationModel } from '@core/state';
+import { AppState, ChangeCurrentLanguage, LocationModel } from '@core/state';
 import { TranslateService } from '@ngx-translate/core';
 import { map, shareReplay, switchMap } from 'rxjs/operators';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
@@ -16,6 +22,13 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 })
 export class DefaultLayoutComponent implements OnDestroy {
   @Select(AppState.location) location$!: Observable<LocationModel>;
+  @Select(AppState.currentLanguage) currentLanguage$!: Observable<string>;
+  @Select(AppState.supportedLanguages) supportedLanguages$!: Observable<
+    string[]
+  >;
+
+  @ViewChild(TuiHostedDropdownComponent)
+  private readonly dropdown!: TuiHostedDropdownComponent;
 
   readonly isHandset$: Observable<boolean> = this.breakpointObserver
     .observe(Breakpoints.Handset)
@@ -43,7 +56,7 @@ export class DefaultLayoutComponent implements OnDestroy {
       this.translateService
         .get('default-layout.map-dialog-heading')
         .pipe(
-          switchMap((heading) =>
+          switchMap((label) =>
             this.dialogService.open(
               new PolymorpheusComponent(
                 DefaultLayoutMapComponent,
@@ -51,12 +64,18 @@ export class DefaultLayoutComponent implements OnDestroy {
               ),
               {
                 dismissible: true,
-                label: heading,
+                label,
               },
             ),
           ),
         )
         .subscribe(),
     );
+  }
+
+  onChangeLanguageButtonClicked(language: string): void {
+    this.store.dispatch(new ChangeCurrentLanguage(language));
+    this.dropdown.open = false;
+    this.dropdown.nativeFocusableElement?.focus();
   }
 }

@@ -12,7 +12,8 @@ import { Select, Store } from '@ngxs/store';
   styleUrls: ['./zmanim-form.component.scss'],
 })
 export class ZmanimFormComponent implements OnInit, OnDestroy {
-  @Select(AppState.zmanim) state$!: Observable<ZmanimStateModel>;
+  @Select(AppState.zmanim)
+  private readonly state$!: Observable<ZmanimStateModel>;
 
   readonly form: FormGroup = this.fb.group({
     date: [null, [Validators.required]],

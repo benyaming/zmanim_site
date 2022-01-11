@@ -1,0 +1,13 @@
+{
+  "default-layout.title": "זמנים",
+  "default-layout.location": "מיקום",
+  "default-layout.language-label-en": "אנגלית",
+  "default-layout.language-label-he": "עברית",
+  "default-layout.language-label-ru": "רוסית",
+  "default-layout.map-dialog-heading": "תעדכן את המקום שלך",
+  "zmanim-form.date-placeholder": "תאריך",
+  "zmanim-form.get-zmanim-button": "קבל זמנים",
+  "zmanim-info.title": "זמנים",
+  "app.browser-tab-title": "זמנים",
+  "zmanim.browser-tab-title": "זמנים | זמנים"
+}

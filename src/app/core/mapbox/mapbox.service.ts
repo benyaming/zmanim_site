@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PlacesRouteParams } from './places.route-params';
-import { PlacesQueryParams } from './places.query-params';
-import { PlacesResponseDto } from './places.response-dto';
+import { MapboxPlacesRouteParams } from './mapbox.route-params';
+import { MapboxPlacesQueryParams } from './mapbox.query-params';
+import { MapboxPlacesResponseDto } from './mapbox.dtos';
 
 @Injectable({
   providedIn: 'root',
@@ -14,11 +14,11 @@ export class MapboxService {
   constructor(private readonly http: HttpClient) {}
 
   places(
-    routeParams: PlacesRouteParams,
-    queryParams: PlacesQueryParams,
-  ): Observable<PlacesResponseDto> {
+    routeParams: MapboxPlacesRouteParams,
+    queryParams: MapboxPlacesQueryParams,
+  ): Observable<MapboxPlacesResponseDto> {
     const url = `${this.urlPrefix}mapbox.places/${routeParams.lng},${routeParams.lat}.json`;
 
-    return this.http.get<PlacesResponseDto>(url, { params: queryParams });
+    return this.http.get<MapboxPlacesResponseDto>(url, { params: queryParams });
   }
 }

@@ -1,0 +1,13 @@
+{
+  "default-layout.title": "Зманим",
+  "default-layout.location": "Локация",
+  "default-layout.language-label-en": "Английский",
+  "default-layout.language-label-he": "Иврит",
+  "default-layout.language-label-ru": "Русский",
+  "default-layout.map-dialog-heading": "Обновите свою локацию",
+  "zmanim-form.date-placeholder": "Дата",
+  "zmanim-form.get-zmanim-button": "Запросить Зманим",
+  "zmanim-info.title": "Зманим",
+  "app.browser-tab-title": "Зманим",
+  "zmanim.browser-tab-title": "Зманим | Зманим"
+}

@@ -1,3 +1,3 @@
 export * from './freegeoip.interceptor';
-export * from './freegeoip.response-dto';
+export * from './freegeoip.dtos';
 export * from './freegeoip.service';

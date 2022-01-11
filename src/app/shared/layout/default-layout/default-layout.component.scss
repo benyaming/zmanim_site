@@ -18,7 +18,17 @@ header {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+
+  .divider {
+    flex: 1;
+  }
+}
+
+.change-language-button {
+  display: flex;
+  flex-direction: row;
+  gap: .25rem;
+  justify-content: flex-start;
 }
 
 main {

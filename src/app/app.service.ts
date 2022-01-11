@@ -6,8 +6,8 @@ import { Observable } from 'rxjs';
 import {
   AppState,
   AppStateModel,
-  FetchLocationFromFreegeoip,
-  FetchLocationFromNavigator,
+  SetLocationFromGeoip,
+  SetLocationFromNavigator,
 } from '@core/state';
 import { tap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
@@ -29,14 +29,18 @@ export class AppService {
   ): () => Observable<any> {
     return () => {
       store.dispatch([
-        new FetchLocationFromNavigator(),
-        new FetchLocationFromFreegeoip(),
+        new SetLocationFromNavigator(),
+        new SetLocationFromGeoip(),
       ]);
 
-      const { browserTabTitle, language }: AppStateModel =
-        store.selectSnapshot(AppState);
+      const {
+        browserTabTitle,
+        currentLanguage,
+        supportedLanguages,
+      }: AppStateModel = store.selectSnapshot(AppState);
 
-      translateService.setDefaultLang(language);
+      translateService.langs = supportedLanguages;
+      translateService.setDefaultLang(currentLanguage);
 
       return translateService
         .get(browserTabTitle)

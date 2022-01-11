@@ -6,12 +6,18 @@ export class ChangeBrowserTabTitle {
   constructor(public readonly browserTabTitle: string) {}
 }
 
-export class FetchLocationFromNavigator {
-  static readonly type = '[App] Fetch Location from navigator';
+export class ChangeCurrentLanguage {
+  static readonly type = '[App] Change current language';
+
+  constructor(public readonly currentLanguage: string) {}
 }
 
-export class FetchLocationFromFreegeoip {
-  static readonly type = '[App] Fetch Location from freegeoip';
+export class SetLocationFromNavigator {
+  static readonly type = '[App] Set Location from navigator';
+}
+
+export class SetLocationFromGeoip {
+  static readonly type = '[App] Set Location from geoip';
 }
 
 export class SetLocationManually {

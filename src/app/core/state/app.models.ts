@@ -1,28 +1,29 @@
-import { ZmanimResponseDto } from '@core/zmanim';
+import { ZmanimZmanimResponseDto } from '@core/zmanim';
 
 export interface AppStateModel {
-  browserTabTitle: string;
-  language: string;
-  location: LocationModel | null;
-  zmanim: ZmanimStateModel;
+  readonly browserTabTitle: string;
+  readonly currentLanguage: string;
+  readonly supportedLanguages: string[];
+  readonly location: LocationModel | null;
+  readonly zmanim: ZmanimStateModel;
 }
 
 export interface LocationModel {
-  lat: number;
-  lng: number;
-  source: 'geoip' | 'navigator' | 'manual';
-  cityName: string | null;
+  readonly lat: number;
+  readonly lng: number;
+  readonly source: 'geoip' | 'navigator' | 'manual';
+  readonly cityName: string | null;
 }
 
 export type LocationWithoutSourceModel = Omit<LocationModel, 'source'>;
 
 export interface ZmanimStateModel {
-  form: ZmanimFormModel;
-  info: ZmanimInfoModel | null;
+  readonly form: ZmanimFormModel;
+  readonly info: ZmanimInfoModel | null;
 }
 
 export interface ZmanimFormModel {
-  date: Date;
+  readonly date: Date;
 }
 
-export type ZmanimInfoModel = Omit<ZmanimResponseDto, 'settings'>;
+export type ZmanimInfoModel = Omit<ZmanimZmanimResponseDto, 'settings'>;

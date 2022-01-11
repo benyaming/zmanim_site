@@ -2,12 +2,7 @@ import { AfterViewInit, Component, OnDestroy } from '@angular/core';
 import mapboxgl, { EventData, Map, MapMouseEvent, Marker } from 'mapbox-gl';
 import { Observable, Subscription } from 'rxjs';
 import { MapboxService } from '@core/mapbox';
-import {
-  AppState,
-  AppStateModel,
-  LocationModel,
-  SetLocationManually,
-} from '@core/state';
+import { AppState, LocationModel, SetLocationManually } from '@core/state';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { filter, map, shareReplay } from 'rxjs/operators';
 import { Select, Store } from '@ngxs/store';
@@ -22,7 +17,7 @@ import MapboxLanguage from '@mapbox/mapbox-gl-language';
 })
 export class DefaultLayoutMapComponent implements AfterViewInit, OnDestroy {
   @Select(AppState.location)
-  private location$!: Observable<LocationModel | null>;
+  private readonly location$!: Observable<LocationModel | null>;
 
   readonly isHandset$: Observable<boolean> = this.breakpointObserver
     .observe(Breakpoints.Handset)
@@ -31,11 +26,11 @@ export class DefaultLayoutMapComponent implements AfterViewInit, OnDestroy {
       shareReplay(),
     );
 
-  private map!: Map;
-  private marker!: Marker;
-  private language!: MapboxLanguage;
-  private geocoder!: MapboxGeocoder;
-  // private geolocate!: GeolocateControl;
+  private map?: Map;
+  private marker?: Marker;
+  private language?: MapboxLanguage;
+  private geocoder?: MapboxGeocoder;
+  // private geolocate?: GeolocateControl;
 
   private readonly onDestroy$: Subscription = new Subscription();
 
@@ -67,7 +62,9 @@ export class DefaultLayoutMapComponent implements AfterViewInit, OnDestroy {
   }
 
   private initMap(location: LocationModel): void {
-    const { language } = this.store.selectSnapshot<AppStateModel>(AppState);
+    const language = this.store.selectSnapshot<string>(
+      AppState.currentLanguage,
+    );
     mapboxgl.accessToken = window.env.mapboxPublicApiKey;
 
     this.map = new Map({
@@ -105,7 +102,7 @@ export class DefaultLayoutMapComponent implements AfterViewInit, OnDestroy {
   }
 
   private updateMarker(location: LocationModel): void {
-    this.marker.setLngLat(location);
+    this.marker?.setLngLat(location);
   }
 
   private onMapClicked({ lngLat }: MapMouseEvent & EventData): void {

@@ -5,12 +5,12 @@ import { Title } from '@angular/platform-browser';
 import {
   AppState,
   ChangeBrowserTabTitle,
-  FetchLocationFromFreegeoip,
-  FetchLocationFromNavigator,
   FetchZmanim,
+  LocationModel,
 } from '@core/state';
-import { Actions, ofActionSuccessful, Store } from '@ngxs/store';
-import { map, take } from 'rxjs/operators';
+import { Actions, Select, Store } from '@ngxs/store';
+import { filter, map, take } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-zmanim',
@@ -18,6 +18,9 @@ import { map, take } from 'rxjs/operators';
   styleUrls: ['./zmanim.component.scss'],
 })
 export class ZmanimComponent implements OnInit {
+  @Select(AppState.location)
+  private readonly location$!: Observable<LocationModel | null>;
+
   constructor(
     private readonly zmanimService: ZmanimService,
     private readonly translateService: TranslateService,
@@ -28,16 +31,13 @@ export class ZmanimComponent implements OnInit {
 
   ngOnInit(): void {
     this.initOneTimeZmanimFetch();
-    this.updateStore();
+    this.setBrowserTabTitle();
   }
 
   private initOneTimeZmanimFetch() {
-    this.actions$
+    this.location$
       .pipe(
-        ofActionSuccessful(
-          FetchLocationFromNavigator,
-          FetchLocationFromFreegeoip,
-        ),
+        filter((location) => !!location),
         take(1),
         map(() => this.store.selectSnapshot(AppState.zmanim)),
       )
@@ -46,7 +46,7 @@ export class ZmanimComponent implements OnInit {
       });
   }
 
-  private updateStore(): void {
+  private setBrowserTabTitle(): void {
     this.store.dispatch(new ChangeBrowserTabTitle('zmanim.browser-tab-title'));
   }
 }

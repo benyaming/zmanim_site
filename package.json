@@ -41,6 +41,7 @@
     "@tinkoff/ng-dompurify": "3.0.0",
     "date-fns": "^2.27.0",
     "dompurify": "2.2.9",
+    "flag-icons": "^6.0.2",
     "mapbox-gl": "^2.6.1",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
