@@ -4,10 +4,13 @@ import { DefaultLayoutComponent } from './default-layout.component';
 import { DefaultLayoutFormDirective } from './default-layout-form/default-layout-form.directive';
 import { DefaultLayoutInfoDirective } from './default-layout-info/default-layout-info.directive';
 import { TranslateModule } from '@ngx-translate/core';
-import { TuiButtonModule, TuiSvgModule } from '@taiga-ui/core';
+import {
+  TuiButtonModule,
+  TuiDataListModule,
+  TuiHostedDropdownModule,
+  TuiSvgModule,
+} from '@taiga-ui/core';
 import { DefaultLayoutMapComponent } from './default-layout-map/default-layout-map.component';
-import { NgxMapboxGLModule } from 'ngx-mapbox-gl';
-import { NgxMapboxGlGeocoderControlModule } from 'ngx-mapbox-gl-geocoder-control';
 
 @NgModule({
   declarations: [
@@ -25,10 +28,10 @@ import { NgxMapboxGlGeocoderControlModule } from 'ngx-mapbox-gl-geocoder-control
   imports: [
     CommonModule,
     TranslateModule,
-    TuiButtonModule,
     TuiSvgModule,
-    NgxMapboxGLModule,
-    NgxMapboxGlGeocoderControlModule,
+    TuiButtonModule,
+    TuiHostedDropdownModule,
+    TuiDataListModule,
   ],
 })
 export class DefaultLayoutModule {}

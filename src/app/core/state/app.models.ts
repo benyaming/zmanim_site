@@ -1,26 +1,37 @@
-import { ZmanimResponseDto } from '@core/zmanim';
+import { ZmanimZmanimResponseDto } from '@core/zmanim';
+import { Language } from '@taiga-ui/i18n/interfaces';
 
 export interface AppStateModel {
-  location: LocationModel | null;
-  zmanim: ZmanimStateModel;
+  readonly browserTabTitle: string;
+  readonly currentLanguage: LanguageModel;
+  readonly supportedLanguages: LanguageModel[];
+  readonly location: LocationModel | null;
+  readonly zmanim: ZmanimModel;
+}
+
+export interface LanguageModel {
+  name: string;
+  direction: string;
+  country: string;
+  tuiLanguage: Language;
 }
 
 export interface LocationModel {
-  lat: number;
-  lng: number;
-  source: 'geoip' | 'navigator' | 'manual';
-  cityName: string | null;
+  readonly lat: number;
+  readonly lng: number;
+  readonly source: 'geoip' | 'navigator' | 'manual';
+  readonly cityName: string | null;
 }
 
 export type LocationWithoutSourceModel = Omit<LocationModel, 'source'>;
 
-export interface ZmanimStateModel {
-  form: ZmanimFormModel;
-  info: ZmanimInfoModel | null;
+export interface ZmanimModel {
+  readonly form: ZmanimFormModel;
+  readonly info: ZmanimInfoModel | null;
 }
 
 export interface ZmanimFormModel {
-  date: Date;
+  readonly date: Date;
 }
 
-export type ZmanimInfoModel = Omit<ZmanimResponseDto, 'settings'>;
+export type ZmanimInfoModel = Omit<ZmanimZmanimResponseDto, 'settings'>;

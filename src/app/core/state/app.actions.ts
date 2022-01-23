@@ -1,21 +1,33 @@
 import { LocationWithoutSourceModel, ZmanimFormModel } from './app.models';
 
-export class FetchLocationFromNavigator {
-  static readonly type = '[App] Fetch Location from Navigator';
+export class SetBrowserTabTitle {
+  static readonly type = '[App] Set browser tab title';
+
+  constructor(public readonly payload: string) {}
 }
 
-export class FetchLocationFromFreegeoip {
-  static readonly type = '[App] Fetch Location from Freegeoip';
+export class SetCurrentLanguage {
+  static readonly type = '[App] Set current language';
+
+  constructor(public readonly payload: string) {}
+}
+
+export class SetLocationFromNavigator {
+  static readonly type = '[App] Set Location from navigator';
+}
+
+export class SetLocationFromGeoip {
+  static readonly type = '[App] Set Location from geoip';
 }
 
 export class SetLocationManually {
   static readonly type = '[App] Set location';
 
-  constructor(public readonly location: LocationWithoutSourceModel) {}
+  constructor(public readonly payload: LocationWithoutSourceModel) {}
 }
 
 export class FetchZmanim {
-  static readonly type = '[App] Fetch Zmanim';
+  static readonly type = '[App] Fetch zmanim';
 
-  constructor(public readonly form: ZmanimFormModel) {}
+  constructor(public readonly payload: ZmanimFormModel) {}
 }

@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs';
-import { AppState, ZmanimStateModel } from '@core/state';
+import { AppState, ZmanimModel } from '@core/state';
 import { Select } from '@ngxs/store';
 
 @Component({
@@ -9,6 +9,6 @@ import { Select } from '@ngxs/store';
   styleUrls: ['./zmanim-info.component.scss'],
 })
 export class ZmanimInfoComponent {
-  @Select(AppState.zmanim) state$!: Observable<ZmanimStateModel>;
+  @Select(AppState.zmanim) readonly zmanim$!: Observable<ZmanimModel>;
   readonly compareWith = () => 0;
 }

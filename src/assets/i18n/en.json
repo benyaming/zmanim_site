@@ -1,11 +1,13 @@
 {
   "default-layout.title": "Zmanim",
   "default-layout.location": "Location",
+  "default-layout.language-label-en": "English",
+  "default-layout.language-label-he": "Hebrew",
+  "default-layout.language-label-ru": "Russian",
   "default-layout.map-dialog-heading": "Update your location",
-  "default-layout-map.submit-dialog-button": "Submit",
-  "default-layout-map.geocoder-placeholder": "Search for a places",
   "zmanim-form.date-placeholder": "Date",
   "zmanim-form.get-zmanim-button": "Get Zmanim",
   "zmanim-info.title": "Zmanim",
-  "zmanim.tab-title": "Zmanim | Zmanim"
+  "app.browser-tab-title": "Zmanim",
+  "zmanim.browser-tab-title": "Zmanim | Zmanim"
 }

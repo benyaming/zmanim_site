@@ -5,5 +5,5 @@ import { Directive, HostBinding } from '@angular/core';
 })
 export class DefaultLayoutFormDirective {
   @HostBinding('style.min-width.rem')
-  minWidth = 20;
+  private readonly minWidth = 20;
 }

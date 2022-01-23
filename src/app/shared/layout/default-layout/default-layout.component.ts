@@ -1,14 +1,20 @@
-import { Component, Inject, Injector, OnDestroy, OnInit } from '@angular/core';
-import { TuiDialogService } from '@taiga-ui/core';
+import {
+  Component,
+  Inject,
+  Injector,
+  OnDestroy,
+  ViewChild,
+} from '@angular/core';
+import { TuiDialogService, TuiHostedDropdownComponent } from '@taiga-ui/core';
 import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 import { DefaultLayoutMapComponent } from './default-layout-map/default-layout-map.component';
 import { Observable, Subscription } from 'rxjs';
 import { Select, Store } from '@ngxs/store';
 import {
   AppState,
+  SetCurrentLanguage,
   LocationModel,
-  LocationWithoutSourceModel,
-  SetLocationManually,
+  LanguageModel,
 } from '@core/state';
 import { TranslateService } from '@ngx-translate/core';
 import { map, shareReplay, switchMap } from 'rxjs/operators';
@@ -21,6 +27,14 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 })
 export class DefaultLayoutComponent implements OnDestroy {
   @Select(AppState.location) location$!: Observable<LocationModel>;
+  @Select(AppState.currentLanguage)
+  currentLanguage$!: Observable<LanguageModel>;
+  @Select(AppState.supportedLanguages) supportedLanguages$!: Observable<
+    LanguageModel[]
+  >;
+
+  @ViewChild(TuiHostedDropdownComponent)
+  private readonly dropdown!: TuiHostedDropdownComponent;
 
   readonly isHandset$: Observable<boolean> = this.breakpointObserver
     .observe(Breakpoints.Handset)
@@ -44,34 +58,30 @@ export class DefaultLayoutComponent implements OnDestroy {
   }
 
   openMapDialog(): void {
-    const location: LocationModel | null = this.store.selectSnapshot(
-      AppState.location,
-    );
-    if (!location) {
-      return;
-    }
-
     this.onDestroy$.add(
       this.translateService
         .get('default-layout.map-dialog-heading')
         .pipe(
-          switchMap((heading) =>
-            this.dialogService.open<LocationWithoutSourceModel>(
+          switchMap((label) =>
+            this.dialogService.open(
               new PolymorpheusComponent(
                 DefaultLayoutMapComponent,
                 this.injector,
               ),
               {
                 dismissible: true,
-                data: location,
-                label: heading,
+                label,
               },
             ),
           ),
         )
-        .subscribe((location) => {
-          this.store.dispatch(new SetLocationManually(location));
-        }),
+        .subscribe(),
     );
+  }
+
+  onSetCurrentLanguageButtonClicked(newLanguage: string): void {
+    this.store.dispatch(new SetCurrentLanguage(newLanguage));
+    this.dropdown.open = false;
+    this.dropdown.nativeFocusableElement?.focus();
   }
 }

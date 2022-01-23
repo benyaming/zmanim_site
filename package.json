@@ -22,6 +22,7 @@
     "@angular/platform-browser-dynamic": "~13.1.1",
     "@angular/router": "~13.1.1",
     "@mapbox/mapbox-gl-geocoder": "^4.7.4",
+    "@mapbox/mapbox-gl-language": "^1.0.0",
     "@ngx-translate/core": "^13.0.0",
     "@ngx-translate/http-loader": "^6.0.0",
     "@ngxs/store": "^3.7.3",
@@ -40,9 +41,8 @@
     "@tinkoff/ng-dompurify": "3.0.0",
     "date-fns": "^2.27.0",
     "dompurify": "2.2.9",
+    "flag-icons": "^6.0.2",
     "mapbox-gl": "^2.6.1",
-    "ngx-mapbox-gl": "^7.1.2",
-    "ngx-mapbox-gl-geocoder-control": "^0.0.1",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
     "zone.js": "~0.11.4"

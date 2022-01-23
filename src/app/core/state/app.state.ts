@@ -1,20 +1,30 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { Action, Selector, State, StateContext } from '@ngxs/store';
-import { AppStateModel, LocationModel, ZmanimStateModel } from './app.models';
+import {
+  AppStateModel,
+  LanguageModel,
+  LocationModel,
+  ZmanimModel,
+} from './app.models';
 import { APP_DEFAULTS } from './app.defaults';
 import {
-  FetchLocationFromFreegeoip,
-  FetchLocationFromNavigator,
   FetchZmanim,
+  SetBrowserTabTitle,
+  SetCurrentLanguage,
+  SetLocationFromGeoip,
+  SetLocationFromNavigator,
   SetLocationManually,
 } from './app.actions';
 import { MapboxService } from '@core/mapbox';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
 import { Result } from '@mapbox/mapbox-gl-geocoder';
 import { FreegeoipService } from '@core/freegeoip';
-import { ZmanimQueryParams, ZmanimService } from '@core/zmanim';
+import { ZmanimService, ZmanimZmanimQueryParams } from '@core/zmanim';
 import { format } from 'date-fns';
+import { TranslateService } from '@ngx-translate/core';
+import { Title } from '@angular/platform-browser';
+import { DOCUMENT } from '@angular/common';
 
 @State<AppStateModel>({
   name: 'app',
@@ -28,7 +38,17 @@ export class AppState {
   }
 
   @Selector()
-  static zmanim(state: AppStateModel): ZmanimStateModel {
+  static currentLanguage(state: AppStateModel): LanguageModel {
+    return state.currentLanguage;
+  }
+
+  @Selector()
+  static supportedLanguages(state: AppStateModel): LanguageModel[] {
+    return state.supportedLanguages;
+  }
+
+  @Selector()
+  static zmanim(state: AppStateModel): ZmanimModel {
     return state.zmanim;
   }
 
@@ -36,10 +56,62 @@ export class AppState {
     private readonly mapboxService: MapboxService,
     private readonly freegeoipService: FreegeoipService,
     private readonly zmanimService: ZmanimService,
+    private readonly translateService: TranslateService,
+    private readonly title: Title,
+    @Inject(DOCUMENT) private readonly document: Document,
   ) {}
 
-  @Action(FetchLocationFromNavigator)
-  fetchLocationFromNavigator(
+  @Action(SetBrowserTabTitle)
+  private setBrowserTabTitle(
+    ctx: StateContext<AppStateModel>,
+    { payload }: SetBrowserTabTitle,
+  ): Observable<any> {
+    return this.translateService.get(payload).pipe(
+      tap((browserTabTitle) => ctx.patchState({ browserTabTitle })),
+      tap((browserTabTitle) => this.title.setTitle(browserTabTitle)),
+    );
+  }
+
+  @Action(SetCurrentLanguage)
+  private setCurrentLanguage(
+    ctx: StateContext<AppStateModel>,
+    { payload }: SetCurrentLanguage,
+  ): Observable<any> {
+    const { supportedLanguages, location }: AppStateModel = ctx.getState();
+    const language: LanguageModel | undefined = supportedLanguages.find(
+      ({ name }) => name === payload,
+    );
+    if (!language) {
+      const supportedLanguageNamesString: string = supportedLanguages
+        .map(({ name }) => name)
+        .join(', ');
+      throw new Error(
+        `Can't change language, since [${payload}] is not in supported languages list [${supportedLanguageNamesString}]`,
+      );
+    }
+
+    return this.translateService.use(language.name).pipe(
+      tap(() => {
+        this.document.documentElement.dir = language.direction;
+        this.document.documentElement.lang = language.name;
+      }),
+      tap(() => ctx.patchState({ currentLanguage: language })),
+      switchMap(() => {
+        if (!location) {
+          return of();
+        }
+
+        return this.getFullLocation(location, location.source).pipe(
+          tap(({ cityName }) =>
+            ctx.patchState({ location: { ...location, cityName } }),
+          ),
+        );
+      }),
+    );
+  }
+
+  @Action(SetLocationFromNavigator)
+  private setLocationFromNavigator(
     ctx: StateContext<AppStateModel>,
   ): Observable<any> {
     return new Observable<GeolocationPosition>((observer) => {
@@ -54,64 +126,44 @@ export class AppState {
       );
     }).pipe(
       map(({ coords }) => ({ lat: coords.latitude, lng: coords.longitude })),
-      switchMap((coords) => this.mapboxService.places(coords, { limit: '1' })),
-      tap((res) => {
-        const place: Result = res.features[0];
-        if (!place) {
-          console.error(
-            `received no places for given coords from navigator: lat [${res.query[1]}], lng [${res.query[0]}]`,
-          );
-          return;
-        }
-
-        const city = place.context.find(({ id }) => id.startsWith('place'));
-
-        this.setLocation(ctx, {
-          lat: res.query[1],
-          lng: res.query[0],
-          cityName: city?.text ?? place.text,
-          source: 'navigator',
-        });
-      }),
+      switchMap((coords) => this.getFullLocation(coords, 'navigator')),
+      tap((location) => this.setLocation(ctx, location)),
     );
   }
 
-  @Action(FetchLocationFromFreegeoip)
-  fetchLocationFromFreegeoip(
+  @Action(SetLocationFromGeoip)
+  private setLocationFromGeoip(
     ctx: StateContext<AppStateModel>,
   ): Observable<any> {
-    return this.freegeoipService.fetchMyGeo().pipe(
-      tap(({ latitude, longitude, city }) => {
-        this.setLocation(ctx, {
-          lat: latitude,
-          lng: longitude,
-          cityName: city,
-          source: 'geoip',
-        });
-      }),
+    return this.freegeoipService.fetch().pipe(
+      map(({ latitude, longitude }) => ({ lat: latitude, lng: longitude })),
+      switchMap((coords) => this.getFullLocation(coords, 'geoip')),
+      tap((location) => this.setLocation(ctx, location)),
     );
   }
 
   @Action(SetLocationManually)
-  setLocationManually(
+  private setLocationManually(
     ctx: StateContext<AppStateModel>,
-    { location }: SetLocationManually,
+    { payload }: SetLocationManually,
   ): void {
-    this.setLocation(ctx, { ...location, source: 'manual' });
+    this.setLocation(ctx, { ...payload, source: 'manual' });
   }
 
   @Action(FetchZmanim)
-  fetchZmanim(
+  private fetchZmanim(
     ctx: StateContext<AppStateModel>,
-    { form }: FetchZmanim,
-  ): Observable<any> | undefined {
-    const location: LocationModel | null = ctx.getState().location;
+    { payload }: FetchZmanim,
+  ): Observable<any> {
+    const { location, zmanim }: AppStateModel = ctx.getState();
     if (!location) {
-      return;
+      throw new Error(
+        `You are trying to fetch zmanim when there is no location in the store`,
+      );
     }
 
-    const query: ZmanimQueryParams = {
-      date: format(form.date, 'yyyy-MM-dd'),
+    const query: ZmanimZmanimQueryParams = {
+      date: format(payload.date, 'yyyy-MM-dd'),
       lat: location.lat.toString(),
       lng: location.lng.toString(),
     };
@@ -119,8 +171,40 @@ export class AppState {
     return this.zmanimService.fetchZmanim(query).pipe(
       tap(({ settings, ...info }) => {
         ctx.patchState({
-          zmanim: { form, info },
+          zmanim: {
+            ...zmanim,
+            form: payload,
+            info,
+          },
         });
+      }),
+    );
+  }
+
+  private getFullLocation(
+    coords: { lat: number; lng: number },
+    source: LocationModel['source'],
+  ): Observable<LocationModel> {
+    return of(coords).pipe(
+      switchMap(({ lat, lng }) =>
+        this.mapboxService.places({ lat, lng }, { limit: '1' }),
+      ),
+      map((res) => {
+        const place: Result = res.features[0];
+        if (!place) {
+          throw new Error(
+            `received no places for given coords: lat [${res.query[1]}], lng [${res.query[0]}]`,
+          );
+        }
+
+        const city = place.context.find(({ id }) => id.startsWith('place'));
+
+        return {
+          lat: res.query[1],
+          lng: res.query[0],
+          cityName: city?.text ?? place.text,
+          source,
+        };
       }),
     );
   }
@@ -130,7 +214,8 @@ export class AppState {
     location: LocationModel,
   ): void {
     const current: LocationModel | null = ctx.getState().location;
-    if (!location) {
+    if (!current) {
+      ctx.patchState({ location });
       return;
     }
 
@@ -139,12 +224,12 @@ export class AppState {
         ctx.patchState({ location });
         break;
       case 'navigator':
-        if (current?.source !== 'manual') {
+        if (current.source !== 'manual') {
           ctx.patchState({ location });
         }
         break;
       case 'geoip':
-        if (current?.source !== 'manual' && current?.source !== 'navigator') {
+        if (current.source !== 'manual' && current.source !== 'navigator') {
           ctx.patchState({ location });
         }
         break;

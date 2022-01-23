@@ -1,27 +1,25 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ZmanimService } from '@core/zmanim';
-import { Observable, Subscription } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
 import {
   AppState,
-  AppStateModel,
-  FetchLocationFromFreegeoip,
-  FetchLocationFromNavigator,
+  SetBrowserTabTitle,
   FetchZmanim,
+  LocationModel,
 } from '@core/state';
-import { Actions, ofActionSuccessful, Select, Store } from '@ngxs/store';
-import { map, take } from 'rxjs/operators';
+import { Actions, Select, Store } from '@ngxs/store';
+import { filter, map, take } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-zmanim',
   templateUrl: './zmanim.component.html',
   styleUrls: ['./zmanim.component.scss'],
 })
-export class ZmanimComponent implements OnInit, OnDestroy {
-  @Select(AppState) state$!: Observable<AppStateModel>;
-
-  private readonly onDestroy$: Subscription = new Subscription();
+export class ZmanimComponent implements OnInit {
+  @Select(AppState.location)
+  private readonly location$!: Observable<LocationModel | null>;
 
   constructor(
     private readonly zmanimService: ZmanimService,
@@ -32,36 +30,23 @@ export class ZmanimComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.initTitleChange();
     this.initOneTimeZmanimFetch();
-  }
-
-  ngOnDestroy(): void {
-    this.onDestroy$.unsubscribe();
-  }
-
-  private initTitleChange(): void {
-    this.onDestroy$.add(
-      this.translateService.get('zmanim.tab-title').subscribe((title) => {
-        this.title.setTitle(title);
-      }),
-    );
+    this.setBrowserTabTitle();
   }
 
   private initOneTimeZmanimFetch() {
-    this.onDestroy$.add(
-      this.actions$
-        .pipe(
-          ofActionSuccessful(
-            FetchLocationFromNavigator,
-            FetchLocationFromFreegeoip,
-          ),
-          take(1),
-          map(() => this.store.selectSnapshot(AppState.zmanim)),
-        )
-        .subscribe(({ form }) => {
-          this.store.dispatch(new FetchZmanim(form));
-        }),
-    );
+    this.location$
+      .pipe(
+        filter((location) => !!location),
+        take(1),
+        map(() => this.store.selectSnapshot(AppState.zmanim)),
+      )
+      .subscribe(({ form }) => {
+        this.store.dispatch(new FetchZmanim(form));
+      });
+  }
+
+  private setBrowserTabTitle(): void {
+    this.store.dispatch(new SetBrowserTabTitle('zmanim.browser-tab-title'));
   }
 }

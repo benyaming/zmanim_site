@@ -1,6 +1,6 @@
-<tui-island *ngIf='state$ | async as state'>
+<tui-island *ngIf='zmanim$ | async as zmanim'>
   <h3 class='tui-island__title'>{{'zmanim-info.title' | translate}}</h3>
-  <ng-container *ngIf='state.info as info'>
+  <ng-container *ngIf='zmanim.info as info'>
     <p *ngFor='let keyvalue of info | keyvalue:compareWith'
        class='tui-island__paragraph zmanim-info-row'>
       <b>{{keyvalue.key}}</b>

@@ -1,5 +1,6 @@
 <header>
   <h1 class='tui-text_h4'>{{'default-layout.title' | translate}}</h1>
+  <div class='divider'></div>
   <button *ngIf='location$ | async as location'
           tuiButton
           appearance='flat'
@@ -9,9 +10,33 @@
     <tui-svg src='tuiIconPin'></tui-svg>
     {{location?.cityName || ('default-layout.location' | translate)}}
   </button>
+
+
+  <tui-hosted-dropdown *ngIf='currentLanguage$ | async as currentLanguage'
+                       [content]='dropdownContent'>
+    <button tuiIconButton
+            appearance='flat'
+            size='s'
+            type='button'>
+      <span class='fi fi-{{currentLanguage.country}}'></span>
+    </button>
+  </tui-hosted-dropdown>
 </header>
 
 <main [class.headset]='isHandset$ | async'>
   <ng-content select='[appDefaultLayoutForm]'></ng-content>
   <ng-content select='[appDefaultLayoutInfo]'></ng-content>
 </main>
+
+
+<ng-template #dropdownContent>
+  <tui-data-list>
+    <button *ngFor='let supportedLanguage of supportedLanguages$ | async'
+            tuiOption
+            class='set-current-language-button'
+            (click)='onSetCurrentLanguageButtonClicked(supportedLanguage.name)'>
+      <span class='fi fi-{{supportedLanguage.country}}'></span>
+      {{'default-layout.language-label-' + supportedLanguage.name | translate}}
+    </button>
+  </tui-data-list>
+</ng-template>

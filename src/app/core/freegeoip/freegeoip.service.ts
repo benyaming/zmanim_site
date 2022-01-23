@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { FreegeoipResponseDto } from './freegeoip.response-dto';
+import { FreegeoipResponseDto } from './freegeoip.dtos';
 
 @Injectable({
   providedIn: 'root',
@@ -18,7 +18,7 @@ export class FreegeoipService {
 
   constructor(private readonly http: HttpClient) {}
 
-  fetchMyGeo(): Observable<FreegeoipResponseDto> {
+  fetch(): Observable<FreegeoipResponseDto> {
     return this.http.get<FreegeoipResponseDto>(`${this.urlPrefix}json`);
   }
 }
