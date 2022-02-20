@@ -20,7 +20,7 @@ export interface ZmanimZmanimRequestDto {
   readonly astronomical_hour_gra?: boolean;
 }
 
-export interface ZmanimZmanimResponseDto {
+export interface ZmanimZmanimResponseDto extends Readonly<Record<string, any>> {
   readonly settings?: ZmanimSettingsResponseDto;
   readonly alos: string | null;
   readonly sunrise: string | null;
