@@ -17,7 +17,7 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
   @Select(AppState.zmanim)
   private readonly zmanim$!: Observable<ZmanimModel>;
 
-  form: FormGroup = this.fb.group({
+  readonly form: FormGroup = this.fb.group({
     date: [null, [Validators.required]],
   });
 
