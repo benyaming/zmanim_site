@@ -3,13 +3,15 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AppState, FetchZmanim, ZmanimModel } from '@core/state';
 import { Observable, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { TuiDay } from '@taiga-ui/cdk';
+import { TUI_DATE_SEPARATOR, TuiDay } from '@taiga-ui/cdk';
 import { Select, Store } from '@ngxs/store';
+import { add, sub } from 'date-fns';
 
 @Component({
   selector: 'app-zmanim-form',
   templateUrl: './zmanim-form.component.html',
   styleUrls: ['./zmanim-form.component.scss'],
+  providers: [{ provide: TUI_DATE_SEPARATOR, useValue: '.' }],
 })
 export class ZmanimFormComponent implements OnInit, OnDestroy {
   @Select(AppState.zmanim)
@@ -48,5 +50,17 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
         date: (this.form.value.date as TuiDay).toLocalNativeDate(),
       }),
     );
+  }
+
+  onDateBtnClick(direction: 'sub' | 'add') {
+    const { day, year, month } = this.form.value.date;
+    const date = new Date(year, month, day);
+    if (direction === 'add')
+      return this.form.patchValue({
+        date: TuiDay.fromLocalNativeDate(add(date, { days: 1 })),
+      });
+    return this.form.patchValue({
+      date: TuiDay.fromLocalNativeDate(sub(date, { days: 1 })),
+    });
   }
 }
