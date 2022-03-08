@@ -7,6 +7,9 @@
   "default-layout.map-dialog-heading": "Update your location",
   "zmanim-form.date-placeholder": "Date",
   "zmanim-form.get-zmanim-button": "Get Zmanim",
+  "zmanim-converter-form.convert-button": "Convert time",
+  "zmanim-converter-form.halacha-placeholder": "Halaha date",
+  "zmanim-converter-form.grigorian-placeholder": "Grigorian Date",
   "zmanim-info.title": "Zmanim",
   "app.browser-tab-title": "Zmanim",
   "zmanim.browser-tab-title": "Zmanim | Zmanim"

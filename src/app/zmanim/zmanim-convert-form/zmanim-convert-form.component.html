@@ -1,0 +1,27 @@
+<div class="wrapper">
+  <h3>Date converter</h3>
+  <form [formGroup]="form" (ngSubmit)="onConvert()">
+    <h3>Grigorian</h3>
+    <tui-input
+      formControlName="grigorian"
+      [textMask]="dateMask"
+      (ngModelChange)="onChange('grigorian')"
+    >
+      {{ 'zmanim-form.date-placeholder' | translate }}
+    </tui-input>
+    <h3>Halacha</h3>
+    <tui-input
+      formControlName="jew"
+      [textMask]="dateMask"
+      (ngModelChange)="onChange('jew')"
+    >
+      {{ 'zmanim-form.date-placeholder' | translate }}
+    </tui-input>
+    <h4>{{ converter.toString() }}</h4>
+    <div class="controls">
+      <button tuiButton size="s" type="submit">
+        {{ 'zmanim-converter-form.convert-button' | translate }}
+      </button>
+    </div>
+  </form>
+</div>
