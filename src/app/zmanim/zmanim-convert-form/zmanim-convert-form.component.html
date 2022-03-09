@@ -5,7 +5,7 @@
     <tui-input
       formControlName="grigorian"
       [textMask]="dateMask"
-      (ngModelChange)="onChange('grigorian')"
+      (ngModelChange)="onChange(DateVariant.GRIGORIAN)"
     >
       {{ 'zmanim-form.date-placeholder' | translate }}
     </tui-input>
@@ -13,7 +13,7 @@
     <tui-input
       formControlName="jew"
       [textMask]="dateMask"
-      (ngModelChange)="onChange('jew')"
+      (ngModelChange)="onChange(DateVariant.JEW)"
     >
       {{ 'zmanim-form.date-placeholder' | translate }}
     </tui-input>

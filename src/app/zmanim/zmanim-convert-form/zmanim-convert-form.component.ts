@@ -4,6 +4,12 @@ import { TUI_DATE_SEPARATOR } from '@taiga-ui/cdk';
 import { format } from 'date-fns';
 import * as KosherZmanim from 'kosher-zmanim';
 
+export type JewGrigorian = DateVariant.JEW | DateVariant.GRIGORIAN;
+export enum DateVariant {
+  JEW = 'jew',
+  GRIGORIAN = 'grigorian',
+}
+
 @Component({
   selector: 'app-zmanim-convert-form',
   templateUrl: './zmanim-convert-form.component.html',
@@ -13,20 +19,30 @@ import * as KosherZmanim from 'kosher-zmanim';
 export class ZmanimConvertFormComponent implements OnInit {
   converter = new KosherZmanim.JewishDate();
 
+  DateVariant = DateVariant;
+  shortDateFormatter = (date: string) => `${date.padStart(2, '0')}`;
+
+  generateFormDateValues = (name: JewGrigorian): [number, number, number] =>
+    this.form
+      .get(name)
+      ?.value.split('.')
+      .map((d: string) => parseInt(d, 10))
+      .reverse();
+
   convertJewDateToInputValue = () => {
     const jewMonth = this.converter.getJewishMonth().toString();
     const jewDay = this.converter.getJewishDayOfMonth().toString();
-    return `${jewDay.length > 1 ? jewDay : `0${jewDay}`}.${
-      jewMonth.length > 1 ? jewMonth : `0${jewMonth}`
-    }.${this.converter.getJewishYear()}`;
+    return `${this.shortDateFormatter(jewDay)}.${this.shortDateFormatter(
+      jewMonth,
+    )}.${this.converter.getJewishYear()}`;
   };
 
   convertGrigorianDateToInputValue = () => {
     const day = this.converter.getGregorianDayOfMonth().toString();
     const month = this.converter.getGregorianMonth().toString();
-    return `${day.length > 1 ? day : `0${day}`}.${
-      month.length > 1 ? month : `0${month}`
-    }.${this.converter.getGregorianYear()}`;
+    return `${this.shortDateFormatter(day)}.${this.shortDateFormatter(
+      month,
+    )}.${this.converter.getGregorianYear()}`;
   };
 
   readonly form: FormGroup = new FormGroup({
@@ -46,26 +62,20 @@ export class ZmanimConvertFormComponent implements OnInit {
     mask: [/\d/, /\d/, '.', /\d/, /\d/, '.', /\d/, /\d/, /\d/, /\d/],
   };
 
-  field: 'jew' | 'grigorian' = 'grigorian';
+  field: JewGrigorian = DateVariant.GRIGORIAN;
 
-  onChange = (name: 'jew' | 'grigorian') => {
+  onChange = (name: JewGrigorian) => {
     this.field = name;
   };
 
   onConvert = () => {
     if (this.field === 'grigorian') {
-      const values = this.form
-        .get('grigorian')
-        ?.value.split('.')
-        .map((d: string) => parseInt(d, 10));
-      this.converter.setGregorianDate(values[2], values[1], values[0]);
+      const values = this.generateFormDateValues(DateVariant.GRIGORIAN);
+      this.converter.setGregorianDate(...values);
       this.form.patchValue({ jew: this.convertJewDateToInputValue() });
     } else {
-      const values = this.form
-        .get('jew')
-        ?.value.split('.')
-        .map((d: string) => parseInt(d, 10));
-      this.converter.setJewishDate(values[2], values[1], values[0]);
+      const values = this.generateFormDateValues(DateVariant.JEW);
+      this.converter.setJewishDate(...values);
       this.form.patchValue({
         grigorian: this.convertGrigorianDateToInputValue(),
       });
