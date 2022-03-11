@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import * as KosherZmanim from 'kosher-zmanim';
+import { JewishDate } from 'kosher-zmanim';
 import { FormControl, FormGroup } from '@angular/forms';
 import { format } from 'date-fns';
 import { Subscription } from 'rxjs';
@@ -36,14 +36,14 @@ export class ConverterComponent implements OnInit, OnDestroy {
 
   onConvertButtonClicked(): void {
     if (this.dateVariant === DateVariant.gregorian) {
-      const values = generateFormDateValues(this.form, DateVariant.gregorian);
+      const values = this.generateFormDateValues(DateVariant.gregorian);
       this.converter.setGregorianDate(...values);
       this.form.patchValue(
         { jewish: convertJewishDateToInputValue() },
         { emitEvent: false },
       );
     } else {
-      const values = generateFormDateValues(this.form, DateVariant.jewish);
+      const values = this.generateFormDateValues(DateVariant.jewish);
       this.converter.setJewishDate(...values);
       this.form.patchValue(
         { gregorian: convertGregorianDateToInputValue() },
@@ -55,35 +55,32 @@ export class ConverterComponent implements OnInit, OnDestroy {
   private initSettingDateVariant(): void {
     this.onDestroy$.add(
       this.form
-        .get('gregorian')!
+        .get(DateVariant.gregorian)!
         .valueChanges.subscribe(
           () => (this.dateVariant = DateVariant.gregorian),
         ),
     );
     this.onDestroy$.add(
       this.form
-        .get('jewish')!
+        .get(DateVariant.jewish)!
         .valueChanges.subscribe(() => (this.dateVariant = DateVariant.jewish)),
     );
   }
+
+  private generateFormDateValues(name: DateVariant): [number, number, number] {
+    return this.form
+      .get(name)
+      ?.value.split('.')
+      .map((d: string) => parseInt(d, 10))
+      .reverse();
+  }
 }
 
-const CONVERTER = new KosherZmanim.JewishDate();
+const CONVERTER = new JewishDate();
 
 enum DateVariant {
   jewish = 'jewish',
   gregorian = 'gregorian',
-}
-
-function generateFormDateValues(
-  form: FormGroup,
-  name: DateVariant,
-): [number, number, number] {
-  return form
-    .get(name)
-    ?.value.split('.')
-    .map((d: string) => parseInt(d, 10))
-    .reverse();
 }
 
 function convertJewishDateToInputValue(): string {
