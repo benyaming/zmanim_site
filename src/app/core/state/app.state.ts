@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@angular/core';
 import { Action, Selector, State, StateContext } from '@ngxs/store';
 import {
   AppStateModel,
+  CalendarDayModel,
   CalendarModel,
   LanguageModel,
   LocationModel,
@@ -10,6 +11,7 @@ import {
 import { APP_DEFAULTS } from './app.defaults';
 import {
   FetchZmanim,
+  GenerateCalendarDays,
   NavigateCalendar,
   SelectCalendarDay,
   SetBrowserTabTitle,
@@ -24,7 +26,17 @@ import { map, switchMap, tap } from 'rxjs/operators';
 import { Result } from '@mapbox/mapbox-gl-geocoder';
 import { FreegeoipService } from '@core/freegeoip';
 import { ZmanimService, ZmanimZmanimQueryParams } from '@core/zmanim';
-import { addMonths, format, subMonths } from 'date-fns';
+import {
+  addDays,
+  addMonths,
+  differenceInDays,
+  endOfMonth,
+  endOfWeek,
+  format,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+} from 'date-fns';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
 import { DOCUMENT } from '@angular/common';
@@ -205,6 +217,8 @@ export class AppState {
             : addMonths(current.displayedPeriodDate, 1),
       },
     });
+
+    ctx.dispatch(new GenerateCalendarDays());
   }
 
   @Action(SelectCalendarDay)
@@ -217,7 +231,35 @@ export class AppState {
     ctx.patchState({
       calendar: {
         ...current,
-        selectedDayDate: payload,
+        selectedDay: payload,
+      },
+    });
+  }
+
+  @Action(GenerateCalendarDays)
+  private generateCalendarDays(ctx: StateContext<AppStateModel>): void {
+    const current = ctx.getState().calendar;
+
+    const startOfDisplayedMonth = startOfMonth(current.displayedPeriodDate);
+    const endOfDisplayedMonth = endOfMonth(current.displayedPeriodDate);
+
+    const startOfDisplayedPeriod = startOfWeek(startOfDisplayedMonth);
+    const endOfDisplayedPeriod = endOfWeek(endOfDisplayedMonth);
+
+    const daysNumber =
+      differenceInDays(endOfDisplayedPeriod, startOfDisplayedPeriod) + 1;
+    const days: CalendarDayModel[] = [];
+    for (let i = 0; i < daysNumber; i++) {
+      days.push({
+        date: addDays(startOfDisplayedPeriod, i),
+        events: [],
+      });
+    }
+
+    ctx.patchState({
+      calendar: {
+        ...current,
+        days,
       },
     });
   }

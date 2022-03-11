@@ -8,7 +8,12 @@ import {
 } from '@angular/core';
 import { isSameDay, isSameMonth } from 'date-fns';
 import { Select, Store } from '@ngxs/store';
-import { AppState, CalendarModel, SelectCalendarDay } from '@core/state';
+import {
+  AppState,
+  CalendarDayModel,
+  CalendarModel,
+  SelectCalendarDay,
+} from '@core/state';
 import { Observable, Subscription } from 'rxjs';
 
 @Component({
@@ -17,10 +22,10 @@ import { Observable, Subscription } from 'rxjs';
   styleUrls: ['./calendar-day.component.scss'],
 })
 export class CalendarDayComponent implements OnInit, OnDestroy {
-  @Input() date!: Date;
-
   @Select(AppState.calendar)
   private readonly calendar$!: Observable<CalendarModel>;
+
+  @Input() day!: CalendarDayModel;
 
   @HostBinding('class.calendar-day--displayed-month')
   private isDisplayedMonth: boolean = false;
@@ -46,19 +51,19 @@ export class CalendarDayComponent implements OnInit, OnDestroy {
 
   @HostListener('click')
   private onCalendarDayClicked(): void {
-    this.store.dispatch(new SelectCalendarDay(this.date));
+    this.store.dispatch(new SelectCalendarDay(this.day));
   }
 
   private setTodayClassModifier(): void {
-    this.isToday = isSameDay(new Date(), this.date);
+    this.isToday = isSameDay(new Date(), this.day.date);
   }
 
   private initSettingStateDependentClassModifiers(): void {
     this.onDestroy$.add(
-      this.calendar$.subscribe(({ displayedPeriodDate, selectedDayDate }) => {
-        this.isDisplayedMonth = isSameMonth(displayedPeriodDate, this.date);
+      this.calendar$.subscribe(({ displayedPeriodDate, selectedDay }) => {
+        this.isDisplayedMonth = isSameMonth(displayedPeriodDate, this.day.date);
         this.isSelected =
-          !!selectedDayDate && isSameDay(selectedDayDate, this.date);
+          !!selectedDay && isSameDay(selectedDay.date, this.day.date);
       }),
     );
   }

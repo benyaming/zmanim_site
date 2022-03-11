@@ -1,4 +1,8 @@
-import { LocationWithoutSourceModel, ZmanimFormModel } from './app.models';
+import {
+  CalendarDayModel,
+  LocationWithoutSourceModel,
+  ZmanimFormModel,
+} from './app.models';
 import { NavigationDirection } from '@shared/types';
 
 export class SetBrowserTabTitle {
@@ -42,5 +46,9 @@ export class NavigateCalendar {
 export class SelectCalendarDay {
   static readonly type = '[App] Select calendar day';
 
-  constructor(public readonly payload: Date) {}
+  constructor(public readonly payload: CalendarDayModel) {}
+}
+
+export class GenerateCalendarDays {
+  static readonly type = '[App] Generate calendar days';
 }

@@ -11,10 +11,10 @@ export interface AppStateModel {
 }
 
 export interface LanguageModel {
-  name: string;
-  direction: string;
-  country: string;
-  tuiLanguage: Language;
+  readonly name: string;
+  readonly direction: string;
+  readonly country: string;
+  readonly tuiLanguage: Language;
 }
 
 export interface LocationModel {
@@ -38,6 +38,12 @@ export interface ZmanimFormModel {
 export type ZmanimInfoModel = Omit<ZmanimZmanimResponseDto, 'settings'>;
 
 export interface CalendarModel {
-  displayedPeriodDate: Date;
-  selectedDayDate: Date | null;
+  readonly displayedPeriodDate: Date;
+  readonly selectedDay: CalendarDayModel | null;
+  readonly days: CalendarDayModel[];
+}
+
+export interface CalendarDayModel {
+  readonly date: Date;
+  readonly events: any[];
 }

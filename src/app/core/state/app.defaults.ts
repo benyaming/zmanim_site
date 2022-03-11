@@ -39,6 +39,7 @@ export const APP_DEFAULTS: AppStateModel = {
   },
   calendar: {
     displayedPeriodDate: startOfMonth(new Date()),
-    selectedDayDate: null,
+    selectedDay: null,
+    days: [],
   },
 };
