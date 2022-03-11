@@ -69,8 +69,8 @@ export class ConverterComponent implements OnInit, OnDestroy {
 
   private generateFormDateValues(name: DateVariant): [number, number, number] {
     return this.form
-      .get(name)
-      ?.value.split('.')
+      .get(name)!
+      .value.split('.')
       .map((d: string) => parseInt(d, 10))
       .reverse();
   }
