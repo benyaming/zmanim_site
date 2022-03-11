@@ -21,12 +21,12 @@ export class ConverterComponent implements OnInit, OnDestroy {
 
   jewishDateString: string = CONVERTER.toString();
 
-  readonly dateMask: TextMaskConfig = {
+  readonly textMask: TextMaskConfig = {
     guide: false,
     mask: [/\d/, /\d/, '.', /\d/, /\d/, '.', /\d/, /\d/, /\d/, /\d/],
   };
 
-  private dateVariant: DateVariant = DateVariant.gregorian;
+  private lastChangedDateVariant: DateVariant = DateVariant.gregorian;
 
   private readonly onDestroy$: Subscription = new Subscription();
 
@@ -39,7 +39,7 @@ export class ConverterComponent implements OnInit, OnDestroy {
   }
 
   onConvertButtonClicked(): void {
-    if (this.dateVariant === DateVariant.gregorian) {
+    if (this.lastChangedDateVariant === DateVariant.gregorian) {
       CONVERTER.setGregorianDate(
         ...this.generateFormDateValues(DateVariant.gregorian),
       );
@@ -47,7 +47,7 @@ export class ConverterComponent implements OnInit, OnDestroy {
         { [DateVariant.jewish]: convertJewishDateToInputValue() },
         { emitEvent: false },
       );
-    } else if (this.dateVariant === DateVariant.jewish) {
+    } else if (this.lastChangedDateVariant === DateVariant.jewish) {
       CONVERTER.setJewishDate(
         ...this.generateFormDateValues(DateVariant.jewish),
       );
@@ -65,13 +65,15 @@ export class ConverterComponent implements OnInit, OnDestroy {
       this.form
         .get(DateVariant.gregorian)!
         .valueChanges.subscribe(
-          () => (this.dateVariant = DateVariant.gregorian),
+          () => (this.lastChangedDateVariant = DateVariant.gregorian),
         ),
     );
     this.onDestroy$.add(
       this.form
         .get(DateVariant.jewish)!
-        .valueChanges.subscribe(() => (this.dateVariant = DateVariant.jewish)),
+        .valueChanges.subscribe(
+          () => (this.lastChangedDateVariant = DateVariant.jewish),
+        ),
     );
   }
 

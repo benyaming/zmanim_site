@@ -3,14 +3,14 @@
 <form [formGroup]='form'
       (ngSubmit)='onConvertButtonClicked()'>
   <tui-input formControlName='gregorian'
-             [textMask]='dateMask'>
+             [textMask]='textMask'>
     {{ 'converter.gregorian-placeholder' | translate }}
   </tui-input>
 
   <label tuiLabel
          [label]='jewishDateString'>
     <tui-input formControlName='jewish'
-               [textMask]='dateMask'>
+               [textMask]='textMask'>
       {{ 'converter.jewish-placeholder' | translate }}
     </tui-input>
   </label>
