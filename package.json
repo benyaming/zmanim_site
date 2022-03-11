@@ -43,7 +43,6 @@
     "dompurify": "2.2.9",
     "flag-icons": "^6.0.2",
     "kosher-zmanim": "^0.8.2",
-    "luxon": "^2.3.1",
     "mapbox-gl": "^2.6.1",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
