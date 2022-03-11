@@ -1,11 +1,11 @@
 <div class="wrapper">
   <h3>Date converter</h3>
   <form [formGroup]="form" (ngSubmit)="onConvert()">
-    <h3>Grigorian</h3>
+    <h3>Gregorian</h3>
     <tui-input
       formControlName="grigorian"
       [textMask]="dateMask"
-      (ngModelChange)="onChange(DateVariant.GRIGORIAN)"
+      (ngModelChange)="onChange(DateVariant.gregorian)"
     >
       {{ 'zmanim-form.date-placeholder' | translate }}
     </tui-input>
@@ -13,7 +13,7 @@
     <tui-input
       formControlName="jew"
       [textMask]="dateMask"
-      (ngModelChange)="onChange(DateVariant.JEW)"
+      (ngModelChange)="onChange(DateVariant.jew)"
     >
       {{ 'zmanim-form.date-placeholder' | translate }}
     </tui-input>

@@ -4,10 +4,10 @@ import { TUI_DATE_SEPARATOR } from '@taiga-ui/cdk';
 import { format } from 'date-fns';
 import * as KosherZmanim from 'kosher-zmanim';
 
-export type JewGrigorian = DateVariant.JEW | DateVariant.GRIGORIAN;
+export type JewGrigorian = DateVariant.jew | DateVariant.gregorian;
 export enum DateVariant {
-  JEW = 'jew',
-  GRIGORIAN = 'grigorian',
+  jew = 'jew',
+  gregorian = 'gregorian',
 }
 
 @Component({
@@ -62,19 +62,19 @@ export class ZmanimConvertFormComponent implements OnInit {
     mask: [/\d/, /\d/, '.', /\d/, /\d/, '.', /\d/, /\d/, /\d/, /\d/],
   };
 
-  field: JewGrigorian = DateVariant.GRIGORIAN;
+  field: JewGrigorian = DateVariant.gregorian;
 
   onChange = (name: JewGrigorian) => {
     this.field = name;
   };
 
   onConvert = () => {
-    if (this.field === 'grigorian') {
-      const values = this.generateFormDateValues(DateVariant.GRIGORIAN);
+    if (this.field === 'gregorian') {
+      const values = this.generateFormDateValues(DateVariant.gregorian);
       this.converter.setGregorianDate(...values);
       this.form.patchValue({ jew: this.convertJewDateToInputValue() });
     } else {
-      const values = this.generateFormDateValues(DateVariant.JEW);
+      const values = this.generateFormDateValues(DateVariant.jew);
       this.converter.setJewishDate(...values);
       this.form.patchValue({
         grigorian: this.convertGrigorianDateToInputValue(),
