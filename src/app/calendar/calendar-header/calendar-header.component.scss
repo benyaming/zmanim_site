@@ -1,0 +1,26 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.navigation {
+  padding: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+
+  background-color: red;
+  padding: 0 1px;
+  gap: 2px;
+
+  &__day {
+    background-color: lightgray;
+    padding: .5rem 1rem;
+  }
+}

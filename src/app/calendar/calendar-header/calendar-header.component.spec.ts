@@ -1,19 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CalendarNavigationComponent } from './calendar-navigation.component';
+import { CalendarHeaderComponent } from './calendar-header.component';
 
 describe('CalendarNavigationComponent', () => {
-  let component: CalendarNavigationComponent;
-  let fixture: ComponentFixture<CalendarNavigationComponent>;
+  let component: CalendarHeaderComponent;
+  let fixture: ComponentFixture<CalendarHeaderComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [CalendarNavigationComponent],
+      declarations: [CalendarHeaderComponent],
     }).compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(CalendarNavigationComponent);
+    fixture = TestBed.createComponent(CalendarHeaderComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

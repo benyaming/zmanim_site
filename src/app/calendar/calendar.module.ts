@@ -5,7 +5,7 @@ import { CalendarRoutingModule } from './calendar-routing.module';
 import { CalendarComponent } from './calendar.component';
 import { CalendarDayComponent } from './calendar-day/calendar-day.component';
 import { CalendarGridComponent } from './calendar-grid/calendar-grid.component';
-import { CalendarNavigationComponent } from './calendar-navigation/calendar-navigation.component';
+import { CalendarHeaderComponent } from './calendar-header/calendar-header.component';
 import { TuiButtonModule } from '@taiga-ui/core';
 
 @NgModule({
@@ -13,7 +13,7 @@ import { TuiButtonModule } from '@taiga-ui/core';
     CalendarComponent,
     CalendarDayComponent,
     CalendarGridComponent,
-    CalendarNavigationComponent,
+    CalendarHeaderComponent,
   ],
   imports: [CommonModule, CalendarRoutingModule, TuiButtonModule],
 })
