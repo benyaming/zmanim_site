@@ -7,7 +7,6 @@ export interface AppStateModel {
   readonly supportedLanguages: LanguageModel[];
   readonly location: LocationModel | null;
   readonly zmanim: ZmanimModel;
-  readonly calendar: CalendarModel;
 }
 
 export interface LanguageModel {
@@ -36,14 +35,3 @@ export interface ZmanimFormModel {
 }
 
 export type ZmanimInfoModel = Omit<ZmanimZmanimResponseDto, 'settings'>;
-
-export interface CalendarModel {
-  readonly displayedPeriodDate: Date;
-  readonly selectedDay: CalendarDayModel | null;
-  readonly days: CalendarDayModel[];
-}
-
-export interface CalendarDayModel {
-  readonly date: Date;
-  readonly events: any[];
-}

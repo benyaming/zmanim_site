@@ -1,7 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Select, Store } from '@ngxs/store';
-import { AppState, CalendarModel, GenerateCalendarDays } from '@core/state';
+import {
+  CalendarState,
+  CalendarStateModel,
+  GenerateCalendarDays,
+} from '@core/state';
 
 @Component({
   selector: 'app-calendar',
@@ -9,8 +13,8 @@ import { AppState, CalendarModel, GenerateCalendarDays } from '@core/state';
   styleUrls: ['./calendar.component.scss'],
 })
 export class CalendarComponent implements OnInit {
-  @Select(AppState.calendar)
-  readonly calendar$!: Observable<CalendarModel>;
+  @Select(CalendarState)
+  readonly state$!: Observable<CalendarStateModel>;
 
   constructor(private readonly store: Store) {}
 

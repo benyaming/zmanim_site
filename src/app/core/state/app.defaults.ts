@@ -1,6 +1,5 @@
 import { AppStateModel } from './app.models';
 import { TUI_ENGLISH_LANGUAGE, TUI_RUSSIAN_LANGUAGE } from '@taiga-ui/i18n';
-import { startOfMonth } from 'date-fns';
 
 export const APP_DEFAULTS: AppStateModel = {
   browserTabTitle: 'app.browser-tab-title',
@@ -36,10 +35,5 @@ export const APP_DEFAULTS: AppStateModel = {
       date: new Date(),
     },
     info: null,
-  },
-  calendar: {
-    displayedPeriodDate: startOfMonth(new Date()),
-    selectedDay: null,
-    days: [],
   },
 };

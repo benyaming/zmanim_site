@@ -29,6 +29,7 @@ import { NgxsReduxDevtoolsPluginModule } from '@ngxs/devtools-plugin';
 import {
   AppState,
   AppStateModel,
+  CalendarState,
   SetLocationFromGeoip,
   SetLocationFromNavigator,
 } from '@core/state';
@@ -97,7 +98,7 @@ function tuiLanguageFactory(store: Store): Observable<Language> {
       },
       useDefaultLang: true,
     }),
-    NgxsModule.forRoot([AppState], {
+    NgxsModule.forRoot([AppState, CalendarState], {
       developmentMode: !environment.production,
     }),
     NgxsReduxDevtoolsPluginModule.forRoot(),

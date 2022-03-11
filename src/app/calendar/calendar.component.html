@@ -1,3 +1,3 @@
 <app-calendar-header></app-calendar-header>
-<app-calendar-grid *ngIf='calendar$ | async as calendar'
-                   [days]='calendar.days'></app-calendar-grid>
+<app-calendar-grid *ngIf='state$ | async as state'
+                   [days]='state.days'></app-calendar-grid>
