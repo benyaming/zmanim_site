@@ -10,6 +10,11 @@ const routes: Routes = [
     loadChildren: () =>
       import('./zmanim/zmanim.module').then((m) => m.ZmanimModule),
   },
+  {
+    path: AppRoute.calendar,
+    loadChildren: () =>
+      import('./calendar/calendar.module').then((m) => m.CalendarModule),
+  },
 ];
 
 @NgModule({

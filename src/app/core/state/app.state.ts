@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@angular/core';
 import { Action, Selector, State, StateContext } from '@ngxs/store';
 import {
   AppStateModel,
+  CalendarModel,
   LanguageModel,
   LocationModel,
   ZmanimModel,
@@ -9,6 +10,8 @@ import {
 import { APP_DEFAULTS } from './app.defaults';
 import {
   FetchZmanim,
+  NavigateCalendar,
+  SelectCalendarDay,
   SetBrowserTabTitle,
   SetCurrentLanguage,
   SetLocationFromGeoip,
@@ -21,7 +24,7 @@ import { map, switchMap, tap } from 'rxjs/operators';
 import { Result } from '@mapbox/mapbox-gl-geocoder';
 import { FreegeoipService } from '@core/freegeoip';
 import { ZmanimService, ZmanimZmanimQueryParams } from '@core/zmanim';
-import { format } from 'date-fns';
+import { addMonths, format, subMonths } from 'date-fns';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
 import { DOCUMENT } from '@angular/common';
@@ -50,6 +53,11 @@ export class AppState {
   @Selector()
   static zmanim(state: AppStateModel): ZmanimModel {
     return state.zmanim;
+  }
+
+  @Selector()
+  static calendar(state: AppStateModel): CalendarModel {
+    return state.calendar;
   }
 
   constructor(
@@ -179,6 +187,39 @@ export class AppState {
         });
       }),
     );
+  }
+
+  @Action(NavigateCalendar)
+  private navigateCalendar(
+    ctx: StateContext<AppStateModel>,
+    { payload }: NavigateCalendar,
+  ): void {
+    const current = ctx.getState().calendar;
+
+    ctx.patchState({
+      calendar: {
+        ...current,
+        displayedPeriodDate:
+          payload === 'sub'
+            ? subMonths(current.displayedPeriodDate, 1)
+            : addMonths(current.displayedPeriodDate, 1),
+      },
+    });
+  }
+
+  @Action(SelectCalendarDay)
+  private selectCalendarDay(
+    ctx: StateContext<AppStateModel>,
+    { payload }: SelectCalendarDay,
+  ): void {
+    const current = ctx.getState().calendar;
+
+    ctx.patchState({
+      calendar: {
+        ...current,
+        selectedDayDate: payload,
+      },
+    });
   }
 
   private getFullLocation(
