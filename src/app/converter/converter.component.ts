@@ -4,6 +4,8 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { format } from 'date-fns';
 import { Subscription } from 'rxjs';
 
+const CONVERTER = new JewishDate();
+
 @Component({
   selector: 'app-converter',
   templateUrl: './converter.component.html',
@@ -15,7 +17,7 @@ export class ConverterComponent implements OnInit, OnDestroy {
     jewish: new FormControl(convertJewishDateToInputValue()),
   });
 
-  readonly converter = CONVERTER;
+  jewishDateString: string = CONVERTER.toString();
 
   readonly dateMask = {
     guide: false,
@@ -37,19 +39,21 @@ export class ConverterComponent implements OnInit, OnDestroy {
   onConvertButtonClicked(): void {
     if (this.dateVariant === DateVariant.gregorian) {
       const values = this.generateFormDateValues(DateVariant.gregorian);
-      this.converter.setGregorianDate(...values);
+      CONVERTER.setGregorianDate(...values);
       this.form.patchValue(
         { jewish: convertJewishDateToInputValue() },
         { emitEvent: false },
       );
     } else {
       const values = this.generateFormDateValues(DateVariant.jewish);
-      this.converter.setJewishDate(...values);
+      CONVERTER.setJewishDate(...values);
       this.form.patchValue(
         { gregorian: convertGregorianDateToInputValue() },
         { emitEvent: false },
       );
     }
+
+    this.jewishDateString = CONVERTER.toString();
   }
 
   private initSettingDateVariant(): void {
@@ -75,8 +79,6 @@ export class ConverterComponent implements OnInit, OnDestroy {
       .reverse();
   }
 }
-
-const CONVERTER = new JewishDate();
 
 enum DateVariant {
   jewish = 'jewish',
