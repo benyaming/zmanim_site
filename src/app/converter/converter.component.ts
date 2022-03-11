@@ -1,8 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { JewishDate } from 'kosher-zmanim';
 import { FormControl, FormGroup } from '@angular/forms';
-import { format } from 'date-fns';
 import { Subscription } from 'rxjs';
+import { TextMaskConfig } from 'angular2-text-mask';
 
 const CONVERTER = new JewishDate();
 
@@ -13,13 +13,15 @@ const CONVERTER = new JewishDate();
 })
 export class ConverterComponent implements OnInit, OnDestroy {
   readonly form: FormGroup = new FormGroup({
-    gregorian: new FormControl(format(new Date(), 'dd.MM.yyyy')),
-    jewish: new FormControl(convertJewishDateToInputValue()),
+    [DateVariant.gregorian]: new FormControl(
+      convertGregorianDateToInputValue(),
+    ),
+    [DateVariant.jewish]: new FormControl(convertJewishDateToInputValue()),
   });
 
   jewishDateString: string = CONVERTER.toString();
 
-  readonly dateMask = {
+  readonly dateMask: TextMaskConfig = {
     guide: false,
     mask: [/\d/, /\d/, '.', /\d/, /\d/, '.', /\d/, /\d/, /\d/, /\d/],
   };
@@ -38,17 +40,19 @@ export class ConverterComponent implements OnInit, OnDestroy {
 
   onConvertButtonClicked(): void {
     if (this.dateVariant === DateVariant.gregorian) {
-      const values = this.generateFormDateValues(DateVariant.gregorian);
-      CONVERTER.setGregorianDate(...values);
+      CONVERTER.setGregorianDate(
+        ...this.generateFormDateValues(DateVariant.gregorian),
+      );
       this.form.patchValue(
-        { jewish: convertJewishDateToInputValue() },
+        { [DateVariant.jewish]: convertJewishDateToInputValue() },
         { emitEvent: false },
       );
-    } else {
-      const values = this.generateFormDateValues(DateVariant.jewish);
-      CONVERTER.setJewishDate(...values);
+    } else if (this.dateVariant === DateVariant.jewish) {
+      CONVERTER.setJewishDate(
+        ...this.generateFormDateValues(DateVariant.jewish),
+      );
       this.form.patchValue(
-        { gregorian: convertGregorianDateToInputValue() },
+        { [DateVariant.gregorian]: convertGregorianDateToInputValue() },
         { emitEvent: false },
       );
     }
@@ -75,7 +79,7 @@ export class ConverterComponent implements OnInit, OnDestroy {
     return this.form
       .get(name)!
       .value.split('.')
-      .map((d: string) => parseInt(d, 10))
+      .map((value: string) => parseInt(value, 10))
       .reverse();
   }
 }
@@ -86,21 +90,21 @@ enum DateVariant {
 }
 
 function convertJewishDateToInputValue(): string {
-  const jewMonth = CONVERTER.getJewishMonth().toString();
-  const jewDay = CONVERTER.getJewishDayOfMonth().toString();
-  return `${shortDateFormatter(jewDay)}.${shortDateFormatter(
-    jewMonth,
+  return `${shortDateFormatter(
+    CONVERTER.getJewishMonth(),
+  )}.${shortDateFormatter(
+    CONVERTER.getJewishDayOfMonth(),
   )}.${CONVERTER.getJewishYear()}`;
 }
 
 function convertGregorianDateToInputValue(): string {
-  const day = CONVERTER.getGregorianDayOfMonth().toString();
-  const month = CONVERTER.getGregorianMonth().toString();
-  return `${shortDateFormatter(day)}.${shortDateFormatter(
-    month,
+  return `${shortDateFormatter(
+    CONVERTER.getGregorianDayOfMonth(),
+  )}.${shortDateFormatter(
+    CONVERTER.getGregorianMonth() + 1,
   )}.${CONVERTER.getGregorianYear()}`;
 }
 
-function shortDateFormatter(date: string): string {
-  return `${date.padStart(2, '0')}`;
+function shortDateFormatter(date: number): string {
+  return date.toString().padStart(2, '0');
 }
