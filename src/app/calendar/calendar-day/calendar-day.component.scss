@@ -1,17 +1,17 @@
 :host {
   background-color: purple;
-  padding: 1rem;
-  box-shadow: 0 0 0 1px red inset;
+  padding: var(--calendar-gap);
+  box-shadow: 0 0 0 var(--calendar-day-border-width) red inset;
 
   &.calendar-day--displayed-month {
     background-color: green;
   }
 
   &.calendar-day--today {
-    background-color: lightgreen;;
+    background-color: lightgreen;
   }
 
   &.calendar-day--selected {
-    box-shadow: 0 0 0 5px blue inset;
+    box-shadow: 0 0 0 calc(var(--calendar-day-border-width) * 5) blue inset;
   }
 }

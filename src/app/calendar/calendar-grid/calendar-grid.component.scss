@@ -1,7 +1,7 @@
 :host {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: var(--calendar-template-columns);
 
   @for $i from 4 through 6 {
     &.calendar-grid--#{$i}-weeks {
