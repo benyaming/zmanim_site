@@ -1,19 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ZmanimConvertFormComponent } from './zmanim-convert-form.component';
+import { ConverterComponent } from './converter.component';
 
-describe('ZmanimConvertFormComponent', () => {
-  let component: ZmanimConvertFormComponent;
-  let fixture: ComponentFixture<ZmanimConvertFormComponent>;
+describe('ConverterComponent', () => {
+  let component: ConverterComponent;
+  let fixture: ComponentFixture<ConverterComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ZmanimConvertFormComponent],
+      declarations: [ConverterComponent],
     }).compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(ZmanimConvertFormComponent);
+    fixture = TestBed.createComponent(ConverterComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

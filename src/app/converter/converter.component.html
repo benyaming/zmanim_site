@@ -1,0 +1,23 @@
+<h3 class='tui-form__header'>{{'converter.title' | translate}}</h3>
+
+<form [formGroup]='form'
+      (ngSubmit)='onConvertButtonClicked()'>
+  <tui-input formControlName='gregorian'
+             [textMask]='dateMask'>
+    {{ 'converter.gregorian-placeholder' | translate }}
+  </tui-input>
+
+  <label tuiLabel
+         [label]='converter.toString()'>
+    <tui-input formControlName='jewish'
+               [textMask]='dateMask'>
+      {{ 'converter.jewish-placeholder' | translate }}
+    </tui-input>
+  </label>
+
+  <button tuiButton
+          size='s'
+          type='submit'>
+    {{ 'converter.convert-button' | translate }}
+  </button>
+</form>

@@ -9,5 +9,9 @@
   "zmanim-form.get-zmanim-button": "קבל זמנים",
   "zmanim-info.title": "זמנים",
   "app.browser-tab-title": "זמנים",
-  "zmanim.browser-tab-title": "זמנים | זמנים"
+  "zmanim.browser-tab-title": "זמנים | זמנים",
+  "converter.title": "ממיר תאריך",
+  "converter.convert-button": "המר תאריך",
+  "converter.jewish-placeholder": "תאריך יהודי",
+  "converter.gregorian-placeholder": "תאריך גרגוריאני"
 }
