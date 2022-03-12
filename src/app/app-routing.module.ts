@@ -10,6 +10,11 @@ const routes: Routes = [
     loadChildren: () =>
       import('./zmanim/zmanim.module').then((m) => m.ZmanimModule),
   },
+  {
+    path: AppRoute.converter,
+    loadChildren: () =>
+      import('./converter/converter.module').then((m) => m.ConverterModule),
+  },
 ];
 
 @NgModule({
