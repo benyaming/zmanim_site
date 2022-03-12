@@ -9,5 +9,9 @@
   "zmanim-form.get-zmanim-button": "Get Zmanim",
   "zmanim-info.title": "Zmanim",
   "app.browser-tab-title": "Zmanim",
-  "zmanim.browser-tab-title": "Zmanim | Zmanim"
+  "zmanim.browser-tab-title": "Zmanim | Zmanim",
+  "converter.title": "Date converter",
+  "converter.convert-button": "Convert Date",
+  "converter.jewish-placeholder": "Jewish Date",
+  "converter.gregorian-placeholder": "Gregorian Date"
 }

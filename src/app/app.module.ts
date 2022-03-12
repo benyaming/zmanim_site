@@ -38,6 +38,7 @@ import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { Language } from '@taiga-ui/i18n/interfaces';
+import { TUI_DATE_SEPARATOR } from '@taiga-ui/cdk';
 
 function translateLoaderFactory(http: HttpClient): TranslateLoader {
   return new TranslateHttpLoader(http);
@@ -107,6 +108,7 @@ function tuiLanguageFactory(store: Store): Observable<Language> {
     { provide: HTTP_INTERCEPTORS, useClass: MapboxInterceptor, multi: true },
     { provide: TUI_SANITIZER, useClass: NgDompurifySanitizer },
     { provide: TUI_NUMBER_FORMAT, useValue: { decimalSeparator: '.' } },
+    { provide: TUI_DATE_SEPARATOR, useValue: '.' },
     {
       provide: APP_INITIALIZER,
       useFactory: appInitializerFactory,
