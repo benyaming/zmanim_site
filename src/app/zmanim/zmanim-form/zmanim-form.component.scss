@@ -4,23 +4,19 @@
   gap: 1rem;
 }
 
+button {
+  align-self: end;
+}
+
 .wrapper {
   display: flex;
   align-items: center;
+
   form {
     flex-grow: 1;
   }
+
   button {
     align-self: center;
   }
-}
-
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-button {
-  align-self: end;
 }
