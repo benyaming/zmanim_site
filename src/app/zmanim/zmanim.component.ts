@@ -15,7 +15,6 @@ import { Observable } from 'rxjs';
 @Component({
   selector: 'app-zmanim',
   templateUrl: './zmanim.component.html',
-  styleUrls: ['./zmanim.component.scss'],
 })
 export class ZmanimComponent implements OnInit {
   @Select(AppState.location)
