@@ -9,5 +9,9 @@
   "zmanim-form.get-zmanim-button": "Запросить Зманим",
   "zmanim-info.title": "Зманим",
   "app.browser-tab-title": "Зманим",
-  "zmanim.browser-tab-title": "Зманим | Зманим"
+  "zmanim.browser-tab-title": "Зманим | Зманим",
+  "converter.title": "Конвертер дат",
+  "converter.convert-button": "Конвертировать дату",
+  "converter.jewish-placeholder": "Еврейская дата",
+  "converter.gregorian-placeholder": "Григорианская дата"
 }

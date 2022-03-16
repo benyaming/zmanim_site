@@ -7,8 +7,10 @@
     "build": "ng build",
     "build:prod": "ng build --configuration=production",
     "test": "ng test",
-    "lint": "ng lint",
-    "lint:fix": "ng lint --fix"
+    "eslint": "ng lint",
+    "eslint:fix": "ng lint --fix",
+    "stylelint": "stylelint \"**/*.scss\"",
+    "stylelint:fix": "stylelint \"**/*.scss\" --fix"
   },
   "private": true,
   "dependencies": {
@@ -42,6 +44,7 @@
     "date-fns": "^2.27.0",
     "dompurify": "2.2.9",
     "flag-icons": "^6.0.2",
+    "kosher-zmanim": "^0.8.2",
     "mapbox-gl": "^2.6.1",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
@@ -59,6 +62,7 @@
     "@ngxs/devtools-plugin": "^3.7.3",
     "@types/dompurify": "2.2.3",
     "@types/jasmine": "~3.8.0",
+    "@types/luxon": "^2.3.0",
     "@types/mapbox__mapbox-gl-geocoder": "^4.7.1",
     "@types/mapbox-gl": "^2.6.0",
     "@types/node": "^12.11.1",
@@ -74,6 +78,9 @@
     "karma-jasmine": "~4.0.0",
     "karma-jasmine-html-reporter": "~1.7.0",
     "prettier": "^2.5.1",
+    "stylelint": "^14.5.1",
+    "stylelint-config-prettier": "^9.0.3",
+    "stylelint-config-standard-scss": "^3.0.0",
     "typescript": "~4.5.4"
   }
 }
