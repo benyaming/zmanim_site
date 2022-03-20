@@ -15,12 +15,12 @@
   grid-template-columns: var(--calendar-template-columns);
   grid-template-rows: 1fr;
 
-  background-color: red;
+  background-color: #ffffff;
   padding: 0 var(--calendar-day-border-width);
   gap: calc(var(--calendar-day-border-width) * 2);
 
   &__day {
-    background-color: lightgray;
+    background-color: #ffffff;
     padding: calc(var(--calendar-gap) / 2) var(--calendar-gap);
   }
 }

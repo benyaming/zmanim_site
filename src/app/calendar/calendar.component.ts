@@ -4,8 +4,11 @@ import { Select, Store } from '@ngxs/store';
 import {
   CalendarState,
   CalendarStateModel,
+  FetchZmanim,
   GenerateCalendarDays,
+  SelectCalendarDay,
 } from '@core/state';
+import { TuiDay } from '@taiga-ui/cdk';
 
 @Component({
   selector: 'app-calendar',
@@ -20,6 +23,15 @@ export class CalendarComponent implements OnInit {
 
   ngOnInit(): void {
     this.generateCalendarDays();
+    const date = new Date();
+    const day = date.getDay();
+    const month = date.getMonth();
+    const year = date.getFullYear();
+    this.store.dispatch(
+      new FetchZmanim({
+        date: new TuiDay(year, month, day).toLocalNativeDate(),
+      }),
+    );
   }
 
   private generateCalendarDays() {

@@ -12,9 +12,11 @@ import {
   CalendarDayModel,
   CalendarState,
   CalendarStateModel,
+  FetchZmanim,
   SelectCalendarDay,
 } from '@core/state';
 import { Observable, Subscription } from 'rxjs';
+import { TuiDay } from '@taiga-ui/cdk';
 
 @Component({
   selector: 'app-calendar-day',
@@ -51,7 +53,15 @@ export class CalendarDayComponent implements OnInit, OnDestroy {
 
   @HostListener('click')
   private onCalendarDayClicked(): void {
+    const day = this.day.date.getDay();
+    const month = this.day.date.getMonth();
+    const year = this.day.date.getFullYear();
     this.store.dispatch(new SelectCalendarDay(this.day));
+    this.store.dispatch(
+      new FetchZmanim({
+        date: new TuiDay(year, month, day).toLocalNativeDate(),
+      }),
+    );
   }
 
   private setTodayClassModifier(): void {
