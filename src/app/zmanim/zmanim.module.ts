@@ -31,5 +31,6 @@ import { TuiTableModule } from '@taiga-ui/addon-table';
     TuiButtonModule,
     TuiIslandModule,
   ],
+  exports: [ZmanimInfoComponent],
 })
 export class ZmanimModule {}

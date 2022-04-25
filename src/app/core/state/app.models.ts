@@ -10,10 +10,10 @@ export interface AppStateModel {
 }
 
 export interface LanguageModel {
-  name: string;
-  direction: string;
-  country: string;
-  tuiLanguage: Language;
+  readonly name: string;
+  readonly direction: string;
+  readonly country: string;
+  readonly tuiLanguage: Language;
 }
 
 export interface LocationModel {
@@ -28,6 +28,7 @@ export type LocationWithoutSourceModel = Omit<LocationModel, 'source'>;
 export interface ZmanimModel {
   readonly form: ZmanimFormModel;
   readonly info: ZmanimInfoModel | null;
+  readonly hebrew: number;
 }
 
 export interface ZmanimFormModel {

@@ -35,5 +35,6 @@ export const APP_DEFAULTS: AppStateModel = {
       date: new Date(),
     },
     info: null,
+    hebrew: 0,
   },
 };

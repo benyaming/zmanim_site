@@ -26,6 +26,11 @@ export class SetLocationManually {
   constructor(public readonly payload: LocationWithoutSourceModel) {}
 }
 
+export class GetZmanim {
+  static readonly type = '[App] Get zmanim';
+  constructor(public readonly payload: ZmanimFormModel) {}
+}
+
 export class FetchZmanim {
   static readonly type = '[App] Fetch zmanim';
 

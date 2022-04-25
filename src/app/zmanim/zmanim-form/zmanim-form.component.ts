@@ -6,6 +6,7 @@ import { map } from 'rxjs/operators';
 import { TUI_DATE_SEPARATOR, TuiDay } from '@taiga-ui/cdk';
 import { Select, Store } from '@ngxs/store';
 import { add, sub } from 'date-fns';
+import { NavigationDirection } from '@shared/types';
 
 @Component({
   selector: 'app-zmanim-form',
@@ -52,7 +53,7 @@ export class ZmanimFormComponent implements OnInit, OnDestroy {
     );
   }
 
-  onDateBtnClick(direction: 'sub' | 'add') {
+  onDateBtnClick(direction: NavigationDirection) {
     const { day, year, month } = this.form.value.date;
     const date = new Date(year, month, day);
     if (direction === 'add')

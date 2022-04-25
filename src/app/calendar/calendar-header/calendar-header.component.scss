@@ -1,0 +1,26 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.navigation {
+  padding: var(--calendar-gap);
+  display: flex;
+  gap: var(--calendar-gap);
+  align-items: center;
+}
+
+.week-days {
+  display: grid;
+  grid-template-columns: var(--calendar-template-columns);
+  grid-template-rows: 1fr;
+
+  background-color: #ffffff;
+  padding: 0 var(--calendar-day-border-width);
+  gap: calc(var(--calendar-day-border-width) * 2);
+
+  &__day {
+    background-color: #ffffff;
+    padding: calc(var(--calendar-gap) / 2) var(--calendar-gap);
+  }
+}

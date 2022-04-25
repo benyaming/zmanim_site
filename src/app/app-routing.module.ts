@@ -15,6 +15,11 @@ const routes: Routes = [
     loadChildren: () =>
       import('./converter/converter.module').then((m) => m.ConverterModule),
   },
+  {
+    path: AppRoute.calendar,
+    loadChildren: () =>
+      import('./calendar/calendar.module').then((m) => m.CalendarModule),
+  },
 ];
 
 @NgModule({
