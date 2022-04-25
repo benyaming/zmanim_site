@@ -9,25 +9,37 @@ import {
 import { isSameDay, isSameMonth } from 'date-fns';
 import { Select, Store } from '@ngxs/store';
 import {
+  AppState,
   CalendarDayModel,
   CalendarState,
   CalendarStateModel,
   FetchZmanim,
+  GetZmanim,
+  LocationModel,
   SelectCalendarDay,
+  ZmanimModel,
 } from '@core/state';
 import { Observable, Subscription } from 'rxjs';
-import { TuiDay } from '@taiga-ui/cdk';
+import { ZmanimService } from '@core/zmanim';
+import { JewishDate } from 'kosher-zmanim';
 
 @Component({
   selector: 'app-calendar-day',
   templateUrl: './calendar-day.component.html',
   styleUrls: ['./calendar-day.component.scss'],
+  providers: [ZmanimService],
 })
 export class CalendarDayComponent implements OnInit, OnDestroy {
   @Select(CalendarState)
   private readonly state$!: Observable<CalendarStateModel>;
 
+  @Select(AppState.zmanim) readonly zmanim$!: Observable<ZmanimModel>;
+
+  @Select(AppState.location) readonly location$!: Observable<LocationModel>;
+
   @Input() day!: CalendarDayModel;
+  @Input() jewDate!: JewishDate;
+  @Input() jewDay!: string;
 
   @HostBinding('class.calendar-day--displayed-month')
   private isDisplayedMonth: boolean = false;
@@ -40,9 +52,19 @@ export class CalendarDayComponent implements OnInit, OnDestroy {
 
   private readonly onDestroy$: Subscription = new Subscription();
 
-  constructor(private readonly store: Store) {}
+  private formatter = new this.zmanimService.kosherZmanim.HebrewDateFormatter();
+  private calendar = new this.zmanimService.kosherZmanim.ZmanimCalendar();
+
+  constructor(
+    private readonly store: Store,
+    private zmanimService: ZmanimService,
+  ) {}
 
   ngOnInit(): void {
+    this.jewDate = new this.zmanimService.kosherZmanim.JewishDate(
+      this.day.date,
+    );
+    this.jewDay = this.formatter.format(this.jewDate);
     this.setTodayClassModifier();
     this.initSettingStateDependentClassModifiers();
   }
@@ -53,13 +75,11 @@ export class CalendarDayComponent implements OnInit, OnDestroy {
 
   @HostListener('click')
   private onCalendarDayClicked(): void {
-    const day = this.day.date.getDay();
-    const month = this.day.date.getMonth();
-    const year = this.day.date.getFullYear();
     this.store.dispatch(new SelectCalendarDay(this.day));
+    this.store.dispatch(new GetZmanim(this.day));
     this.store.dispatch(
       new FetchZmanim({
-        date: new TuiDay(year, month, day).toLocalNativeDate(),
+        date: this.day.date,
       }),
     );
   }

@@ -28,6 +28,7 @@ export type LocationWithoutSourceModel = Omit<LocationModel, 'source'>;
 export interface ZmanimModel {
   readonly form: ZmanimFormModel;
   readonly info: ZmanimInfoModel | null;
+  readonly hebrew: number;
 }
 
 export interface ZmanimFormModel {

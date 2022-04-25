@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ZmanimZmanimRequestDto, ZmanimZmanimResponseDto } from './zmanim.dtos';
 import { ZmanimZmanimQueryParams } from './zmanim.query-params';
+import * as KosherZmanim from 'kosher-zmanim';
+import { JsonOutput, Options } from 'kosher-zmanim';
 
 // NOTE: In terms of project the word "zmanim" has two meanings: the API itself and one of its endpoints.
 // The current service is named after the whole API itself,
@@ -34,8 +36,11 @@ export class ZmanimService {
   };
 
   readonly urlPrefix = `zmanim/`;
+  kosherZmanim;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {
+    this.kosherZmanim = KosherZmanim;
+  }
 
   fetchZmanim(
     params: ZmanimZmanimQueryParams,
@@ -45,5 +50,9 @@ export class ZmanimService {
       ZmanimService.fullZmanimZmanimRequestDto,
       { params },
     );
+  }
+
+  getZmanim(options: Options): JsonOutput {
+    return this.kosherZmanim.getZmanimJson(options);
   }
 }

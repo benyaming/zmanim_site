@@ -6,9 +6,12 @@ import {
   LocationModel,
   ZmanimModel,
 } from './app.models';
+// @ts-ignore
+import ts from '@mapbox/timespace';
 import { APP_DEFAULTS } from './app.defaults';
 import {
   FetchZmanim,
+  GetZmanim,
   SetBrowserTabTitle,
   SetCurrentLanguage,
   SetLocationFromGeoip,
@@ -129,7 +132,7 @@ export class AppState {
     }).pipe(
       map(({ coords }) => ({ lat: coords.latitude, lng: coords.longitude })),
       switchMap((coords) => this.getFullLocation(coords, 'navigator')),
-      tap((location) => this.setLocation(ctx, location)),
+      tap((location) => AppState.setLocation(ctx, location)),
     );
   }
 
@@ -140,7 +143,7 @@ export class AppState {
     return this.freegeoipService.fetch().pipe(
       map(({ latitude, longitude }) => ({ lat: latitude, lng: longitude })),
       switchMap((coords) => this.getFullLocation(coords, 'geoip')),
-      tap((location) => this.setLocation(ctx, location)),
+      tap((location) => AppState.setLocation(ctx, location)),
     );
   }
 
@@ -149,7 +152,32 @@ export class AppState {
     ctx: StateContext<AppStateModel>,
     { payload }: SetLocationManually,
   ): void {
-    this.setLocation(ctx, { ...payload, source: 'manual' });
+    AppState.setLocation(ctx, { ...payload, source: 'manual' });
+  }
+
+  @Action(GetZmanim)
+  private async getZmanim(
+    ctx: StateContext<AppStateModel>,
+    { payload }: FetchZmanim,
+  ): Promise<void> {
+    const { location, zmanim }: AppStateModel = ctx.getState();
+    const timestamp = Date.now();
+    const point = [location?.lat!, location?.lng!];
+    const time = ts.getFuzzyLocalTimeFromPoint(timestamp, point);
+    const options = {
+      latitude: location?.lat!,
+      longitude: location?.lng!,
+      timeZoneId: time._z.name,
+      locationName: location?.cityName!,
+      date: format(payload.date, 'yyyy-MM-dd'),
+    };
+    const zman = this.zmanimService.getZmanim(options);
+    console.log(zman);
+    ctx.patchState({
+      zmanim: {
+        ...zmanim,
+      },
+    });
   }
 
   @Action(FetchZmanim)
@@ -163,13 +191,11 @@ export class AppState {
         `You are trying to fetch zmanim when there is no location in the store`,
       );
     }
-
     const query: ZmanimZmanimQueryParams = {
       date: format(payload.date, 'yyyy-MM-dd'),
       lat: location.lat.toString(),
       lng: location.lng.toString(),
     };
-
     return this.zmanimService.fetchZmanim(query).pipe(
       tap(({ settings, ...info }) => {
         ctx.patchState({
@@ -211,7 +237,7 @@ export class AppState {
     );
   }
 
-  private setLocation(
+  private static setLocation(
     ctx: StateContext<AppStateModel>,
     location: LocationModel,
   ): void {

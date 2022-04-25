@@ -2,10 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Select, Store } from '@ngxs/store';
 import {
+  AppState,
   CalendarState,
   CalendarStateModel,
   FetchZmanim,
   GenerateCalendarDays,
+  LocationModel,
   SelectCalendarDay,
 } from '@core/state';
 import { TuiDay } from '@taiga-ui/cdk';
@@ -18,6 +20,9 @@ import { TuiDay } from '@taiga-ui/cdk';
 export class CalendarComponent implements OnInit {
   @Select(CalendarState)
   readonly state$!: Observable<CalendarStateModel>;
+
+  @Select(AppState.location)
+  private readonly location$!: Observable<LocationModel | null>;
 
   constructor(private readonly store: Store) {}
 

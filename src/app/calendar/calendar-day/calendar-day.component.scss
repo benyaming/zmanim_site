@@ -1,9 +1,15 @@
 :host {
+  cursor: pointer;
   background-color: #ababab;
   padding: var(--calendar-gap);
   color: #000;
   font-weight: 500;
   box-shadow: 0 0 0 var(--calendar-day-border-width) #cccaca inset;
+
+  .wrapper {
+    display: flex;
+    flex-direction: column;
+  }
 
   &.calendar-day--displayed-month {
     background-color: #eeeeee;
