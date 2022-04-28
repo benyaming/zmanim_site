@@ -4,6 +4,7 @@ import {
   GenerateCalendarDays,
   NavigateCalendar,
   SelectCalendarDay,
+  ToggleCalendarMode,
 } from './calendar.actions';
 import {
   addDays,
@@ -48,6 +49,14 @@ export class CalendarState {
   ): void {
     ctx.patchState({
       selectedDay: payload,
+    });
+  }
+
+  @Action(ToggleCalendarMode)
+  private toggleCalendarModel(ctx: StateContext<CalendarStateModel>): void {
+    const current = ctx.getState();
+    ctx.patchState({
+      hebrewMode: !current.hebrewMode,
     });
   }
 

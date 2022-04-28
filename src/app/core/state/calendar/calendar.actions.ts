@@ -13,6 +13,10 @@ export class SelectCalendarDay {
   constructor(public readonly payload: CalendarDayModel) {}
 }
 
+export class ToggleCalendarMode {
+  static readonly type = '[Calendar] Toggle calendar mode';
+}
+
 export class GenerateCalendarDays {
   static readonly type = '[Calendar] Generate calendar days';
 }

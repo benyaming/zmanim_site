@@ -53,7 +53,6 @@ export class CalendarDayComponent implements OnInit, OnDestroy {
   private readonly onDestroy$: Subscription = new Subscription();
 
   private formatter = new this.zmanimService.kosherZmanim.HebrewDateFormatter();
-  private calendar = new this.zmanimService.kosherZmanim.ZmanimCalendar();
 
   constructor(
     private readonly store: Store,

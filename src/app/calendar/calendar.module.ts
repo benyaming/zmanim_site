@@ -8,6 +8,7 @@ import { CalendarGridComponent } from './calendar-grid/calendar-grid.component';
 import { CalendarHeaderComponent } from './calendar-header/calendar-header.component';
 import { TuiButtonModule } from '@taiga-ui/core';
 import { ZmanimModule } from '../zmanim/zmanim.module';
+import { TuiToggleModule } from '@taiga-ui/kit';
 
 @NgModule({
   declarations: [
@@ -16,6 +17,12 @@ import { ZmanimModule } from '../zmanim/zmanim.module';
     CalendarGridComponent,
     CalendarHeaderComponent,
   ],
-  imports: [CommonModule, CalendarRoutingModule, TuiButtonModule, ZmanimModule],
+  imports: [
+    CommonModule,
+    CalendarRoutingModule,
+    TuiButtonModule,
+    ZmanimModule,
+    TuiToggleModule,
+  ],
 })
 export class CalendarModule {}
