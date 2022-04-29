@@ -34,6 +34,7 @@ import { RQ_QUERY_GET_PLACES } from '../../../constants/queries';
 import { useGeolocation } from '../../../providers/GeoProvider';
 import { getPlaces } from '../../../services/http/mapBox/resources';
 import { LanguageVariant } from '../../../types/i18n';
+import { MapboxMap } from '../../domain/map/MapboxMap';
 
 const languages = {
   he,
@@ -69,14 +70,9 @@ export const Navbar = () => {
         <ModalContent>
           <ModalHeader>Modal Title</ModalHeader>
           <ModalCloseButton />
-          <ModalBody></ModalBody>
-
-          <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={onModalClose}>
-              Close
-            </Button>
-            <Button variant="ghost">Secondary Action</Button>
-          </ModalFooter>
+          <ModalBody>
+            <MapboxMap />
+          </ModalBody>
         </ModalContent>
       </Modal>
       <Flex
