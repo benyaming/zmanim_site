@@ -1,1 +1,1 @@
-export { WithSubnavigation as Navbar } from './Navbar';
+export { Navbar } from './Navbar';
