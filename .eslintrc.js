@@ -21,6 +21,7 @@ module.exports = {
   },
   env: {
     browser: true,
+    jest: true,
     amd: true,
     node: true,
   },
@@ -38,6 +39,7 @@ module.exports = {
     'jsx-a11y/accessible-emoji': 'off',
     'react/jsx-curly-brace-presence': 1,
     'react/prop-types': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     'simple-import-sort/imports': 'error',
     'simple-import-sort/exports': 'error',

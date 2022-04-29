@@ -22,13 +22,17 @@ import {
   useColorModeValue,
   useDisclosure,
 } from '@chakra-ui/react';
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RiMapPin2Fill } from 'react-icons/ri';
+import { useQuery } from 'react-query';
 
 import he from '../../../assets/flags/il.svg';
 import ru from '../../../assets/flags/ru.svg';
 import en from '../../../assets/flags/us.svg';
+import { RQ_QUERY_GET_PLACES } from '../../../constants/queries';
+import { useGeolocation } from '../../../providers/GeoProvider';
+import { getPlaces } from '../../../services/http/mapBox/resources';
 import { LanguageVariant } from '../../../types/i18n';
 
 const languages = {
@@ -38,12 +42,26 @@ const languages = {
 };
 
 export const Navbar = () => {
+  const [city, setCity] = useState('');
   const { isOpen, onToggle } = useDisclosure();
   const { isOpen: isModalOpen, onOpen: onModalOpen, onClose: onModalClose } = useDisclosure();
   const { t, i18n } = useTranslation();
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng).catch((e) => console.error(e));
   };
+  const { position } = useGeolocation();
+  const { data, isLoading } = useQuery(
+    [RQ_QUERY_GET_PLACES, position?.coords.latitude, position?.coords.longitude],
+    () =>
+      getPlaces({
+        lat: position!.coords.latitude,
+        lng: position!.coords.longitude,
+      }),
+    {
+      onSuccess: (data) => setCity(data.features[0].context[0].text),
+      enabled: Boolean(position),
+    },
+  );
   return (
     <Box>
       <Modal isOpen={isModalOpen} onClose={onModalClose}>
@@ -91,7 +109,13 @@ export const Navbar = () => {
         </Flex>
 
         <Stack justify="flex-end" direction="row">
-          <IconButton aria-label="Search database" onClick={onModalOpen} icon={<Icon as={RiMapPin2Fill} />} />
+          <Flex onClick={onModalOpen} cursor="pointer">
+            <Flex alignItems="center">
+              {city || ''}
+              <IconButton ml={4} aria-label="Search database" icon={<Icon as={RiMapPin2Fill} />} />
+            </Flex>
+          </Flex>
+
           <Menu>
             {({ isOpen }) => (
               <>

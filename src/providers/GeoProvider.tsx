@@ -1,10 +1,10 @@
-import ts, { MomentTimezone } from '@mapbox/timespace';
+import ts, { Moment } from '@mapbox/timespace';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export interface GeoProviderContextProps {
   position: GeolocationPosition | null;
   isLoading: boolean;
-  zone: MomentTimezone | null;
+  zone: Moment | null;
   error?: string;
 }
 
@@ -21,7 +21,7 @@ const GeoProvider: React.FC = (props): JSX.Element => {
   const [position, setPosition] = useState<GeolocationPosition | null>(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [zone, setZone] = useState<MomentTimezone | null>(null);
+  const [zone, setZone] = useState<Moment | null>(null);
 
   const handleSuccess = (position: GeolocationPosition) => {
     setPosition(position);

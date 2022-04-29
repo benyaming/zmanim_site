@@ -4,6 +4,7 @@ import { ChakraProvider } from '@chakra-ui/react';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
+import { ReactQueryDevtools } from 'react-query/devtools';
 
 import App from './App';
 import { GeoProvider } from './providers/GeoProvider';
@@ -18,6 +19,7 @@ ReactDOM.render(
         <GeoProvider>
           <App />
         </GeoProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </ChakraProvider>
   </React.StrictMode>,
