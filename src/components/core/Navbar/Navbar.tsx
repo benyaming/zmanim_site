@@ -9,6 +9,13 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   Stack,
   Text,
   useBreakpointValue,
@@ -32,12 +39,28 @@ const languages = {
 
 export const Navbar = () => {
   const { isOpen, onToggle } = useDisclosure();
+  const { isOpen: isModalOpen, onOpen: onModalOpen, onClose: onModalClose } = useDisclosure();
   const { t, i18n } = useTranslation();
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng).catch((e) => console.error(e));
   };
   return (
     <Box>
+      <Modal isOpen={isModalOpen} onClose={onModalClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Modal Title</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody></ModalBody>
+
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={onModalClose}>
+              Close
+            </Button>
+            <Button variant="ghost">Secondary Action</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       <Flex
         bg={useColorModeValue('white', 'gray.800')}
         color={useColorModeValue('gray.600', 'white')}
@@ -68,7 +91,7 @@ export const Navbar = () => {
         </Flex>
 
         <Stack justify="flex-end" direction="row">
-          <IconButton aria-label="Search database" icon={<Icon as={RiMapPin2Fill} />} />
+          <IconButton aria-label="Search database" onClick={onModalOpen} icon={<Icon as={RiMapPin2Fill} />} />
           <Menu>
             {({ isOpen }) => (
               <>
