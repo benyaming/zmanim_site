@@ -8,7 +8,7 @@ export const AppLayout = () => {
   return (
     <Box minH="100vh" id="layout" display="flex" flexDirection="column">
       <Navbar />
-      <Box as="main">
+      <Box as="main" display="flex" flexGrow={1}>
         <Container maxW="container.lg" pt={1}>
           <Outlet />
         </Container>

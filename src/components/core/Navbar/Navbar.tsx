@@ -13,7 +13,6 @@ import {
   ModalBody,
   ModalCloseButton,
   ModalContent,
-  ModalFooter,
   ModalHeader,
   ModalOverlay,
   Stack,
@@ -25,14 +24,12 @@ import {
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RiMapPin2Fill } from 'react-icons/ri';
-import { useQuery } from 'react-query';
 
 import he from '../../../assets/flags/il.svg';
 import ru from '../../../assets/flags/ru.svg';
 import en from '../../../assets/flags/us.svg';
-import { RQ_QUERY_GET_PLACES } from '../../../constants/queries';
+import { useGetPlaces } from '../../../hooks/rq/useGetPlaces';
 import { useGeolocation } from '../../../providers/GeoProvider';
-import { getPlaces } from '../../../services/http/mapBox/resources';
 import { LanguageVariant } from '../../../types/i18n';
 import { MapboxMap } from '../../domain/map/MapboxMap';
 
@@ -50,25 +47,24 @@ export const Navbar = () => {
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng).catch((e) => console.error(e));
   };
-  const { position } = useGeolocation();
-  const { data, isLoading } = useQuery(
-    [RQ_QUERY_GET_PLACES, position?.coords.latitude, position?.coords.longitude],
-    () =>
-      getPlaces({
-        lat: position!.coords.latitude,
-        lng: position!.coords.longitude,
-      }),
+  const {
+    latLng: { lng, lat },
+  } = useGeolocation();
+  useGetPlaces(
+    { lat, lng },
     {
-      onSuccess: (data) => setCity(data.features[0].context[0].text),
-      enabled: Boolean(position),
+      onSuccess: (data) => {
+        setCity(data?.features[0]?.context[0]?.text);
+      },
     },
   );
+
   return (
     <Box>
       <Modal isOpen={isModalOpen} onClose={onModalClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Modal Title</ModalHeader>
+          <ModalHeader>{t('map.title')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <MapboxMap />

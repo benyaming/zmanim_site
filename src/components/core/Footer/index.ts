@@ -1,1 +1,1 @@
-export { LargeWithLogoLeft as Footer } from './Footer';
+export { Footer } from './Footer';

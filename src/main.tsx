@@ -10,7 +10,13 @@ import App from './App';
 import { GeoProvider } from './providers/GeoProvider';
 import theme from './theme';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      notifyOnChangeProps: 'tracked',
+    },
+  },
+});
 
 ReactDOM.render(
   <React.StrictMode>

@@ -4,7 +4,6 @@ const mapBoxTransport = axios.create({
   baseURL: import.meta.env.VITE_MAPBOX_API_URL,
 });
 
-console.log('URL', process.env.VITE_MAPBOX_API_URL);
 mapBoxTransport.interceptors.request.use((config) => {
   return config;
 });

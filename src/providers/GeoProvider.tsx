@@ -1,17 +1,23 @@
 import ts, { Moment } from '@mapbox/timespace';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
+import { Coords } from '../types/geo';
+
 export interface GeoProviderContextProps {
   position: GeolocationPosition | null;
+  latLng: Coords;
   isLoading: boolean;
   zone: Moment | null;
   error?: string;
+  setPosition: (pos: GeolocationPosition) => void;
 }
 
 const GeoContext = createContext<GeoProviderContextProps>({
   position: null,
   isLoading: true,
   zone: null,
+  latLng: { lng: 0, lat: 0 },
+  setPosition: () => {},
 });
 
 export const useGeolocation = (): GeoProviderContextProps => useContext(GeoContext);
@@ -43,7 +49,13 @@ const GeoProvider: React.FC = (props): JSX.Element => {
     }
   }, [position]);
 
-  return <GeoContext.Provider value={{ position, error, isLoading, zone }}>{children}</GeoContext.Provider>;
+  const latLng = position ? { lng: position?.coords.longitude, lat: position?.coords.latitude } : { lat: 0, lng: 0 };
+
+  return (
+    <GeoContext.Provider value={{ setPosition, latLng, position, error, isLoading, zone }}>
+      {children}
+    </GeoContext.Provider>
+  );
 };
 
 export { GeoContext, GeoProvider };

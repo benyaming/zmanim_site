@@ -1,29 +1,64 @@
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 import { Box } from '@chakra-ui/react';
-import mapboxgl, { Marker } from 'mapbox-gl';
+import mapboxgl, { Map, Marker } from 'mapbox-gl';
 import React, { useEffect, useRef } from 'react';
 
+import { useGetPlaces } from '../../../hooks/rq/useGetPlaces';
 import { useGeolocation } from '../../../providers/GeoProvider';
+import { MapboxClickEvent } from '../../../types/mapbox';
 
 export const MapboxMap = () => {
-  const mapContainer = useRef(null);
-  const map = useRef(null);
+  const mapContainer = useRef<HTMLDivElement | null>(null);
+  const map = useRef<Map | null>(null);
 
-  const { position } = useGeolocation();
-  const { coords } = position!;
-  mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-  useEffect(() => {
-    if (map.current) return;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current!,
-      style: 'mapbox://styles/mapbox/streets-v11',
-      center: [coords.longitude, coords.latitude],
-      zoom: 12,
+  const {
+    latLng: { lat, lng },
+    setPosition,
+  } = useGeolocation();
+
+  useGetPlaces({ lat, lng });
+
+  // as map entity runs outside react state content, we add a variable to store markers in component scope
+  let m: Marker;
+
+  const handleMapClick = (e: MapboxClickEvent) => {
+    if (m) m.remove();
+    const {
+      lngLat: { lat, lng },
+      target,
+    } = e;
+    const newMarker = new Marker().setLngLat([lng, lat]);
+    setPosition({
+      coords: {
+        latitude: lat,
+        longitude: lng,
+        heading: null,
+        altitude: null,
+        altitudeAccuracy: null,
+        accuracy: 0,
+        speed: null,
+      },
+      timestamp: Date.now(),
     });
-    new Marker().setLngLat([coords.longitude, coords.latitude]).addTo(map.current!);
+    m = newMarker;
+    m.addTo(target);
+  };
+
+  mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+
+  useEffect(() => {
+    if (!map.current) {
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current!,
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: [lng, lat],
+        zoom: 12,
+      });
+      const mapEntity = map.current!;
+      m = new Marker().setLngLat([lng, lat]).addTo(mapEntity);
+      mapEntity.on('click', (e: MapboxClickEvent) => handleMapClick(e));
+    }
   });
 
   return (
