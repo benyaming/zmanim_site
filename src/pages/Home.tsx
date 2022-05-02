@@ -1,5 +1,11 @@
 import React from 'react';
 
+import { ZmanimCalendar } from '../components/domain/calendar/ZmanimCalendar';
+
 export const Home = () => {
-  return <div>1234</div>;
+  return (
+    <div>
+      <ZmanimCalendar />
+    </div>
+  );
 };
