@@ -30,13 +30,10 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install dependencies
-        run: npm install
+        run: yarn install
 
       - name: Build the project
-        run: npm run build:prod
-        
-      - name: Save env file
-        run: echo ${{ secrets.ENV_FILE }} | base64 -d > ./dist/zmanim-site/assets/env.js
+        run: yarn build
 
       - name: Publish
         uses: nogsantos/scp-deploy@master
