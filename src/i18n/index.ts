@@ -5,8 +5,6 @@ import en from './locales/en/translation.json';
 import he from './locales/he/translation.json';
 import ru from './locales/ru/translation.json';
 
-console.log(en);
-
 // the translations
 // (tip move them in a JSON file and import them,
 // or even better, manage them separated from your code: https://react.i18next.com/guides/multiple-translation-files)

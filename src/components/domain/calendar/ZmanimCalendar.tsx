@@ -14,12 +14,23 @@ const StyledCalendar = styled(Calendar)`
   }
 `;
 
-export const ZmanimCalendar = () => {
+export interface ZmanimCalendarProps {
+  handleDayClick: (date: Date) => void;
+}
+
+export const ZmanimCalendar = (props: ZmanimCalendarProps) => {
+  const { handleDayClick } = props;
   const [value, onChange] = useState(new Date());
 
   return (
     <div>
-      <StyledCalendar tileContent={ZmanimCalendarDay} locale="en" onChange={onChange} value={value} />
+      <StyledCalendar
+        tileContent={ZmanimCalendarDay}
+        locale="en"
+        onChange={onChange}
+        value={value}
+        onClickDay={(s) => handleDayClick(s)}
+      />
     </div>
   );
 };

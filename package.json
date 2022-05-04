@@ -26,6 +26,7 @@
     "i18next": "^21.6.16",
     "i18next-parser": "^6.4.0",
     "kosher-zmanim": "^0.8.2",
+    "lodash": "^4.17.21",
     "luxon": "^2.3.2",
     "mapbox-gl": "^2.8.2",
     "react": "^17.0.2",
