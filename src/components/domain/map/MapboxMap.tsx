@@ -29,6 +29,7 @@ export const MapboxMap = () => {
       target,
     } = e;
     const newMarker = new Marker().setLngLat([lng, lat]);
+    console.log(lat, lng);
     setPosition({
       coords: {
         latitude: lat,

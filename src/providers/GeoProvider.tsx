@@ -16,7 +16,7 @@ const GeoContext = createContext<GeoProviderContextProps>({
   position: null,
   isLoading: true,
   zone: null,
-  latLng: { lng: 0, lat: 0 },
+  latLng: { lat: 31.778821, lng: 35.225259 },
   setPosition: () => {},
 });
 
@@ -49,7 +49,9 @@ const GeoProvider: React.FC = (props): JSX.Element => {
     }
   }, [position]);
 
-  const latLng = position ? { lng: position?.coords.longitude, lat: position?.coords.latitude } : { lat: 0, lng: 0 };
+  const latLng = position
+    ? { lng: position?.coords.longitude, lat: position?.coords.latitude }
+    : { lat: 31.778821, lng: 35.225259 };
 
   return (
     <GeoContext.Provider value={{ setPosition, latLng, position, error, isLoading, zone }}>
