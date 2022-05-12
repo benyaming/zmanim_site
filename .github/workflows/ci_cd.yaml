@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
+      - name: Save env file
+        run: echo ${{ secrets.ENV_FILE }} | base64 -d > ./dist/zmanim-site/assets/env.js
+
       - name: Build the project
         run: yarn build
 
