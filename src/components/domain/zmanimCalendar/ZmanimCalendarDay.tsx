@@ -1,7 +1,9 @@
 import { Box, Flex, SystemStyleObject, useToken } from '@chakra-ui/react';
-import { format, isSameDay, isSameMonth, isToday } from 'date-fns';
+import { format, isSameDay, isSameMonth, isToday, Locale } from 'date-fns';
+import { enUS, he, ru } from 'date-fns/locale';
 import { JewishDate } from 'kosher-zmanim';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { CalendarModeTypes, useCalendar } from '../../../providers/CalendarProvide';
 import { Formatter } from '../../../services/zmanim/formatter';
@@ -11,9 +13,16 @@ export interface ZmanimCalendarDayProps {
   firstDayOfMonth: Date;
 }
 
+const locales = {
+  en: enUS,
+  ru,
+  he,
+};
+
 export const ZmanimCalendarDay = (props: ZmanimCalendarDayProps) => {
   const { date, firstDayOfMonth } = props;
   const { selectedDay, handleDayClick, calendarMode } = useCalendar();
+  const { i18n } = useTranslation();
   const [currentMonth, outerMonth, today, selectedBorder] = useToken('colors', [
     'white',
     'gray.200',
@@ -49,14 +58,13 @@ export const ZmanimCalendarDay = (props: ZmanimCalendarDayProps) => {
   };
 
   const handleClick = () => {
-    console.log(date);
     handleDayClick(date);
   };
 
   return (
-    <Flex cursor="pointer" sx={daySx} onClick={handleClick}>
+    <Flex sx={daySx} onClick={handleClick}>
       <Flex sx={innerBlockSx}>
-        <Box>{format(date, 'dd MMM')}</Box>
+        <Box>{format(date, 'dd MMM', { locale: locales[i18n.language as 'en' | 'he' | 'ru'] })}</Box>
         <Box>{`${jewDate.getJewishDayOfMonth()} ${Formatter.formatMonth(jewDate)}`}</Box>
       </Flex>
     </Flex>

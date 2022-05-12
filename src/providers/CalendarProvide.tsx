@@ -1,6 +1,9 @@
 import { addDays, addMonths, startOfMonth, startOfWeek, subMonths } from 'date-fns';
-import { JewishDate } from 'kosher-zmanim';
+import { JewishDate, JsonOutput } from 'kosher-zmanim';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+
+import { useZmanimJson } from '../hooks/zmanim/useZmanimJson';
+import { useGeolocation } from './GeoProvider';
 
 export enum CalendarModeTypes {
   HEBREW = 'hebrew',
@@ -21,6 +24,7 @@ export interface CalendarProviderContextProps {
   date: Date;
   firstDayOfGrid: Date;
   firstDayOfMonth: Date;
+  zmanimJson: JsonOutput | undefined;
 }
 
 const CalendarContext = createContext<CalendarProviderContextProps>({
@@ -35,6 +39,7 @@ const CalendarContext = createContext<CalendarProviderContextProps>({
   date: new Date(),
   firstDayOfGrid: new Date(),
   firstDayOfMonth: new Date(),
+  zmanimJson: undefined,
 });
 
 export const useCalendar = (): CalendarProviderContextProps => useContext(CalendarContext);
@@ -43,13 +48,18 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
   const { children } = props;
   const [date, setDate] = useState(new Date());
   const [calendarMode, toggleCalendarMode] = useState<CalendarMode>(CalendarModeTypes.GREGORIAN);
-  const [selectedDay, setSelectedDay] = useState<Date | number>(-1);
+  const [selectedDay, setSelectedDay] = useState<Date>(date);
   const [firstDayOfMonth, setFirstDayOfMonth] = useState(startOfMonth(date));
   const [firstDayOfGrid, setFirstDayOfGrid] = useState(startOfWeek(firstDayOfMonth));
 
-  const jewishDate = new JewishDate(date);
+  const timestamp = selectedDay.getTime();
+  const {
+    latLng: { lat, lng },
+  } = useGeolocation();
 
-  console.log('firstDayOfMonth', firstDayOfMonth);
+  const { data: zmanimJson } = useZmanimJson({ lat, lng, timestamp });
+
+  const jewishDate = new JewishDate(date);
 
   const isHebrew = calendarMode === CalendarModeTypes.HEBREW;
 
@@ -118,6 +128,7 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
   return (
     <CalendarContext.Provider
       value={{
+        zmanimJson,
         onNext,
         onPrev,
         date,

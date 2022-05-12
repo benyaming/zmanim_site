@@ -1,41 +1,33 @@
-import ts from '@mapbox/timespace';
-import { format, getDate } from 'date-fns';
-import { JsonOutput } from 'kosher-zmanim';
 import { pick } from 'lodash';
 import map from 'lodash/map';
 import { DateTime } from 'luxon';
-import React from 'react';
-import { useQuery } from 'react-query';
+import React, { useState } from 'react';
 
-import { RQ_QUERY_ZMANIM_JSON } from '../../../constants/queries';
-import { useGeolocation } from '../../../providers/GeoProvider';
-import { zmanimJson } from '../../../services/zmanim/ZmanimJson';
+import { ZMANIM_KEYS } from '../../../constants/common';
+import { useCalendar } from '../../../providers/CalendarProvide';
+import { ZmanimInfoFilters } from './ZmanimInfoFilters';
 
-export interface ZmanimInfoProps {
-  timestamp: number;
-}
-
-export const ZmanimInfo = (props: ZmanimInfoProps) => {
-  const { timestamp } = props;
-  if (!timestamp) return <></>;
-  const {
-    latLng: { lat, lng },
-  } = useGeolocation();
-  const timeZone = ts.getFuzzyLocalTimeFromPoint(timestamp, [lat, lng]);
-
-  const { data } = useQuery<JsonOutput>(
-    [RQ_QUERY_ZMANIM_JSON, lat, lng, timeZone?._z.name, timestamp],
-    () => zmanimJson({ timeZoneId: timeZone?._z.name, date: timestamp, elevation: 0, latitude: lat, longitude: lng }),
-    { enabled: Boolean(timeZone) },
-  );
-
+export const ZmanimInfo = () => {
+  const { zmanimJson } = useCalendar();
+  const [show, setShow] = useState(ZMANIM_KEYS);
+  const handleFilters = (val: { [key: string]: boolean }) => {
+    setShow(Object.keys(val).filter((k) => val[k]));
+  };
+  console.log(show);
   return (
     <div>
-      {map(pick(data?.BasicZmanim, ['Sunrise', 'Sunset', 'AlosHashachar', 'CandleLighting']), (value, key) => (
-        <div key={key}>
-          <span>{key}</span>: <span>{DateTime.fromISO(value!).toFormat('HH:mm')}</span>
-        </div>
-      ))}
+      <ZmanimInfoFilters handleFormSubmit={handleFilters} />
+      {map(
+        pick(
+          zmanimJson?.BasicZmanim,
+          show.map((i) => i),
+        ),
+        (value, key) => (
+          <div key={key}>
+            <span>{key}</span>: <span>{DateTime.fromISO(value!).toFormat('HH:mm')}</span>
+          </div>
+        ),
+      )}
     </div>
   );
 };

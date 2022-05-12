@@ -21,11 +21,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Save env file
+        run: echo ${{ secrets.ENV_FILE }} | base64 -d > .env
+
+
       - name: Install dependencies
         run: yarn install
-
-      - name: Save env file
-        run: echo ${{ secrets.ENV_FILE }} | base64 -d > ./dist/zmanim-site/assets/env.js
 
       - name: Build the project
         run: yarn build
@@ -38,4 +39,3 @@ jobs:
           remote: ${{ secrets.SSH_DIR }}
           user: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-

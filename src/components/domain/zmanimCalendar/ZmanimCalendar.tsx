@@ -5,6 +5,7 @@ import { JewishDate } from 'kosher-zmanim';
 import { capitalize } from 'lodash';
 import { Info } from 'luxon';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { CalendarModeTypes, useCalendar } from '../../../providers/CalendarProvide';
 import { Formatter } from '../../../services/zmanim/formatter';
@@ -13,6 +14,7 @@ import { ZmanimCalendarDay } from './ZmanimCalendarDay';
 export const ZmanimCalendar = () => {
   const { toggleCalendar, calendarMode, date, onNext, onPrev, firstDayOfMonth, firstDayOfGrid } = useCalendar();
   const jewishDate = new JewishDate(date);
+  const { i18n } = useTranslation();
 
   const weekdays = [...Array(7).keys()].map((i) => i);
   return (
@@ -38,7 +40,7 @@ export const ZmanimCalendar = () => {
       <Flex py={2} bg="green.300" borderBottomColor="gray.800" borderBottomWidth={1} borderBottomStyle="solid">
         {weekdays.map((wd, idx) => (
           <Flex justifyContent="center" key={idx} width="150px" h="20px">
-            {Info.weekdays('short')[idx ? idx - 1 : 6]}
+            {Info.weekdays('short', { locale: i18n.language })[idx ? idx - 1 : 6]}
           </Flex>
         ))}
       </Flex>
