@@ -128,6 +128,7 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
     if (calendarMode === CalendarModeTypes.HEBREW) {
       jewishDate.setJewishDayOfMonth(1);
       setFirstDayOfMonth(jewishDate.getDate().toJSDate());
+      setLastDayOfMonth(addDays(firstDayOfMonth, jewishDate.getDaysInJewishMonth()));
     }
   }, [date]);
 
@@ -139,13 +140,12 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
     if (calendarMode === CalendarModeTypes.HEBREW) {
       jewishDate.setJewishDayOfMonth(1);
       setFirstDayOfGrid(startOfWeek(jewishDate.getDate().toJSDate()));
+      setLastDayOfGrid(endOfWeek(lastDayOfMonth));
     }
   }, [firstDayOfMonth]);
 
   useEffect(() => {
-    if (calendarMode === CalendarModeTypes.GREGORIAN) {
-      setVisibleDays(differenceInDays(lastDayOfGrid, firstDayOfGrid) + 1);
-    }
+    setVisibleDays(differenceInDays(lastDayOfGrid, firstDayOfGrid) + 1);
   }, [firstDayOfGrid, lastDayOfGrid]);
 
   return (
