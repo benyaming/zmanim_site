@@ -13,7 +13,6 @@ export const ZmanimInfo = () => {
   const handleFilters = (val: { [key: string]: boolean }) => {
     setShow(Object.keys(val).filter((k) => val[k]));
   };
-  console.log(show);
   return (
     <div>
       <ZmanimInfoFilters handleFormSubmit={handleFilters} />

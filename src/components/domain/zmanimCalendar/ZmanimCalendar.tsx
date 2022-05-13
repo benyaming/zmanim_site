@@ -12,9 +12,12 @@ import { Formatter } from '../../../services/zmanim/formatter';
 import { ZmanimCalendarDay } from './ZmanimCalendarDay';
 
 export const ZmanimCalendar = () => {
-  const { toggleCalendar, calendarMode, date, onNext, onPrev, firstDayOfMonth, firstDayOfGrid } = useCalendar();
+  const { toggleCalendar, visibleDays, calendarMode, date, onNext, onPrev, firstDayOfMonth, firstDayOfGrid } =
+    useCalendar();
   const jewishDate = new JewishDate(date);
   const { i18n } = useTranslation();
+
+  console.log('visibleDays', visibleDays);
 
   const weekdays = [...Array(7).keys()].map((i) => i);
   return (
@@ -46,7 +49,7 @@ export const ZmanimCalendar = () => {
       </Flex>
 
       <Flex flexWrap="wrap" py={2}>
-        {new Array(35).fill(0).map((d, i) => (
+        {new Array(visibleDays).fill(0).map((d, i) => (
           <ZmanimCalendarDay key={i} firstDayOfMonth={firstDayOfMonth} date={addDays(firstDayOfGrid, i)} />
         ))}
       </Flex>

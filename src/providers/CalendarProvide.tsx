@@ -1,4 +1,13 @@
-import { addDays, addMonths, startOfMonth, startOfWeek, subMonths } from 'date-fns';
+import {
+  addDays,
+  addMonths,
+  differenceInDays,
+  endOfMonth,
+  endOfWeek,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+} from 'date-fns';
 import { JewishDate, JsonOutput } from 'kosher-zmanim';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
@@ -25,6 +34,7 @@ export interface CalendarProviderContextProps {
   firstDayOfGrid: Date;
   firstDayOfMonth: Date;
   zmanimJson: JsonOutput | undefined;
+  visibleDays: number;
 }
 
 const CalendarContext = createContext<CalendarProviderContextProps>({
@@ -40,6 +50,7 @@ const CalendarContext = createContext<CalendarProviderContextProps>({
   firstDayOfGrid: new Date(),
   firstDayOfMonth: new Date(),
   zmanimJson: undefined,
+  visibleDays: 35,
 });
 
 export const useCalendar = (): CalendarProviderContextProps => useContext(CalendarContext);
@@ -50,7 +61,10 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
   const [calendarMode, toggleCalendarMode] = useState<CalendarMode>(CalendarModeTypes.GREGORIAN);
   const [selectedDay, setSelectedDay] = useState<Date>(date);
   const [firstDayOfMonth, setFirstDayOfMonth] = useState(startOfMonth(date));
+  const [lastDayOfMonth, setLastDayOfMonth] = useState(endOfMonth(date));
   const [firstDayOfGrid, setFirstDayOfGrid] = useState(startOfWeek(firstDayOfMonth));
+  const [lastDayOfGrid, setLastDayOfGrid] = useState(endOfWeek(lastDayOfMonth));
+  const [visibleDays, setVisibleDays] = useState(differenceInDays(lastDayOfGrid, firstDayOfGrid) + 1);
 
   const timestamp = selectedDay.getTime();
   const {
@@ -70,6 +84,7 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
   const handleDayClick = (day: Date) => {
     setSelectedDay(day);
   };
+
   const toggleCalendar = () => {
     if (calendarMode === CalendarModeTypes.GREGORIAN) {
       jewishDate.setJewishDayOfMonth(1);
@@ -108,6 +123,7 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
   useEffect(() => {
     if (calendarMode === CalendarModeTypes.GREGORIAN) {
       setFirstDayOfMonth(startOfMonth(date));
+      setLastDayOfMonth(endOfMonth(date));
     }
     if (calendarMode === CalendarModeTypes.HEBREW) {
       jewishDate.setJewishDayOfMonth(1);
@@ -118,6 +134,7 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
   useEffect(() => {
     if (calendarMode === CalendarModeTypes.GREGORIAN) {
       setFirstDayOfGrid(startOfWeek(firstDayOfMonth));
+      setLastDayOfGrid(endOfWeek(lastDayOfMonth));
     }
     if (calendarMode === CalendarModeTypes.HEBREW) {
       jewishDate.setJewishDayOfMonth(1);
@@ -125,9 +142,16 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
     }
   }, [firstDayOfMonth]);
 
+  useEffect(() => {
+    if (calendarMode === CalendarModeTypes.GREGORIAN) {
+      setVisibleDays(differenceInDays(lastDayOfGrid, firstDayOfGrid) + 1);
+    }
+  }, [firstDayOfGrid, lastDayOfGrid]);
+
   return (
     <CalendarContext.Provider
       value={{
+        visibleDays,
         zmanimJson,
         onNext,
         onPrev,
