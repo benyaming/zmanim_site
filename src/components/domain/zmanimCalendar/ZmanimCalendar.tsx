@@ -17,8 +17,6 @@ export const ZmanimCalendar = () => {
   const jewishDate = new JewishDate(date);
   const { i18n } = useTranslation();
 
-  console.log('visibleDays', visibleDays);
-
   const weekdays = [...Array(7).keys()].map((i) => i);
   return (
     <Box w={`${150 * 7}px`}>

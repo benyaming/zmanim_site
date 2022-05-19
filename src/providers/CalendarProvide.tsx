@@ -9,6 +9,7 @@ import {
   subMonths,
 } from 'date-fns';
 import { JewishDate, JsonOutput } from 'kosher-zmanim';
+import { DateTime } from 'luxon';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import { useZmanimJson } from '../hooks/zmanim/useZmanimJson';
@@ -89,11 +90,9 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
     if (calendarMode === CalendarModeTypes.GREGORIAN) {
       jewishDate.setJewishDayOfMonth(1);
       setFirstDayOfMonth(jewishDate.getDate().toJSDate());
-      setFirstDayOfGrid(jewishDate.getDate().toJSDate());
     }
     if (calendarMode === CalendarModeTypes.HEBREW) {
       setFirstDayOfMonth(startOfMonth(date));
-      setFirstDayOfGrid(startOfWeek(firstDayOfMonth));
     }
     toggleCalendarMode(
       calendarMode === CalendarModeTypes.GREGORIAN ? CalendarModeTypes.HEBREW : CalendarModeTypes.GREGORIAN,
@@ -123,14 +122,22 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
   useEffect(() => {
     if (calendarMode === CalendarModeTypes.GREGORIAN) {
       setFirstDayOfMonth(startOfMonth(date));
+    }
+    if (calendarMode === CalendarModeTypes.HEBREW) {
+      jewishDate.setDate(DateTime.fromJSDate(date));
+      jewishDate.setJewishDayOfMonth(1);
+      setFirstDayOfMonth(jewishDate.getDate().toJSDate());
+    }
+  }, [date]);
+
+  useEffect(() => {
+    if (calendarMode === CalendarModeTypes.GREGORIAN) {
       setLastDayOfMonth(endOfMonth(date));
     }
     if (calendarMode === CalendarModeTypes.HEBREW) {
-      jewishDate.setJewishDayOfMonth(1);
-      setFirstDayOfMonth(jewishDate.getDate().toJSDate());
       setLastDayOfMonth(addDays(firstDayOfMonth, jewishDate.getDaysInJewishMonth()));
     }
-  }, [date]);
+  }, [firstDayOfMonth]);
 
   useEffect(() => {
     if (calendarMode === CalendarModeTypes.GREGORIAN) {
@@ -138,11 +145,10 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
       setLastDayOfGrid(endOfWeek(lastDayOfMonth));
     }
     if (calendarMode === CalendarModeTypes.HEBREW) {
-      jewishDate.setJewishDayOfMonth(1);
-      setFirstDayOfGrid(startOfWeek(jewishDate.getDate().toJSDate()));
+      setFirstDayOfGrid(startOfWeek(firstDayOfMonth));
       setLastDayOfGrid(endOfWeek(lastDayOfMonth));
     }
-  }, [firstDayOfMonth]);
+  }, [lastDayOfMonth]);
 
   useEffect(() => {
     setVisibleDays(differenceInDays(lastDayOfGrid, firstDayOfGrid) + 1);
