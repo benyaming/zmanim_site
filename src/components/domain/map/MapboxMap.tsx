@@ -1,17 +1,42 @@
 import 'mapbox-gl/dist/mapbox-gl.css';
+import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 
 import { Box } from '@chakra-ui/react';
-import mapboxgl, { Map, Marker } from 'mapbox-gl';
-import React, { useEffect, useRef } from 'react';
+import MapboxGeocoder, { GeocoderOptions, Result } from '@mapbox/mapbox-gl-geocoder';
+import React, { useState } from 'react';
+import Map, {
+  FullscreenControl,
+  GeolocateControl,
+  MapLayerMouseEvent,
+  Marker,
+  NavigationControl,
+  ScaleControl,
+  useControl,
+} from 'react-map-gl';
 
 import { useGetPlaces } from '../../../hooks/rq/useGetPlaces';
 import { useGeolocation } from '../../../providers/GeoProvider';
-import { MapboxClickEvent } from '../../../types/mapbox';
+
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+
+export interface GeocoderProps {
+  onResult: (e: Result) => void;
+}
+
+const Geocoder = (props: GeocoderProps) => {
+  const { onResult } = props;
+  useControl<MapboxGeocoder>(() => {
+    const control = new MapboxGeocoder({
+      marker: false,
+      accessToken: MAPBOX_TOKEN,
+    });
+    control.on('result', (evt) => onResult(evt.result));
+    return control;
+  });
+  return null;
+};
 
 export const MapboxMap = () => {
-  const mapContainer = useRef<HTMLDivElement | null>(null);
-  const map = useRef<Map | null>(null);
-
   const {
     latLng: { lat, lng },
     setPosition,
@@ -19,52 +44,60 @@ export const MapboxMap = () => {
 
   useGetPlaces({ lat, lng });
 
-  // as map entity runs outside react state content, we add a variable to store markers in component scope
-  let m: Marker;
-
-  const handleMapClick = (e: MapboxClickEvent) => {
-    if (m) m.remove();
+  const [viewport] = useState({
+    latitude: lat,
+    longitude: lng,
+    zoom: 10,
+  });
+  const handleClick = (e: MapLayerMouseEvent) => {
     const {
       lngLat: { lat, lng },
-      target,
     } = e;
-    const newMarker = new Marker().setLngLat([lng, lat]);
-    console.log(lat, lng);
     setPosition({
       coords: {
         latitude: lat,
         longitude: lng,
-        heading: null,
-        altitude: null,
-        altitudeAccuracy: null,
+        heading: 0,
+        speed: 0,
         accuracy: 0,
-        speed: null,
+        altitudeAccuracy: 0,
+        altitude: 0,
       },
       timestamp: Date.now(),
     });
-    m = newMarker;
-    m.addTo(target);
   };
 
-  mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-
-  useEffect(() => {
-    if (!map.current) {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current!,
-        style: 'mapbox://styles/mapbox/streets-v11',
-        center: [lng, lat],
-        zoom: 12,
-      });
-      const mapEntity = map.current!;
-      m = new Marker().setLngLat([lng, lat]).addTo(mapEntity);
-      mapEntity.on('click', (e: MapboxClickEvent) => handleMapClick(e));
-    }
-  });
+  const handleResult = (e: Result) => {
+    const [lng, lat] = e.center;
+    setPosition({
+      coords: {
+        latitude: lat,
+        longitude: lng,
+        heading: 0,
+        speed: 0,
+        accuracy: 0,
+        altitudeAccuracy: 0,
+        altitude: 0,
+      },
+      timestamp: Date.now(),
+    });
+  };
 
   return (
-    <div id="map">
-      <Box width="400px" height="400px" ref={mapContainer} className="map-container" />
-    </div>
+    <Box height="400px" id="map">
+      <Map
+        onClick={handleClick}
+        initialViewState={{ ...viewport }}
+        mapStyle="mapbox://styles/mapbox/streets-v9"
+        mapboxAccessToken={MAPBOX_TOKEN}
+      >
+        <Geocoder onResult={handleResult} />
+        <Marker longitude={lng} latitude={lat} />
+        <GeolocateControl position="top-left" />
+        <FullscreenControl position="top-left" />
+        <NavigationControl position="top-left" />
+        <ScaleControl />
+      </Map>
+    </Box>
   );
 };
