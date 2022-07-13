@@ -47,7 +47,7 @@ export const ZmanimCalendarDay = (props: ZmanimCalendarDayProps) => {
   };
 
   const innerBlockSx: SystemStyleObject = {
-    border: isDaySelected ? `4px solid ${selectedBorder}` : '1px solid gray',
+    border: `1px solid ${isDaySelected ? selectedBorder : 'gray'}`,
     justifyContent: 'space-between',
     w: '150px',
     h: '75px',
