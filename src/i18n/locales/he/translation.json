@@ -1,12 +1,14 @@
 {
+  "cancel": "",
   "footer": {
     "title": "םגגג"
   },
   "map": {
     "title": "בחר מיקום"
   },
+  "save": "",
+  "settings": "",
   "times": {
-    "day": "יְוֹם",
     "month": "חוֹדֶשׁ",
     "year": "שָׁנָה"
   },

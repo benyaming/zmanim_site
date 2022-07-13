@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Flex,
+  HStack,
   IconButton,
   Image,
   Menu,
@@ -13,6 +14,7 @@ import {
   ModalBody,
   ModalCloseButton,
   ModalContent,
+  ModalFooter,
   ModalHeader,
   ModalOverlay,
   Stack,
@@ -42,6 +44,7 @@ const languages = {
 export const Navbar = () => {
   const [city, setCity] = useState('');
   const { isOpen, onToggle } = useDisclosure();
+  const { isOpen: isMenuOpen, onToggle: onMenuOpen, onClose: onMenuClose } = useDisclosure();
   const { isOpen: isModalOpen, onOpen: onModalOpen, onClose: onModalClose } = useDisclosure();
   const { t, i18n } = useTranslation();
   const changeLanguage = (lng: string) => {
@@ -59,8 +62,31 @@ export const Navbar = () => {
     },
   );
 
+  const handleSave = () => {
+    onMenuClose();
+  };
+  const handleCancel = () => {
+    onMenuClose();
+  };
+
   return (
     <Box>
+      <Modal isOpen={isMenuOpen} onClose={onMenuClose} closeOnOverlayClick={false}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>{t('settings')}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>Тут будут настройки</ModalBody>
+          <ModalFooter>
+            <HStack spacing={2}>
+              <Button colorScheme="teal" onClick={handleSave}>
+                {t('save')}
+              </Button>
+              <Button onClick={handleCancel}>{t('cancel')}</Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       <Modal isOpen={isModalOpen} onClose={onModalClose}>
         <ModalOverlay />
         <ModalContent>
@@ -132,6 +158,9 @@ export const Navbar = () => {
             )}
           </Menu>
         </Stack>
+        <Flex mx={2}>
+          <IconButton aria-label="menu" onClick={onMenuOpen} icon={<HamburgerIcon w={5} h={5} />} />
+        </Flex>
       </Flex>
     </Box>
   );
