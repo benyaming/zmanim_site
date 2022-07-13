@@ -1,10 +1,13 @@
 {
+  "cancel": "Cancel",
   "footer": {
     "title": "Footer"
   },
   "map": {
     "title": "Choose location"
   },
+  "save": "Save",
+  "settings": "Settings",
   "times": {
     "month": "Month",
     "year": "Year"
