@@ -1,4 +1,4 @@
-import { ChevronDownIcon, CloseIcon, HamburgerIcon, Icon } from '@chakra-ui/icons';
+import { ChevronDownIcon, CloseIcon, HamburgerIcon, Icon, SettingsIcon } from '@chakra-ui/icons';
 import {
   Box,
   Button,
@@ -159,7 +159,7 @@ export const Navbar = () => {
           </Menu>
         </Stack>
         <Flex mx={2}>
-          <IconButton aria-label="menu" onClick={onMenuOpen} icon={<HamburgerIcon w={5} h={5} />} />
+          <IconButton aria-label="menu" onClick={onMenuOpen} icon={<SettingsIcon w={5} h={5} />} />
         </Flex>
       </Flex>
     </Box>

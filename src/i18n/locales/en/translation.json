@@ -14,5 +14,11 @@
   },
   "zmanim": {
     "title": "Zmanim"
-  }
+  },
+  "shabbat": "Shabbat",
+  "yom": "Yom Tov",
+  "hol": "Hol A-Moed",
+  "abst": "Abst",
+  "rosh": "Rosh Hodesh",
+  "holiday": "Holiday"
 }
