@@ -1,6 +1,7 @@
-import { Box, Flex, SystemStyleObject, useToken } from '@chakra-ui/react';
+import { Box, Flex, SystemStyleObject, Tag, TagLabel, Text, useToken } from '@chakra-ui/react';
 import { format, isSameDay, isSameMonth, isToday } from 'date-fns';
 import { JewishCalendar, JewishDate } from 'kosher-zmanim';
+import { DateTime } from 'luxon';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -14,22 +15,47 @@ export interface ZmanimCalendarDayProps {
   firstDayOfMonth: Date;
 }
 
+export interface DayTagProps {
+  color: string;
+  text: string;
+}
+
+export const DayTag = ({ color, text }: DayTagProps) => {
+  const { t } = useTranslation();
+  return (
+    <Box p={1} bg={color} borderRadius="3xl">
+      <Text fontSize="xx-small" color="white">
+        {t(text)}
+      </Text>
+    </Box>
+  );
+};
+
 export const ZmanimCalendarDay = (props: ZmanimCalendarDayProps) => {
   const { date, firstDayOfMonth } = props;
   const { selectedDay, handleDayClick, calendarMode } = useCalendar();
   const { i18n } = useTranslation();
-  const [currentMonth, outerMonth, today, selectedBorder] = useToken('colors', [
-    'white',
-    'gray.200',
-    'orange.100',
-    'teal.200',
-  ]);
+  const [currentMonth, outerMonth, today] = useToken('colors', ['white', 'gray.200', 'orange.100', 'teal.200']);
   const jewDate = new JewishDate(date);
-  const jewCalendar = new JewishCalendar(date);
+  const dateTime = DateTime.fromJSDate(date);
   const currentLang = i18n.language as LanguageVariant;
 
   const isItToday = isToday(date);
   const isDaySelected = isSameDay(selectedDay, date);
+  const [shabbat, yom, hol, abst, rosh, holiday]: string[] = useToken('colors', [
+    'blue.400',
+    'green.500',
+    'green.200',
+    'red.300',
+    'teal.500',
+    'yellow.400',
+  ]);
+  const jewCalendar = new JewishCalendar(dateTime);
+  const isShabbat = jewDate.getDayOfWeek() === 7 ? { color: shabbat, text: 'shabbat' } : null;
+  const isYomTov = jewCalendar.isYomTov() && !isShabbat ? { color: yom, text: 'yom' } : null;
+  const isHol = jewCalendar.isCholHamoed() ? { color: hol, text: 'hol' } : null;
+  const isRosh = jewCalendar.isRoshChodesh() ? { color: rosh, text: 'rosh' } : null;
+  const tags = [isShabbat, isYomTov, isHol, isRosh];
   const isCurrentMonth = () => {
     if (calendarMode === CalendarModeTypes.HEBREW) {
       return new JewishDate(firstDayOfMonth).getJewishMonth() === jewDate.getJewishMonth();
@@ -47,8 +73,10 @@ export const ZmanimCalendarDay = (props: ZmanimCalendarDayProps) => {
   };
 
   const innerBlockSx: SystemStyleObject = {
-    border: `1px solid ${isDaySelected ? selectedBorder : 'gray'}`,
-    justifyContent: 'space-between',
+    border: '1px solid gray',
+    outline: () => isDaySelected && `3px solid #81E6D9`,
+    outlineOffset: '-3px',
+    alignItems: 'flex-start',
     w: '150px',
     h: '75px',
     px: 2,
@@ -59,10 +87,21 @@ export const ZmanimCalendarDay = (props: ZmanimCalendarDayProps) => {
   };
 
   return (
-    <Flex sx={daySx} onClick={handleClick}>
-      <Flex sx={innerBlockSx} flexWrap="wrap">
-        <Box>{format(date, 'dd MMM', { locale: timeLocales[currentLang] })}</Box>
-        <Box>{`${jewDate.getJewishDayOfMonth()} ${Formatter.formatMonth(jewDate)}`}</Box>
+    <Flex sx={daySx} onClick={handleClick} justifyContent="flex-start" alignItems="flex-start" flexDirection="column">
+      <Flex sx={innerBlockSx} flexWrap="wrap" pb={2}>
+        <Flex justifyContent="space-between" w="100%">
+          <Box>
+            <Text fontSize="sm">{format(date, 'dd MMM', { locale: timeLocales[currentLang] })}</Text>
+          </Box>
+          <Box>
+            <Text fontSize="sm">{`${jewDate.getJewishDayOfMonth()} ${Formatter.formatMonth(jewDate)}`}</Text>
+          </Box>
+        </Flex>
+        {tags
+          .filter((t) => t)
+          .map((t) => (
+            <DayTag color={t!.color} key={t!.color} text={t!.text} />
+          ))}
       </Flex>
     </Flex>
   );
