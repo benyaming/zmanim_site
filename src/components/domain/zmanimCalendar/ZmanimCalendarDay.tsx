@@ -9,6 +9,7 @@ import { CalendarModeTypes, useCalendar } from '../../../providers/CalendarProvi
 import { timeLocales } from '../../../services/locales';
 import { Formatter } from '../../../services/zmanim/formatter';
 import { LanguageVariant } from '../../../types/i18n';
+import { getSignificantDay } from '../../../utils/calendar';
 
 export interface ZmanimCalendarDayProps {
   date: Date;
@@ -51,11 +52,27 @@ export const ZmanimCalendarDay = (props: ZmanimCalendarDayProps) => {
     'yellow.400',
   ]);
   const jewCalendar = new JewishCalendar(dateTime);
+  jewCalendar.setInIsrael(true);
+
+  // check if there is indexed yom tov here
+  const yomTov = getSignificantDay(jewCalendar.getYomTovIndex());
+
+  // check if it is shabbat
   const isShabbat = jewDate.getDayOfWeek() === 7 ? { color: shabbat, text: 'shabbat' } : null;
-  const isYomTov = jewCalendar.isYomTov() && !isShabbat ? { color: yom, text: 'yom' } : null;
+
+  // check if it is yom tom with work prohibit
+  const isYomTov = jewCalendar.isAssurBemelacha() && !isShabbat && !yomTov ? { color: yom, text: 'yom' } : null;
+  const isChanukah = jewCalendar.isChanukah() ? { color: yom, text: 'chanukah' } : null;
   const isHol = jewCalendar.isCholHamoed() ? { color: hol, text: 'hol' } : null;
+
+  // if it is indexed Yom Tov - get it and its name
+  const isHoliday = yomTov ? { color: holiday, text: yomTov.name } : null;
+
   const isRosh = jewCalendar.isRoshChodesh() ? { color: rosh, text: 'rosh' } : null;
-  const tags = [isShabbat, isYomTov, isHol, isRosh];
+
+  // put all possible tags to array, to filter only non-falsy values in view
+  const tags = [isYomTov, isHol, isRosh, isChanukah, isHoliday];
+
   const isCurrentMonth = () => {
     if (calendarMode === CalendarModeTypes.HEBREW) {
       return new JewishDate(firstDayOfMonth).getJewishMonth() === jewDate.getJewishMonth();

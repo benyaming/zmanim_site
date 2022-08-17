@@ -12,7 +12,6 @@ export interface ZmanimJsonQueryOptions {
 }
 export const useZmanimJson = ({ lat, lng, timestamp }: ZmanimJsonQueryOptions) => {
   const timeZone = ts.getFuzzyLocalTimeFromPoint(timestamp, [lat, lng]);
-
   return useQuery<JsonOutput>(
     [RQ_QUERY_ZMANIM_JSON, lat, lng, timeZone?._z.name, timestamp],
     () => zmanimJson({ timeZoneId: timeZone?._z.name, date: timestamp, elevation: 0, latitude: lat, longitude: lng }),
