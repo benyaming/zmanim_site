@@ -5,10 +5,12 @@ import { DateTime } from 'luxon';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { holidays } from '../../../constants/zmanim';
 import { CalendarModeTypes, useCalendar } from '../../../providers/CalendarProvide';
 import { timeLocales } from '../../../services/locales';
 import { Formatter } from '../../../services/zmanim/formatter';
 import { LanguageVariant } from '../../../types/i18n';
+import { getSignificantDay } from '../../../utils';
 
 export interface ZmanimCalendarDayProps {
   date: Date;
@@ -42,20 +44,26 @@ export const ZmanimCalendarDay = (props: ZmanimCalendarDayProps) => {
 
   const isItToday = isToday(date);
   const isDaySelected = isSameDay(selectedDay, date);
-  const [shabbat, yom, hol, abst, rosh, holiday]: string[] = useToken('colors', [
-    'blue.400',
+  const [shabbat, yom, hol, abst, rosh, holiday, holidayAsur]: string[] = useToken('colors', [
+    'cyan.200',
     'green.500',
     'green.200',
     'red.300',
     'teal.500',
     'yellow.400',
+    'purple.400',
   ]);
   const jewCalendar = new JewishCalendar(dateTime);
+  const holidayCheck = getSignificantDay(jewCalendar.getYomTovIndex());
+
+  const getHolidayColor = () => (jewCalendar.isAssurBemelacha() ? holidayAsur : holiday);
+
+  const isHoliday = holidayCheck ? { color: getHolidayColor(), text: holidayCheck.name } : null;
   const isShabbat = jewDate.getDayOfWeek() === 7 ? { color: shabbat, text: 'shabbat' } : null;
-  const isYomTov = jewCalendar.isYomTov() && !isShabbat ? { color: yom, text: 'yom' } : null;
+  const isYomTov = jewCalendar.isYomTov() && !isHoliday && !isShabbat ? { color: yom, text: 'yom' } : null;
   const isHol = jewCalendar.isCholHamoed() ? { color: hol, text: 'hol' } : null;
   const isRosh = jewCalendar.isRoshChodesh() ? { color: rosh, text: 'rosh' } : null;
-  const tags = [isShabbat, isYomTov, isHol, isRosh];
+  const tags = [isYomTov, isHol, isRosh, isHoliday];
   const isCurrentMonth = () => {
     if (calendarMode === CalendarModeTypes.HEBREW) {
       return new JewishDate(firstDayOfMonth).getJewishMonth() === jewDate.getJewishMonth();
@@ -66,6 +74,7 @@ export const ZmanimCalendarDay = (props: ZmanimCalendarDayProps) => {
   const daySx: SystemStyleObject = {
     cursor: 'pointer',
     bg: () => {
+      if (isShabbat) return shabbat;
       if (isItToday) return today;
       if (isCurrentMonth()) return currentMonth;
       return outerMonth;

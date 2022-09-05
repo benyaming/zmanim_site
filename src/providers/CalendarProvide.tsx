@@ -26,6 +26,7 @@ export interface CalendarProviderContextProps {
   toggleCalendar: () => void;
   onNext: () => void;
   onPrev: () => void;
+  setDate: (date: Date) => void;
   calendarMode: CalendarMode;
   isHebrew: boolean;
   selectedDay: Date | number;
@@ -44,6 +45,7 @@ const CalendarContext = createContext<CalendarProviderContextProps>({
   handleSetDate: () => {},
   onNext: () => {},
   onPrev: () => {},
+  setDate: () => {},
   calendarMode: CalendarModeTypes.GREGORIAN,
   isHebrew: false,
   selectedDay: -1,
@@ -157,6 +159,7 @@ const CalendarProvider: React.FC = (props): JSX.Element => {
   return (
     <CalendarContext.Provider
       value={{
+        setDate,
         visibleDays,
         zmanimJson,
         onNext,
