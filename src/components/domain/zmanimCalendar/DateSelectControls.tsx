@@ -87,7 +87,7 @@ export const DateSelectControls = (props: ZmanimCalendarDayProps) => {
       setYear(getYear(date).toString());
       setMonth(getMonth(date).toString());
     }
-  }, [isHebrew]);
+  }, [isHebrew, date]);
 
   return (
     <Flex py={2} gap={4}>
