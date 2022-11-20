@@ -15,7 +15,7 @@ export const ZmanimInfo = () => {
   };
   return (
     <div>
-      <ZmanimInfoFilters handleFormSubmit={handleFilters} />
+      {/*<ZmanimInfoFilters handleFormSubmit={handleFilters} />*/}
       {map(
         pick(
           zmanimJson?.BasicZmanim,

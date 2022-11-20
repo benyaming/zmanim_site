@@ -59,11 +59,23 @@ export const ZmanimCalendarDay = (props: ZmanimCalendarDayProps) => {
   const getHolidayColor = () => (jewCalendar.isAssurBemelacha() ? holidayAsur : holiday);
 
   const isHoliday = holidayCheck ? { color: getHolidayColor(), text: holidayCheck.name } : null;
+  jewCalendar.setInIsrael(true);
+
+  // check if there is indexed yom tov here
+  const yomTov = getSignificantDay(jewCalendar.getYomTovIndex());
+
+  // check if it is shabbat
   const isShabbat = jewDate.getDayOfWeek() === 7 ? { color: shabbat, text: 'shabbat' } : null;
+
+  // check if it is yom tom with work prohibit
+  const isChanukah = jewCalendar.isChanukah() ? { color: yom, text: 'chanukah' } : null;
   const isYomTov = jewCalendar.isYomTov() && !isHoliday && !isShabbat ? { color: yom, text: 'yom' } : null;
   const isHol = jewCalendar.isCholHamoed() ? { color: hol, text: 'hol' } : null;
   const isRosh = jewCalendar.isRoshChodesh() ? { color: rosh, text: 'rosh' } : null;
-  const tags = [isYomTov, isHol, isRosh, isHoliday];
+
+  // put all possible tags to array, to filter only non-falsy values in view
+  const tags = [isYomTov, isHol, isRosh, isChanukah, isHoliday];
+
   const isCurrentMonth = () => {
     if (calendarMode === CalendarModeTypes.HEBREW) {
       return new JewishDate(firstDayOfMonth).getJewishMonth() === jewDate.getJewishMonth();

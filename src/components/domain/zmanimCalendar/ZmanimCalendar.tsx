@@ -62,7 +62,7 @@ export const ZmanimCalendar = () => {
         </Flex>
         <IconButton aria-label="prev" icon={<ArrowRightIcon />} onClick={onNext} />
       </Flex>
-      <DateSelectControls handleChange={handleDateSelectClick} />
+      <DateSelectControls handleChange={handleDateSelectClick} date={date} />
 
       <Flex py={2} bg="green.300" borderBottomColor="gray.800" borderBottomWidth={1} borderBottomStyle="solid">
         {weekdays.map((wd, idx) => (

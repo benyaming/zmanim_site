@@ -12,7 +12,7 @@ import {
   MenuList,
   Select,
 } from '@chakra-ui/react';
-import { getDay, getDaysInMonth, getMonth, getYear } from 'date-fns';
+import { format, getDay, getDaysInMonth, getMonth, getYear } from 'date-fns';
 import { JewishCalendar, JewishDate } from 'kosher-zmanim';
 import * as KosherZmanim from 'kosher-zmanim';
 import { capitalize } from 'lodash';
@@ -21,16 +21,20 @@ import React, { FocusEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useCalendar } from '../../../providers/CalendarProvide';
+import { timeLocales } from '../../../services/locales';
 import { Formatter } from '../../../services/zmanim/formatter';
+import { LanguageVariant } from '../../../types/i18n';
 
 export interface ZmanimCalendarDayProps {
   handleChange: (value: number, type: 'year' | 'month' | 'day') => void;
+  date: Date;
 }
 
 export const DateSelectControls = (props: ZmanimCalendarDayProps) => {
   const { handleChange } = props;
   const { date, isHebrew } = useCalendar();
   const { i18n, t } = useTranslation();
+  const currentLang = i18n.language as LanguageVariant;
   const [year, setYear] = useState(getYear(date).toString());
   const [month, setMonth] = useState(getMonth(date).toString());
 
@@ -107,7 +111,7 @@ export const DateSelectControls = (props: ZmanimCalendarDayProps) => {
             <FormLabel>{t('times.month')}</FormLabel>
             <Menu>
               <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
-                {currentMonth(parseInt(month, 10))}
+                {format(date, 'MMMM', { locale: timeLocales[currentLang] })}
               </MenuButton>
               <MenuList>
                 {monthList.map((m, i) => (

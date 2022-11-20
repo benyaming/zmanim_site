@@ -57,6 +57,7 @@ export const Navbar = () => {
     { lat, lng },
     {
       onSuccess: (data) => {
+        console.log(data);
         setCity(data?.features[0]?.context[0]?.text);
       },
     },
