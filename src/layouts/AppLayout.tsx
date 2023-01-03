@@ -1,4 +1,4 @@
-import { Box, Container } from '@chakra-ui/react';
+import { Box, Container } from '@mui/material';
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 
@@ -6,10 +6,10 @@ import { Footer, Navbar } from '../components';
 
 export const AppLayout = () => {
   return (
-    <Box minH="100vh" id="layout" display="flex" flexDirection="column">
+    <Box minHeight="100vh" id="layout" display="flex" flexDirection="column">
       <Navbar />
-      <Box as="main" display="flex" flexGrow={1}>
-        <Container maxW="container.xl" pt={1}>
+      <Box component="main" display="flex" flexGrow={1} pt={1}>
+        <Container maxWidth="xl">
           <Outlet />
         </Container>
       </Box>

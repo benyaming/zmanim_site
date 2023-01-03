@@ -1,33 +1,11 @@
-import './i18n';
-
-import { ChakraProvider } from '@chakra-ui/react';
 import React from 'react';
-import ReactDOM from 'react-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { ReactQueryDevtools } from 'react-query/devtools';
+import { createRoot } from 'react-dom/client';
 
 import App from './App';
-import { GeoProvider } from './providers/GeoProvider';
-import theme from './theme';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      notifyOnChangeProps: 'tracked',
-    },
-  },
-});
-
-ReactDOM.render(
+const container = document.getElementById('root');
+const root = createRoot(container!); // createRoot(container!) if you use TypeScript
+root.render(
   <React.StrictMode>
-    <ChakraProvider theme={theme}>
-      <QueryClientProvider client={queryClient}>
-        <GeoProvider>
-          <App />
-        </GeoProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
-    </ChakraProvider>
+    <App />
   </React.StrictMode>,
-  document.getElementById('root'),
 );

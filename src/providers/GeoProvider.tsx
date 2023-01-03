@@ -1,5 +1,5 @@
 import ts, { Moment } from '@mapbox/timespace';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 import { Coords } from '../types/geo';
 
@@ -22,7 +22,7 @@ const GeoContext = createContext<GeoProviderContextProps>({
 
 export const useGeolocation = (): GeoProviderContextProps => useContext(GeoContext);
 
-const GeoProvider: React.FC = (props): JSX.Element => {
+const GeoProvider = (props: { children: ReactNode }) => {
   const { children } = props;
   const [position, setPosition] = useState<GeolocationPosition | null>(null);
   const [error, setError] = useState('');
