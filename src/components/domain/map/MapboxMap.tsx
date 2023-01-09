@@ -1,8 +1,8 @@
 import 'mapbox-gl/dist/mapbox-gl.css';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 
-import { Box } from '@chakra-ui/react';
-import MapboxGeocoder, { GeocoderOptions, Result } from '@mapbox/mapbox-gl-geocoder';
+import MapboxGeocoder, { Result } from '@mapbox/mapbox-gl-geocoder';
+import { Box } from '@mui/material';
 import React, { useState } from 'react';
 import Map, {
   FullscreenControl,

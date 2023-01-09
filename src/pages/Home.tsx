@@ -1,17 +1,13 @@
-import { Flex } from '@chakra-ui/react';
+import { Box } from '@mui/material';
 import React from 'react';
 
-import { ZmanimCalendar } from '../components';
-import { ZmanimInfo } from '../components/domain/zmanim/ZmanimInfo';
-import { CalendarProvider } from '../providers/CalendarProvide';
+import { ZmanimCalendar, ZmanimInfo } from '../components';
 
 export const Home = () => {
   return (
-    <Flex justifyContent="center" flexDirection="column">
-      <CalendarProvider>
-        <ZmanimCalendar />
-        <ZmanimInfo />
-      </CalendarProvider>
-    </Flex>
+    <Box justifyContent="center" display="flex" flexDirection="column">
+      <ZmanimCalendar />
+      <ZmanimInfo />
+    </Box>
   );
 };

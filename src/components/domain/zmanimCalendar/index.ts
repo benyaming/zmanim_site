@@ -1,1 +1,1 @@
-export { ZmanimCalendar } from './ZmanimCalendar';
+export * from './ZmanimCalendar';

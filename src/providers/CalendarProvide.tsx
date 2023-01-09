@@ -10,7 +10,7 @@ import {
 } from 'date-fns';
 import { JewishDate, JsonOutput } from 'kosher-zmanim';
 import { DateTime } from 'luxon';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 import { useZmanimJson } from '../hooks/zmanim/useZmanimJson';
 import { useGeolocation } from './GeoProvider';
@@ -58,7 +58,7 @@ const CalendarContext = createContext<CalendarProviderContextProps>({
 
 export const useCalendar = (): CalendarProviderContextProps => useContext(CalendarContext);
 
-const CalendarProvider: React.FC = (props): JSX.Element => {
+const CalendarProvider = (props: { children: ReactNode }) => {
   const { children } = props;
   const [date, setDate] = useState(new Date());
   const [calendarMode, toggleCalendarMode] = useState<CalendarMode>(CalendarModeTypes.GREGORIAN);

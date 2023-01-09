@@ -1,6 +1,6 @@
 import ts from '@mapbox/timespace';
+import { useQuery } from '@tanstack/react-query';
 import { JsonOutput } from 'kosher-zmanim';
-import { useQuery } from 'react-query';
 
 import { RQ_QUERY_ZMANIM_JSON } from '../../constants/queries';
 import { zmanimJson } from '../../services/zmanim/ZmanimJson';

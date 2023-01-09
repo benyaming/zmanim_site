@@ -1,4 +1,4 @@
-import { useQuery, UseQueryOptions } from 'react-query';
+import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 
 import { RQ_QUERY_GET_PLACES } from '../../constants/queries';
 import i18n from '../../i18n';
