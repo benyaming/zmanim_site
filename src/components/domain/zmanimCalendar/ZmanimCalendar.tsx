@@ -8,10 +8,11 @@ export const ZmanimCalendar = () => {
     <Box
       sx={{
         display: 'grid',
-
         gridTemplateColumns: 'repeat(7, 1fr)',
         gridTemplateRow: 'repeat(5, 1fr)',
       }}
-    ></Box>
+    >
+      <ZmanimCalendarDay />
+    </Box>
   );
 };
