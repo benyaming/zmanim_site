@@ -5,8 +5,13 @@ import { ZmanimCalendarDay } from './ZmanimCalendarDay';
 
 export const ZmanimCalendar = () => {
   return (
-    <Box>
-      <ZmanimCalendarDay />
-    </Box>
+    <Box
+      sx={{
+        display: 'grid',
+
+        gridTemplateColumns: 'repeat(7, 1fr)',
+        gridTemplateRow: 'repeat(5, 1fr)',
+      }}
+    ></Box>
   );
 };
