@@ -2,35 +2,43 @@
 import { createTheme, PaletteColor, PaletteColorOptions } from '@mui/material';
 
 export const themeColors = {
-  primary: '#008EF7',
+  primary: '#C6DEF4',
+  white: '#ffffff',
+  primaryHoliday: '#EDBDD4',
+  secondaryHoliday: '#F8E6EF',
+  roshHodesh: '#C6DEF4',
   error: '#FF5C67',
   success: '#3DB465',
   disabledBackground: '#ADB0B5',
   disabled: '#F2F2F2',
-  neutral: '#ADB0B5',
+  neutral: '#DCDCE2',
   monochrome: '#000',
+  text: '#2C2D35',
 };
 
 export const theme = createTheme({
   typography: {
-    fontFamily: ['SF Pro', 'Pilat Extended'].join(','),
+    fontFamily: ['Roboto'].join(','),
   },
   spacing: 4,
   components: {
     MuiButton: {
       defaultProps: {
-        disableRipple: true,
         variant: 'contained',
-        color: 'primary',
+        color: 'white',
         disableElevation: true,
-        size: 'medium',
+        size: 'large',
       },
       styleOverrides: {
         root: {
+          borderRadius: '4px',
           textTransform: 'none',
-          fontFamily: 'Pilat Extended',
-          fontWeight: 900,
-          fontSize: '12px',
+          fontFamily: 'Roboto',
+          fontWeight: 500,
+          fontSize: '14px',
+          padding: '12px 16px',
+          border: '2px solid #DCDCE2',
+          lineHeight: '16px',
         },
       },
     },
@@ -76,9 +84,21 @@ export const theme = createTheme({
     },
   },
   palette: {
+    white: {
+      main: themeColors.white,
+      contrastText: themeColors.text,
+    },
     action: {
       disabledBackground: themeColors.disabledBackground,
       disabled: themeColors.disabled,
+    },
+    primaryHoliday: {
+      main: themeColors.primaryHoliday,
+      contrastText: '#FFF',
+    },
+    secondaryHoliday: {
+      main: themeColors.secondaryHoliday,
+      contrastText: '#FFF',
     },
     monochrome: {
       main: themeColors.monochrome,
@@ -86,7 +106,7 @@ export const theme = createTheme({
     },
     neutral: {
       main: themeColors.neutral,
-      contrastText: '#FFF',
+      contrastText: '#72758A',
     },
     primary: {
       main: themeColors.primary,
@@ -112,16 +132,24 @@ declare module '@mui/material/Button' {
     neutral: true;
     primary: true;
     monochrome: true;
+    white: true;
   }
 }
 
 declare module '@mui/material/styles' {
   interface Palette {
+    white: PaletteColor;
     neutral: PaletteColor;
     monochrome: PaletteColor;
+    primaryHoliday: PaletteColor;
+    secondaryHoliday: PaletteColor;
   }
+
   interface PaletteOptions {
+    white: PaletteColorOptions;
     neutral: PaletteColorOptions;
     monochrome: PaletteColorOptions;
+    primaryHoliday: PaletteColorOptions;
+    secondaryHoliday: PaletteColorOptions;
   }
 }

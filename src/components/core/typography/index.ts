@@ -1,2 +1,1 @@
-export * from './TextPilat';
-export * from './TextSF';
+export * from './Text';
