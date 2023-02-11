@@ -4,3 +4,5 @@ export const getSignificantDay = (index: number) => {
   if (index < 0) return false;
   return holidays[index];
 };
+
+export * from './date';

@@ -6,14 +6,13 @@ import { Footer, Navbar } from '../components';
 
 export const AppLayout = () => {
   return (
-    <Box minHeight="100vh" id="layout" display="flex" flexDirection="column">
+    <Box minHeight="100vh" width="100%" id="layout" display="flex" flexDirection="column">
       <Navbar />
-      <Box component="main" display="flex" flexGrow={1} pt={1}>
+      <Box component="main" display="flex" flexGrow={1} pt={1} sx={{ background: '#FAFAFA' }}>
         <Container maxWidth="xl">
           <Outlet />
         </Container>
       </Box>
-
       <Footer />
     </Box>
   );
