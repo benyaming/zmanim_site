@@ -21,7 +21,14 @@ function App() {
     },
   });
   return (
-    <Box height="100vh" id="app-component" display="flex">
+    <Box
+      height="100vh"
+      id="app-component"
+      display="flex"
+      sx={{
+        minWidth: '900px',
+      }}
+    >
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
