@@ -7,6 +7,10 @@ export const themeColors = {
   primaryHoliday: '#EDBDD4',
   secondaryHoliday: '#F8E6EF',
   roshHodesh: '#C6DEF4',
+  yom: '#EDBDD4',
+  hol: '#F8E6EF',
+  hanuka: '#92CFB0',
+  erevHag: '#F8E6EF',
   error: '#FF5C67',
   success: '#3DB465',
   disabledBackground: '#ADB0B5',
@@ -117,6 +121,26 @@ export const theme = createTheme({
     success: {
       main: themeColors.success,
     },
+    yom: {
+      main: themeColors.yom,
+      contrastText: themeColors.text,
+    },
+    hol: {
+      main: themeColors.hol,
+      contrastText: themeColors.text,
+    },
+    hanuka: {
+      main: themeColors.hanuka,
+      contrastText: themeColors.text,
+    },
+    roshHodesh: {
+      main: themeColors.roshHodesh,
+      contrastText: themeColors.text,
+    },
+    erevHag: {
+      main: themeColors.erevHag,
+      contrastText: themeColors.text,
+    },
   },
 });
 
@@ -143,6 +167,11 @@ declare module '@mui/material/styles' {
     monochrome: PaletteColor;
     primaryHoliday: PaletteColor;
     secondaryHoliday: PaletteColor;
+    yom: PaletteColor;
+    hol: PaletteColor;
+    hanuka: PaletteColor;
+    roshHodesh: PaletteColor;
+    erevHag: PaletteColor;
   }
 
   interface PaletteOptions {
@@ -151,5 +180,10 @@ declare module '@mui/material/styles' {
     monochrome: PaletteColorOptions;
     primaryHoliday: PaletteColorOptions;
     secondaryHoliday: PaletteColorOptions;
+    yom: PaletteColorOptions;
+    hol: PaletteColorOptions;
+    hanuka: PaletteColorOptions;
+    roshHodesh: PaletteColorOptions;
+    erevHag: PaletteColorOptions;
   }
 }

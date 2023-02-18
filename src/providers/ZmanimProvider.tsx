@@ -1,5 +1,6 @@
+import { JewishDate } from 'kosher-zmanim';
 import { DateTime } from 'luxon';
-import React, { createContext, ReactNode, useContext, useState } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 import { useGeolocation } from './GeoProvider';
 
@@ -12,11 +13,11 @@ export type CalendarMode = CalendarModeTypes.GREGORIAN | CalendarModeTypes.HEBRE
 
 export interface ZmanimProviderContextProps {
   setDate: (date: DateTime) => void;
-  calendarMode: CalendarMode;
   isHebrew: boolean;
   selectedDay: DateTime;
   lat: number;
   lng: number;
+  toggleCalendarMode: (mode: CalendarMode) => void;
   setSelectedDay: (date: DateTime) => void;
   date: DateTime;
 }
@@ -24,10 +25,10 @@ export interface ZmanimProviderContextProps {
 const ZmanimContext = createContext<ZmanimProviderContextProps>({
   date: DateTime.now(),
   setDate: () => {},
-  calendarMode: CalendarModeTypes.GREGORIAN,
   isHebrew: false,
   selectedDay: DateTime.now(),
   setSelectedDay: () => {},
+  toggleCalendarMode: () => {},
   lat: 0,
   lng: 0,
 });
@@ -56,7 +57,7 @@ const ZmanimProvider = (props: { children: ReactNode }) => {
         selectedDay,
         setSelectedDay,
         isHebrew,
-        calendarMode,
+        toggleCalendarMode,
       }}
     >
       {children}
