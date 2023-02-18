@@ -1,31 +1,33 @@
 import { Box } from '@mui/material';
-import { DateTime } from 'luxon';
+import { HebrewDateFormatter, JewishCalendar, JewishDate } from 'kosher-zmanim';
+import { DateTime, Duration } from 'luxon';
 import React from 'react';
 
 import { useZmanim } from '../../../providers/ZmanimProvider';
 import { isShabat } from '../../../utils';
-import { Text } from '../../core/typography';
+import { DayLabel } from './DayLabel';
+import { DayText } from './DayText';
+import { Parsha } from './Parsha';
+import { RoshHodesh } from './RoshHodesh';
 
 export interface ZmanimCalendarDayProps {
   date: DateTime;
   onClick: (date: DateTime) => void;
-}
-
-export interface DayTagProps {
-  color: string;
-  text: string;
+  isOffRange?: boolean;
 }
 
 export const ZmanimCalendarDay = (props: ZmanimCalendarDayProps) => {
-  const { date, onClick } = props;
-  const { date: globalDate, selectedDay } = useZmanim();
-  const today = DateTime.now().hasSame(date, 'day');
-  const sameMonth = DateTime.now().hasSame(date, 'month');
-  const isSelectedDay = date.hasSame(selectedDay, 'day');
+  const { date, onClick, isOffRange } = props;
+  const { date: globalDate, isHebrew } = useZmanim();
+
+  const jewishCalendar = new JewishCalendar(date);
+  const hebrewDateFormatter = new HebrewDateFormatter();
+
+  const parsha = hebrewDateFormatter.formatParsha(jewishCalendar);
 
   const getBackground = () => {
     switch (true) {
-      case !sameMonth:
+      case isOffRange:
         return '#F4F4F6';
       case isShabat(date):
         return '#F2F8FE';
@@ -44,26 +46,10 @@ export const ZmanimCalendarDay = (props: ZmanimCalendarDayProps) => {
       borderRight="1px solid #DCDCE2"
       bgcolor={getBackground()}
     >
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          borderRadius={1}
-          bgcolor={isSelectedDay ? '#474A61' : 'white'}
-          width="34px"
-          height="34px"
-        >
-          <Text fontSize="18px" color={isSelectedDay ? '#FFF' : '2C2D35'}>
-            {date.day}
-          </Text>
-        </Box>
-        <Box>
-          <Text fontSize="12px" fontWeight={400}>
-            {date.toLocaleString({ day: 'numeric', month: 'short' })}
-          </Text>
-        </Box>
-      </Box>
+      <DayText date={date} jewishCalendar={jewishCalendar} formatter={hebrewDateFormatter} />
+      <DayLabel isOffRange={isOffRange} jewishCalendar={jewishCalendar} formatter={hebrewDateFormatter} date={date} />
+      <RoshHodesh jewishCalendar={jewishCalendar} formatter={hebrewDateFormatter} date={date} />
+      {parsha && <Parsha parsha={parsha} />}
     </Box>
   );
 };
