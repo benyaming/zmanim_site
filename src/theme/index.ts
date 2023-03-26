@@ -37,7 +37,7 @@ export const theme = createTheme({
         root: {
           borderRadius: '4px',
           textTransform: 'none',
-          fontFamily: 'Roboto',
+          fontFamily: 'Arimo',
           fontWeight: 500,
           fontSize: '14px',
           padding: '12px 16px',

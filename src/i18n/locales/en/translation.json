@@ -1,25 +1,17 @@
 {
-  "cancel": "Cancel",
-  "footer": {
-    "title": "Footer"
+  "days": {
+    "today": "Today"
   },
-  "map": {
-    "title": "Choose location"
+  "languages": {
+    "english": "English",
+    "hebrew": "Hebrew",
+    "russian": "Russian"
   },
-  "save": "Save",
-  "settings": "Settings",
-  "times": {
-    "month": "Month",
-    "year": "Year"
+  "mode": {
+    "gregorian": "Gregorian",
+    "hebrew": "Hebrew"
   },
   "zmanim": {
     "title": "Zmanim"
-  },
-  "shabbat": "Shabbat",
-  "yom": "Yom Tov",
-  "hol": "Hol A-Moed",
-  "abst": "Abst",
-  "rosh": "Rosh Hodesh",
-  "holiday": "Holiday",
-  "chanukah": "Chanuka"
+  }
 }

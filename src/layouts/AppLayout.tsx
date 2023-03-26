@@ -6,7 +6,15 @@ import { Footer, Navbar } from '../components';
 
 export const AppLayout = () => {
   return (
-    <Box minHeight="100vh" width="100%" id="layout" display="flex" flexDirection="column">
+    <Box
+      minHeight="100vh"
+      width="100%"
+      minWidth="1024px"
+      overflow="scroll"
+      id="layout"
+      display="flex"
+      flexDirection="column"
+    >
       <Navbar />
       <Box component="main" display="flex" flexGrow={1} pt={1} sx={{ background: '#FAFAFA' }}>
         <Container maxWidth="xl">
