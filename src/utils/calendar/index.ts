@@ -84,3 +84,15 @@ export const getSignificantDay = (day: number) => {
 };
 
 export const getDayTags = (jewDate: JewishDate, jewCalendar: JewishCalendar) => {};
+
+export const isCorner = (index: number, pos: 'top' | 'bottom') => {
+  if (pos === 'top') {
+    if (index === 0) return 'topLeft';
+    if (index === 6) return 'topRight';
+  }
+  if (pos === 'bottom') {
+    if (index === 0) return 'bottomRight';
+    if (index === 6) return 'bottomLeft';
+  }
+  return undefined;
+};

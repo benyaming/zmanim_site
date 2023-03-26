@@ -47,12 +47,13 @@ const GeoProvider = (props: { children: ReactNode }) => {
     if (position) {
       setZone(ts.getFuzzyLocalTimeFromPoint(Date.now(), [position.coords.latitude, position.coords.longitude]));
     }
-  }, [position]);
+  }, [position?.coords.latitude, position?.coords.longitude]);
 
   const latLng = position
     ? { lng: position?.coords.longitude, lat: position?.coords.latitude }
     : { lat: 31.778821, lng: 35.225259 };
 
+  console.log(position);
   return (
     <GeoContext.Provider value={{ setPosition, latLng, position, error, isLoading, zone }}>
       {children}

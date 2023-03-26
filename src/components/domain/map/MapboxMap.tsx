@@ -84,7 +84,7 @@ export const MapboxMap = () => {
   };
 
   return (
-    <Box height="400px" id="map">
+    <Box height="400px" minWidth="320px" id="map">
       <Map
         onClick={handleClick}
         initialViewState={{ ...viewport }}

@@ -7,6 +7,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 
+import { GeoProvider } from './providers/GeoProvider';
 import { ZmanimProvider } from './providers/ZmanimProvider';
 import { AppRouter } from './routes/AppRouter';
 import { theme } from './theme';
@@ -26,10 +27,12 @@ function App() {
         <CssBaseline />
         <BrowserRouter>
           <QueryClientProvider client={queryClient}>
-            <ZmanimProvider>
-              <AppRouter />
-              <ReactQueryDevtools initialIsOpen={false} />
-            </ZmanimProvider>
+            <GeoProvider>
+              <ZmanimProvider>
+                <AppRouter />
+                <ReactQueryDevtools initialIsOpen={false} />
+              </ZmanimProvider>
+            </GeoProvider>
           </QueryClientProvider>
         </BrowserRouter>
       </ThemeProvider>

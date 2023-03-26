@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import { isSameDay } from 'date-fns';
 import { HebrewDateFormatter, JewishCalendar } from 'kosher-zmanim';
 import { DateTime } from 'luxon';
 import React from 'react';
@@ -15,7 +16,7 @@ export interface DayTextProps {
 export const DayText = (props: DayTextProps) => {
   const { selectedDay, isHebrew } = useZmanim();
   const { date, jewishCalendar, formatter } = props;
-  const isSelectedDay = date.hasSame(selectedDay, 'day');
+  const isSelectedDay = isSameDay(date.toJSDate(), selectedDay.toJSDate());
 
   const hebrewDate = `${jewishCalendar.getJewishDayOfMonth()} ${formatter.formatMonth(jewishCalendar)}`;
   const hebrewDay = jewishCalendar.getJewishDayOfMonth();
@@ -29,6 +30,7 @@ export const DayText = (props: DayTextProps) => {
         justifyContent="center"
         alignItems="center"
         borderRadius={1}
+        my={1}
         bgcolor={isSelectedDay ? '#474A61' : 'white'}
         width="34px"
         height="34px"
@@ -38,7 +40,7 @@ export const DayText = (props: DayTextProps) => {
         </Text>
       </Box>
       <Box>
-        <Text fontSize="12px" fontWeight={400} color="#72758A">
+        <Text fontSize="12px" fontWeight={400} color="##2C2D35">
           {isHebrew ? gregDate : hebrewDate}
         </Text>
       </Box>

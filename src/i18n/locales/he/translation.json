@@ -1,16 +1,15 @@
 {
-  "cancel": "",
-  "footer": {
-    "title": "םגגג"
+  "days": {
+    "today": ""
   },
-  "map": {
-    "title": "בחר מיקום"
+  "languages": {
+    "english": "",
+    "hebrew": "",
+    "russian": ""
   },
-  "save": "",
-  "settings": "",
-  "times": {
-    "month": "חוֹדֶשׁ",
-    "year": "שָׁנָה"
+  "mode": {
+    "gregorian": "",
+    "hebrew": ""
   },
   "zmanim": {
     "title": "זמנים"

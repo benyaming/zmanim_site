@@ -1,16 +1,15 @@
 {
-  "cancel": "Отмена",
-  "footer": {
-    "title": "Футер"
+  "days": {
+    "today": "Сегодня"
   },
-  "map": {
-    "title": "Выберите локацию"
+  "languages": {
+    "english": "Английский",
+    "hebrew": "Еврейский",
+    "russian": "Русский"
   },
-  "save": "Сохранить",
-  "settings": "Настройки",
-  "times": {
-    "month": "Месяц",
-    "year": "Год"
+  "mode": {
+    "gregorian": "Григорианский",
+    "hebrew": "Еврейский"
   },
   "zmanim": {
     "title": "Зманим"

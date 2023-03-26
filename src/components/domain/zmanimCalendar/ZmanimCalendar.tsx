@@ -1,3 +1,4 @@
+import styled from '@emotion/styled';
 import { Box, Grid } from '@mui/material';
 import { JewishDate } from 'kosher-zmanim';
 import { times } from 'lodash';
@@ -8,6 +9,16 @@ import { useZmanim } from '../../../providers/ZmanimProvider';
 import { getWeekdays } from '../../../utils';
 import { Text } from '../../core/typography';
 import { ZmanimCalendarDay } from './ZmanimCalendarDay';
+
+const StyledGrid = styled(Grid)`
+  border: 1px solid #e5e5e5;
+  border-top: none;
+  border-left: none;
+  &:nth-of-type(7n) {
+    /* your specific styles for every 7th Box component */
+    border-right: none;
+  }
+`;
 
 export const ZmanimCalendar = () => {
   const { date, setSelectedDay, isHebrew } = useZmanim();
@@ -54,31 +65,33 @@ export const ZmanimCalendar = () => {
           </Grid>
         ))}
       </Grid>
-      <Grid container columns={7} borderRadius={4} border="1px solid #DCDCE2" borderBottom="none" borderRight="none">
-        {times(prependDays, (i) => (
-          <Grid item xs={1} key={i}>
-            <ZmanimCalendarDay
-              isOffRange
-              onClick={handleDayClick}
-              date={firstActiveDay.minus({ days: prependDays - i })}
-            />
-          </Grid>
-        ))}
-        {times(getDaysInMonth(), (i) => (
-          <Grid item xs={1} key={i}>
-            <ZmanimCalendarDay onClick={handleDayClick} date={firstActiveDay.plus({ days: i })} />
-          </Grid>
-        ))}
-        {times(appendDays, (i) => (
-          <Grid item xs={1} key={i}>
-            <ZmanimCalendarDay
-              isOffRange
-              onClick={handleDayClick}
-              date={firstActiveDay.plus({ days: getDaysInMonth() + i })}
-            />
-          </Grid>
-        ))}
-      </Grid>
+      <Box borderRadius={4} border="1px solid #DCDCE2" borderBottom="none" overflow="hidden">
+        <Grid container columns={7}>
+          {times(prependDays, (i) => (
+            <StyledGrid item xs={1} key={i}>
+              <ZmanimCalendarDay
+                isOffRange
+                onClick={handleDayClick}
+                date={firstActiveDay.minus({ days: prependDays - i })}
+              />
+            </StyledGrid>
+          ))}
+          {times(getDaysInMonth(), (i) => (
+            <StyledGrid item xs={1} key={i}>
+              <ZmanimCalendarDay onClick={handleDayClick} date={firstActiveDay.plus({ days: i })} />
+            </StyledGrid>
+          ))}
+          {times(appendDays, (i) => (
+            <StyledGrid item xs={1} key={i}>
+              <ZmanimCalendarDay
+                isOffRange
+                onClick={handleDayClick}
+                date={firstActiveDay.plus({ days: getDaysInMonth() + i })}
+              />
+            </StyledGrid>
+          ))}
+        </Grid>
+      </Box>
     </Box>
   );
 };

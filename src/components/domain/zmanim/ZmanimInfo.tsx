@@ -1,18 +1,17 @@
 import { Box, Divider, Paper, Stack } from '@mui/material';
 import { DateTime } from 'luxon';
-import React, { ReactNode, useState } from 'react';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 
-import { ZMANIM_KEYS } from '../../../constants/common';
 import { useZmanimJson } from '../../../hooks/zmanim/useZmanimJson';
 import { useZmanim } from '../../../providers/ZmanimProvider';
 import { Text } from '../../core/typography';
 
 export const ZmanimInfo = () => {
-  const [show, setShow] = useState(ZMANIM_KEYS);
   const { lat, lng, selectedDay } = useZmanim();
   const { data: zmanimJson } = useZmanimJson({ lat, lng, date: selectedDay });
+  const { t } = useTranslation();
 
-  console.log(zmanimJson);
   const info = {
     AlosHashachar: zmanimJson?.BasicZmanim?.AlosHashachar,
     Alos72: zmanimJson?.BasicZmanim?.Alos72,
@@ -27,11 +26,11 @@ export const ZmanimInfo = () => {
         <Box display="flex" width="100%" justifyContent="space-between" alignItems="center">
           <Box>
             <Text fontSize="20px" fontWeight="500">
-              Зманим
+              {t('zmanim.title')}
             </Text>
           </Box>
           <Box>
-            <Text>Зманим</Text>
+            <Text> {t('zmanim.title')}</Text>
           </Box>
         </Box>
         <Box py={4}>

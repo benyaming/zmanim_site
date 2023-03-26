@@ -1,5 +1,23 @@
 {
+  "abst": "Abst",
+  "cancel": "Cancel",
+  "chanukah": "Chanuka",
+  "footer": {
+    "title": "Footer"
+  },
+  "hol": "Hol A-Moed",
+  "holiday": "Holiday",
+  "map": {
+    "title": "Choose location"
+  },
+  "rosh": "Rosh Hodesh",
+  "save": "Save",
+  "settings": "Settings",
+  "shabbat": "Shabbat",
   "times": {
-    "day": "Day"
-  }
+    "day": "Day",
+    "month": "Month",
+    "year": "Year"
+  },
+  "yom": "Yom Tov"
 }

@@ -1,5 +1,19 @@
 {
+  "cancel": "",
+  "footer": {
+    "title": "םגגג"
+  },
+  "languages": {
+    "gregorian": ""
+  },
+  "map": {
+    "title": "בחר מיקום"
+  },
+  "save": "",
+  "settings": "",
   "times": {
-    "day": "יְוֹם"
+    "day": "יְוֹם",
+    "month": "חוֹדֶשׁ",
+    "year": "שָׁנָה"
   }
 }
