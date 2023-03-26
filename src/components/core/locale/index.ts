@@ -1,1 +1,1 @@
-export * from './LangSwitch';
+export { LangSwitch } from './LangSwitch';

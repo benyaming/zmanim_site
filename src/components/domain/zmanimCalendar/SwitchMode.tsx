@@ -3,7 +3,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { CalendarModeTypes, useZmanim } from '../../../providers/ZmanimProvider';
-import { Text } from '../../core/typography';
+import { Text } from '../../core';
 
 export const SwitchBtn = (props: BoxProps) => {
   const { children, ...rest } = props;

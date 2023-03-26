@@ -7,7 +7,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { SwitchMode, ZmanimCalendar, ZmanimInfo } from '../components';
-import { Text } from '../components/core/typography';
+import { Text } from '../components';
 import { useZmanim } from '../providers/ZmanimProvider';
 
 export const Home = () => {

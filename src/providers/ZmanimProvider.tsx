@@ -43,7 +43,6 @@ const ZmanimProvider = (props: { children: ReactNode }) => {
   const [endDate, setEndDate] = useState(DateTime.now().set({ day: 30 }));
   const [calendarMode, toggleCalendarMode] = useState<CalendarMode>(CalendarModeTypes.GREGORIAN);
   const [selectedDay, setSelectedDay] = useState(DateTime.now());
-  console.log('SelectedDay', selectedDay.toLocaleString());
   const {
     latLng: { lat, lng },
   } = useGeolocation();

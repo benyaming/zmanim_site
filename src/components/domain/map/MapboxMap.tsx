@@ -30,7 +30,10 @@ const Geocoder = (props: GeocoderProps) => {
       marker: false,
       accessToken: MAPBOX_TOKEN,
     });
-    control.on('result', (evt) => onResult(evt.result));
+    control.on('result', (evt) => {
+      console.log('ECT', evt);
+      return onResult(evt.result);
+    });
     return control;
   });
   return null;
@@ -87,7 +90,7 @@ export const MapboxMap = () => {
     <Box height="400px" minWidth="320px" id="map">
       <Map
         onClick={handleClick}
-        initialViewState={{ ...viewport }}
+        initialViewState={{ latitude: lat, longitude: lng, zoom: 10 }}
         mapStyle="mapbox://styles/mapbox/streets-v9"
         mapboxAccessToken={MAPBOX_TOKEN}
       >

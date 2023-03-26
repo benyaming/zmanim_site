@@ -29,6 +29,7 @@ const GeoProvider = (props: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [zone, setZone] = useState<Moment | null>(null);
 
+  console.log(position);
   const handleSuccess = (position: GeolocationPosition) => {
     setPosition(position);
     setIsLoading(false);
@@ -38,6 +39,7 @@ const GeoProvider = (props: { children: ReactNode }) => {
     setError(error.message);
     setIsLoading(false);
   };
+
   useEffect(() => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported.');
@@ -47,13 +49,12 @@ const GeoProvider = (props: { children: ReactNode }) => {
     if (position) {
       setZone(ts.getFuzzyLocalTimeFromPoint(Date.now(), [position.coords.latitude, position.coords.longitude]));
     }
-  }, [position?.coords.latitude, position?.coords.longitude]);
+  }, []);
 
   const latLng = position
     ? { lng: position?.coords.longitude, lat: position?.coords.latitude }
     : { lat: 31.778821, lng: 35.225259 };
 
-  console.log(position);
   return (
     <GeoContext.Provider value={{ setPosition, latLng, position, error, isLoading, zone }}>
       {children}

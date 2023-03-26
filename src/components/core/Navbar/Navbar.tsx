@@ -1,14 +1,30 @@
 import PlaceIcon from '@mui/icons-material/Place';
-import { AppBar, Box, Dialog, DialogContent, IconButton, Stack, Toolbar } from '@mui/material';
-import React from 'react';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { AppBar, Box, Button, Dialog, DialogContent, Icon, IconButton, Stack, Toolbar } from '@mui/material';
+import React, { useState } from 'react';
 
 import text from '../../../assets/zmanim-text.svg';
 import logo from '../../../assets/zmanin-logo.svg';
+import { useGetPlaces } from '../../../hooks/rq/useGetPlaces';
+import { useGeolocation } from '../../../providers/GeoProvider';
 import { MapboxMap } from '../../domain';
-import { LangSwitch } from '../locale';
+import { LangSwitch } from '../locale/';
+import { Text } from '../typography';
 
 export const Navbar = () => {
   const [open, setOpen] = React.useState(false);
+  const [city, setCity] = useState('');
+  const {
+    latLng: { lat, lng },
+  } = useGeolocation();
+  useGetPlaces(
+    { lat, lng },
+    {
+      onSuccess: (data) => {
+        setCity(data?.features[0]?.context[0]?.text);
+      },
+    },
+  );
   return (
     <AppBar
       position="static"
@@ -34,10 +50,16 @@ export const Navbar = () => {
             <img alt="text" src={text} width="72px" height="15px" />
           </Stack>
           <Stack direction="row" spacing={2} alignItems="center">
+            <Text> {city || ''}</Text>
             <IconButton aria-label="delete" onClick={() => setOpen(true)}>
               <PlaceIcon />
             </IconButton>
             <LangSwitch />
+            <Button sx={{ width: '38px', height: '38px', minWidth: 'unset' }}>
+              <Icon>
+                <SettingsIcon />
+              </Icon>
+            </Button>
           </Stack>
         </Box>
       </Toolbar>

@@ -50,13 +50,13 @@ export const LangSwitch = () => {
       </Box>
       <Menu id="lang-switch" anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
         <MenuItem onClick={() => handleChange('en')} value="en">
-          <FlagImg src={us} alt="flag" /> {t('languages.english')}
+          <FlagImg src={us} alt="flag" /> <Text>{t('languages.english')}</Text>
         </MenuItem>
         <MenuItem onClick={() => handleChange('he')} value="he">
-          <FlagImg src={il} alt="flag" /> {t('languages.hebrew')}
+          <FlagImg src={il} alt="flag" /> <Text>{t('languages.hebrew')}</Text>
         </MenuItem>
         <MenuItem onClick={() => handleChange('ru')} value="ru">
-          <FlagImg src={ru} alt="flag" /> {t('languages.russian')}
+          <FlagImg src={ru} alt="flag" /> <Text>{t('languages.russian')}</Text>
         </MenuItem>
       </Menu>
     </Box>
