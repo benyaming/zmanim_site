@@ -2,7 +2,6 @@ import { JewishDate } from 'kosher-zmanim';
 import { DateTime } from 'luxon';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
-import { timeLocales } from '../services/locales';
 import { useGeolocation } from './GeoProvider';
 
 export enum CalendarModeTypes {
@@ -39,8 +38,6 @@ export const useZmanim = (): ZmanimProviderContextProps => useContext(ZmanimCont
 const ZmanimProvider = (props: { children: ReactNode }) => {
   const { children } = props;
   const [date, setDate] = useState(DateTime.now().set({ day: 15 }));
-  const [startDate, setStartDate] = useState(DateTime.now().set({ day: 1 }));
-  const [endDate, setEndDate] = useState(DateTime.now().set({ day: 30 }));
   const [calendarMode, toggleCalendarMode] = useState<CalendarMode>(CalendarModeTypes.GREGORIAN);
   const [selectedDay, setSelectedDay] = useState(DateTime.now());
   const {

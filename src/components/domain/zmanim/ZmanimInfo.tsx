@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useZmanimJson } from '../../../hooks/zmanim/useZmanimJson';
 import { useZmanim } from '../../../providers/ZmanimProvider';
-import { Text } from '../../core/typography';
+import { Text } from '../../core';
 
 export const ZmanimInfo = () => {
   const { lat, lng, selectedDay } = useZmanim();
@@ -40,57 +40,33 @@ export const ZmanimInfo = () => {
         <Stack direction="column" spacing={4}>
           <Box display="flex" justifyContent="space-between">
             <Text color="#72758A" fontSize="12px">
-              {DateTime.fromISO(info.AlosHashachar!).toLocaleString(DateTime.TIME_SIMPLE)}
+              {info.AlosHashachar ? DateTime.fromISO(info.AlosHashachar).toLocaleString(DateTime.TIME_SIMPLE) : ''}
             </Text>
             <Text fontSize="14px">Алот а-шахар (заря)</Text>
           </Box>
           <Box display="flex" justifyContent="space-between">
             <Text color="#72758A" fontSize="12px">
-              {DateTime.fromISO(info.Alos72!).toLocaleString(DateTime.TIME_SIMPLE)}
+              {info.Alos72 ? DateTime.fromISO(info.Alos72!).toLocaleString(DateTime.TIME_SIMPLE) : ''}
             </Text>
             <Text fontSize="14px">Мишеякир (время Талита и Тифлин)</Text>
           </Box>
           <Box display="flex" justifyContent="space-between">
             <Text color="#72758A" fontSize="12px">
-              {DateTime.fromISO(info.Sunrise!).toLocaleString(DateTime.TIME_SIMPLE)}
+              {info.Sunrise ? DateTime.fromISO(info.Sunrise).toLocaleString(DateTime.TIME_SIMPLE) : ''}
             </Text>
             <Text fontSize="14px">Анец а-хама (восход)</Text>
           </Box>
           <Box display="flex" justifyContent="space-between">
             <Text color="#72758A" fontSize="12px">
-              {DateTime.fromISO(info.SofZmanShmaGRA!).toLocaleString(DateTime.TIME_SIMPLE)}
+              {info.SofZmanShmaGRA ? DateTime.fromISO(info.SofZmanShmaGRA).toLocaleString(DateTime.TIME_SIMPLE) : ''}
             </Text>
             <Text fontSize="14px">Зман Шма (время Шма) [АГРО]</Text>
           </Box>
           <Box display="flex" justifyContent="space-between">
             <Text color="#72758A" fontSize="12px">
-              {DateTime.fromISO(info.SofZmanTfilaGRA!).toLocaleString(DateTime.TIME_SIMPLE)}
+              {info.SofZmanTfilaGRA ? DateTime.fromISO(info.SofZmanTfilaGRA).toLocaleString(DateTime.TIME_SIMPLE) : ''}
             </Text>
             <Text fontSize="14px">Зман тфила (время молитвы) [АГРО]</Text>
-          </Box>
-          <Box display="flex" justifyContent="space-between">
-            <Text color="#72758A" fontSize="12px">
-              {DateTime.fromISO(info.AlosHashachar!).toLocaleString(DateTime.TIME_SIMPLE)}
-            </Text>
-            <Text fontSize="14px">Хацот</Text>
-          </Box>
-          <Box display="flex" justifyContent="space-between">
-            <Text color="#72758A" fontSize="12px">
-              {DateTime.fromISO(info.AlosHashachar!).toLocaleString(DateTime.TIME_SIMPLE)}
-            </Text>
-            <Text fontSize="14px">Минха гдола</Text>
-          </Box>
-          <Box display="flex" justifyContent="space-between">
-            <Text color="#72758A" fontSize="12px">
-              {DateTime.fromISO(info.AlosHashachar!).toLocaleString(DateTime.TIME_SIMPLE)}
-            </Text>
-            <Text fontSize="14px">Минха гдола</Text>
-          </Box>
-          <Box display="flex" justifyContent="space-between">
-            <Text color="#72758A" fontSize="12px">
-              {DateTime.fromISO(info.Tzais72!).toLocaleString(DateTime.TIME_SIMPLE)}
-            </Text>
-            <Text fontSize="14px">Выход звезд [8.5 градусов за горизонтом]</Text>
           </Box>
         </Stack>
       </Box>

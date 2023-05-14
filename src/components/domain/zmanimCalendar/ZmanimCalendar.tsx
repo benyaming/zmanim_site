@@ -7,13 +7,14 @@ import React from 'react';
 
 import { useZmanim } from '../../../providers/ZmanimProvider';
 import { getWeekdays } from '../../../utils';
-import { Text } from '../../core/typography';
+import { Text } from '../../core';
 import { ZmanimCalendarDay } from './ZmanimCalendarDay';
 
 const StyledGrid = styled(Grid)`
   border: 1px solid #e5e5e5;
   border-top: none;
   border-left: none;
+
   &:nth-of-type(7n) {
     /* your specific styles for every 7th Box component */
     border-right: none;
@@ -53,7 +54,9 @@ export const ZmanimCalendar = () => {
   const prependDays = firstActiveDay.weekday === 7 ? 0 : firstActiveDay.weekday;
   const appendDays = getAppendDays();
 
-  const handleDayClick = (date: DateTime) => setSelectedDay(date);
+  const handleDayClick = (date: DateTime) => {
+    setSelectedDay(date);
+  };
   return (
     <Box>
       <Grid container columns={7}>

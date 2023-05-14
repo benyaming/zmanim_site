@@ -29,7 +29,7 @@
     "i18next-parser": "^7.1.0",
     "kosher-zmanim": "^0.8.2",
     "lodash": "^4.17.21",
-    "luxon": "^3.2.1",
+    "luxon": "^3.3.0",
     "mapbox-gl": "^2.11.1",
     "react": "^18.2.0",
     "react-calendar": "^3.7.0",
