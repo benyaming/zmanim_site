@@ -102,7 +102,7 @@ export function AppStateProvider({
     // Apply a saved offset only if it's a sane value; otherwise keep the default
     // (this also heals a previously-persisted 0, which is invalid for candle lighting).
     const savedOffset = prefs.candleLightingOffset;
-    if (typeof savedOffset === 'number' && savedOffset >= CANDLE_OFFSET_MIN) {
+    if (typeof savedOffset === 'number' && Number.isFinite(savedOffset) && savedOffset >= CANDLE_OFFSET_MIN) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCandleLightingOffset(Math.min(CANDLE_OFFSET_MAX, Math.round(savedOffset)));
     }

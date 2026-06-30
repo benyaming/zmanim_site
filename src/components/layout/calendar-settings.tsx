@@ -7,7 +7,7 @@ import { CANDLE_OFFSET_MAX, CANDLE_OFFSET_MIN, useAppState } from '@/components/
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { HAVDALAH_OPINIONS, havdalahZmanKey, type HavdalahOpinion } from '@/lib/zmanim';
+import { HAVDALAH_OPINIONS, havdalahZmanKey, type HavdalahOpinion, isHavdalahOpinion } from '@/lib/zmanim';
 
 import { SettingsDialogShell } from './settings-shell';
 
@@ -60,7 +60,7 @@ export function CalendarSettings() {
         <label htmlFor="havdalah-opinion" className="text-sm font-medium">
           {t('havdala')}
         </label>
-        <Select value={havdalahOpinion} onValueChange={(v) => setHavdalahOpinion(v as HavdalahOpinion)}>
+        <Select value={havdalahOpinion} onValueChange={(v) => isHavdalahOpinion(v) && setHavdalahOpinion(v)}>
           <SelectTrigger id="havdalah-opinion" className="w-full">
             <SelectValue />
           </SelectTrigger>

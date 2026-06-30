@@ -31,7 +31,7 @@ export function computeZmanim(input: ComputeZmanimInput): ComputedZman[] {
 
   return ZMANIM.map((def) => {
     const base = (calendar[def.method] as () => DateTime | null)();
-    const raw = base && def.offsetMinutes ? base.plus({ minutes: def.offsetMinutes }) : base;
+    const raw = base && def.offsetMinutes != null ? base.plus({ minutes: def.offsetMinutes }) : base;
     const time = raw ? raw.setZone(timeZoneId) : null;
     return { ...def, time };
   });
