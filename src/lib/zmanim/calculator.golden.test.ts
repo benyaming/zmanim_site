@@ -41,6 +41,7 @@ const CASES: GoldenCase[] = [
       candleLighting: '17:32:44',
       sunset: '17:50:44',
       tzais: '18:26:54',
+      tzais42: '18:32:44', // sunset + 42 fixed minutes
       tzais72: '19:02:44',
     },
   },

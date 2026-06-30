@@ -13,7 +13,10 @@ export interface DayEventTimes {
   candleLighting: DateTime | null;
   alos: DateTime | null;
   sunset: DateTime | null;
+  /** Standard nightfall (8.5°) — used for fast ends. */
   tzais: DateTime | null;
+  /** Nightfall for havdalah, per the user's chosen opinion (may differ from `tzais`). */
+  havdalah: DateTime | null;
 }
 
 /**
@@ -54,10 +57,10 @@ export function getDayEvents(date: DateTime, times: DayEventTimes, inIsrael = fa
     events.push({ type: 'fastStart', time: times.sunset });
   }
 
-  // Havdalah on the night Shabbat / Yom Tov ends.
+  // Havdalah on the night Shabbat / Yom Tov ends — at the chosen tzeit opinion.
   const endsTonight = (isSaturday || jc.isYomTovAssurBemelacha()) && !tomorrowIsRest;
   if (endsTonight) {
-    events.push({ type: 'havdalah', time: times.tzais });
+    events.push({ type: 'havdalah', time: times.havdalah });
   }
 
   // Fast begins/ends on the fast day itself.

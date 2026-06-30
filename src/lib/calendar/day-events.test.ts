@@ -9,6 +9,8 @@ const TIMES = {
   alos: DateTime.fromISO('2024-01-01T04:00'),
   sunset: DateTime.fromISO('2024-01-01T18:18'),
   tzais: DateTime.fromISO('2024-01-01T18:50'),
+  // Distinct from tzais, so we can assert havdalah uses the chosen-opinion time.
+  havdalah: DateTime.fromISO('2024-01-01T19:05'),
 };
 
 function events(iso: string) {
@@ -20,10 +22,10 @@ describe('getDayEvents', () => {
     expect(events('2024-03-22')).toEqual(['candle']);
   });
 
-  it('shows havdalah on Saturday night', () => {
+  it('shows havdalah on Saturday night at the chosen-opinion time', () => {
     const e = getDayEvents(DateTime.fromISO('2024-03-23'), TIMES);
     expect(e).toHaveLength(1);
-    expect(e[0]).toMatchObject({ type: 'havdalah', time: TIMES.tzais });
+    expect(e[0]).toMatchObject({ type: 'havdalah', time: TIMES.havdalah });
   });
 
   it('shows fast begin (dawn) and end (nightfall) for a minor fast', () => {

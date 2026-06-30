@@ -53,7 +53,8 @@
       "tzaisGeonim": "Tzeit ha-Kochavim",
       "tzais": "Tzeit ha-Kochavim",
       "tzais72": "Tzeit ha-Kochavim",
-      "chatzosLaila": "Chatzot Laila"
+      "chatzosLaila": "Chatzot Laila",
+      "tzais42": "Tzeit ha-Kochavim"
     },
     "shitot": {
       "alosHashachar": "16.1°",
@@ -73,9 +74,10 @@
       "candleLighting": "",
       "sunset": "",
       "tzaisGeonim": "Geonim · 5.95°",
-      "tzais": "8.5°",
-      "tzais72": "72 min",
-      "chatzosLaila": ""
+      "tzais": "3 stars · 8.5°",
+      "tzais72": "Rabbeinu Tam · 72 min",
+      "chatzosLaila": "",
+      "tzais42": "fixed 42 min"
     },
     "descriptions": {
       "alosHashachar": "First light, with the sun 16.1° below the horizon — the degree equivalent of a 72-minute dawn, so it tracks the same twilight at any latitude or season.",
@@ -97,7 +99,8 @@
       "tzaisGeonim": "An early, lenient nightfall — sun 5.95° below the horizon (the Geonim / Baal HaTanya, ≈24 min after sunset in Jerusalem near the equinox). Some rely on it to end rabbinic fasts.",
       "tzais": "Three small stars are visible — sun 8.5° below the horizon (≈36 min after sunset in Jerusalem near the equinox). A slightly stringent nightfall; the new day begins.",
       "tzais72": "Rabbeinu Tam's stringent nightfall — a fixed 72 minutes after sunset (4 mil × 18 min). Relied on for ending Shabbat, Yom Tov, and Yom Kippur.",
-      "chatzosLaila": "Solar midnight — the halachic midpoint of the night, halfway between sunset and sunrise."
+      "chatzosLaila": "Solar midnight — the halachic midpoint of the night, halfway between sunset and sunrise.",
+      "tzais42": "A fixed 42 minutes after sunset — a common practical nightfall some communities use to end Shabbat and Yom Tov."
     },
     "baseDescriptions": {
       "alos": "Dawn — first light; the start of the halachic day for many mitzvot.",
@@ -149,7 +152,9 @@
     "reduceMotion": "Reduce motion",
     "highContrast": "High contrast",
     "on": "On",
-    "off": "Off"
+    "off": "Off",
+    "havdala": "Havdala",
+    "havdalaHint": "Opinion for when Shabbat and Yom Tov end."
   },
   "footer": {
     "disclaimer": "Zmanim times computed with <link>kosher-zmanim</link>. For halachic decisions, consult your local rabbinic authority."
