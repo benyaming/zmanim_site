@@ -164,7 +164,9 @@
     "toolsComingSoon": "Coming soon."
   },
   "footer": {
-    "disclaimer": "Zmanim times computed with <link>kosher-zmanim</link>. For halachic decisions, consult your local rabbinic authority."
+    "disclaimer": "Zmanim times computed with <link>kosher-zmanim</link>. For halachic decisions, consult your local rabbinic authority.",
+    "madeBy": "Made by Benyamin Ginzburg",
+    "source": "Source"
   },
   "language": {
     "label": "Language",

@@ -164,7 +164,9 @@
     "toolsComingSoon": "בקרוב."
   },
   "footer": {
-    "disclaimer": "הזמנים מחושבים באמצעות <link>kosher-zmanim</link>. להכרעות הלכתיות יש להתייעץ עם רב מוסמך."
+    "disclaimer": "הזמנים מחושבים באמצעות <link>kosher-zmanim</link>. להכרעות הלכתיות יש להתייעץ עם רב מוסמך.",
+    "madeBy": "מאת Benyamin Ginzburg",
+    "source": "קוד"
   },
   "language": {
     "label": "שפה",

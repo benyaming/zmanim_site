@@ -164,7 +164,9 @@
     "toolsComingSoon": "Скоро."
   },
   "footer": {
-    "disclaimer": "Зманим рассчитаны с помощью <link>kosher-zmanim</link>. Для алахических решений обратитесь к местному раввину."
+    "disclaimer": "Зманим рассчитаны с помощью <link>kosher-zmanim</link>. Для алахических решений обратитесь к местному раввину.",
+    "madeBy": "Сделал Benyamin Ginzburg",
+    "source": "Код"
   },
   "language": {
     "label": "Язык",
