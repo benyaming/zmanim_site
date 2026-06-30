@@ -125,7 +125,8 @@
     "candle": "Зажигание свечей",
     "havdalah": "Авдала",
     "fastStart": "Начало поста",
-    "fastEnd": "Окончание поста"
+    "fastEnd": "Окончание поста",
+    "candleOffset": "{minutes} мин до заката"
   },
   "panel": {
     "next": "Далее",
@@ -135,8 +136,6 @@
     "parasha": "Недельная глава: {name}"
   },
   "settings": {
-    "title": "Настройки",
-    "open": "Настройки",
     "theme": "Тема",
     "themeLight": "Светлая",
     "themeDark": "Тёмная",
@@ -155,7 +154,14 @@
     "on": "Вкл",
     "off": "Выкл",
     "havdala": "Авдала",
-    "havdalaHint": "Мнение о времени исхода Шаббата и Йом Това."
+    "havdalaHint": "Мнение о времени исхода Шаббата и Йом Това.",
+    "appearanceTitle": "Внешний вид",
+    "appearanceOpen": "Настройки внешнего вида",
+    "calendarTitle": "Календарь",
+    "calendarOpen": "Настройки календаря",
+    "toolsTitle": "Инструменты",
+    "toolsOpen": "Инструменты",
+    "toolsComingSoon": "Скоро."
   },
   "footer": {
     "disclaimer": "Зманим рассчитаны с помощью <link>kosher-zmanim</link>. Для алахических решений обратитесь к местному раввину."

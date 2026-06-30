@@ -125,7 +125,8 @@
     "candle": "הדלקת נרות",
     "havdalah": "הבדלה",
     "fastStart": "תחילת הצום",
-    "fastEnd": "סיום הצום"
+    "fastEnd": "סיום הצום",
+    "candleOffset": "{minutes} דק׳ לפני השקיעה"
   },
   "panel": {
     "next": "הבא",
@@ -135,8 +136,6 @@
     "parasha": "פרשת {name}"
   },
   "settings": {
-    "title": "הגדרות",
-    "open": "הגדרות",
     "theme": "ערכת נושא",
     "themeLight": "בהיר",
     "themeDark": "כהה",
@@ -155,7 +154,14 @@
     "on": "פעיל",
     "off": "כבוי",
     "havdala": "הבדלה",
-    "havdalaHint": "השיטה לזמן צאת השבת והחג."
+    "havdalaHint": "השיטה לזמן צאת השבת והחג.",
+    "appearanceTitle": "מראה",
+    "appearanceOpen": "הגדרות מראה",
+    "calendarTitle": "לוח שנה",
+    "calendarOpen": "הגדרות לוח שנה",
+    "toolsTitle": "כלים",
+    "toolsOpen": "כלים",
+    "toolsComingSoon": "בקרוב."
   },
   "footer": {
     "disclaimer": "הזמנים מחושבים באמצעות <link>kosher-zmanim</link>. להכרעות הלכתיות יש להתייעץ עם רב מוסמך."

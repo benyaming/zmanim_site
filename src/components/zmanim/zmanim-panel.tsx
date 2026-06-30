@@ -1,20 +1,21 @@
 'use client';
 
 import { JewishCalendar } from 'kosher-zmanim';
-import { BookOpen, Flame, MapPin, Moon, Sparkles, Utensils, UtensilsCrossed, Wheat } from 'lucide-react';
+import { BookOpen, Flame, Moon, Sparkles, Utensils, UtensilsCrossed, Wheat } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { DateTime } from 'luxon';
 import type { LucideIcon } from 'lucide-react';
 
 import { DAY_TONE, significantTone, type DayTone } from '@/components/calendar/day-style';
 import { useAppState, type AppLocation } from '@/components/providers/app-state';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useZmanim } from '@/hooks/use-zmanim';
 import { getDayEvents, getDayInfo, localizedHolidayLabel, type DayEvent, type DayEventType, type DayInfo } from '@/lib/calendar';
 import { formatTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { buildZmanimGroups, computeZmanim } from '@/lib/zmanim';
+import { buildZmanimGroups, computeZmanim, havdalahTime, havdalahZmanKey, type HavdalahOpinion } from '@/lib/zmanim';
 
 import { NextZman } from './next-zman';
 import { ZmanimList } from './zmanim-list';
@@ -35,7 +36,12 @@ function isRestDay(date: DateTime, inIsrael: boolean): boolean {
 }
 
 /** Candle/havdalah/fast events for a specific date (computes that date's zmanim). */
-function dayEventsFor(date: DateTime, location: AppLocation, candleLightingOffset: number): DayEvent[] {
+function dayEventsFor(
+  date: DateTime,
+  location: AppLocation,
+  candleLightingOffset: number,
+  havdalahOpinion: HavdalahOpinion,
+): DayEvent[] {
   const z = computeZmanim({
     lat: location.lat,
     lng: location.lng,
@@ -46,7 +52,13 @@ function dayEventsFor(date: DateTime, location: AppLocation, candleLightingOffse
   const byKey = Object.fromEntries(z.map((x) => [x.key, x.time]));
   return getDayEvents(
     date,
-    { candleLighting: byKey.candleLighting, alos: byKey.alosHashachar, sunset: byKey.sunset, tzais: byKey.tzais },
+    {
+      candleLighting: byKey.candleLighting,
+      alos: byKey.alosHashachar,
+      sunset: byKey.sunset,
+      tzais: byKey.tzais,
+      havdalah: havdalahTime(havdalahOpinion, byKey),
+    },
     location.inIsrael,
   );
 }
@@ -56,7 +68,12 @@ function dayEventsFor(date: DateTime, location: AppLocation, candleLightingOffse
  * selected day belongs to — so both bookend times show on the eve AND on the
  * rest day(s) — plus any same-day fast events.
  */
-function buildDayTimes(selectedDay: DateTime, location: AppLocation, candleLightingOffset: number): DayEvent[] {
+function buildDayTimes(
+  selectedDay: DateTime,
+  location: AppLocation,
+  candleLightingOffset: number,
+  havdalahOpinion: HavdalahOpinion,
+): DayEvent[] {
   const inIsrael = location.inIsrael;
   const bookends: DayEvent[] = [];
 
@@ -76,14 +93,16 @@ function buildDayTimes(selectedDay: DateTime, location: AppLocation, candleLight
 
   if (firstRest && lastRest) {
     const erev = firstRest.minus({ days: 1 });
-    const candle = dayEventsFor(erev, location, candleLightingOffset).find((e) => e.type === 'candle');
-    const havdalah = dayEventsFor(lastRest, location, candleLightingOffset).find((e) => e.type === 'havdalah');
+    const candle = dayEventsFor(erev, location, candleLightingOffset, havdalahOpinion).find((e) => e.type === 'candle');
+    const havdalah = dayEventsFor(lastRest, location, candleLightingOffset, havdalahOpinion).find(
+      (e) => e.type === 'havdalah',
+    );
     if (candle) bookends.push(candle);
     if (havdalah) bookends.push(havdalah);
   }
 
   // Same-day fast events (minor fasts, Yom Kippur, Tisha B'Av).
-  const fasts = dayEventsFor(selectedDay, location, candleLightingOffset).filter(
+  const fasts = dayEventsFor(selectedDay, location, candleLightingOffset, havdalahOpinion).filter(
     (e) => e.type === 'fastStart' || e.type === 'fastEnd',
   );
 
@@ -142,7 +161,7 @@ function buildDayChips(info: DayInfo, locale: string, t: { cat: Translator; pane
 }
 
 export function ZmanimPanel() {
-  const { selectedDay, location, candleLightingOffset } = useAppState();
+  const { selectedDay, location, candleLightingOffset, havdalahOpinion } = useAppState();
   const zmanim = useZmanim();
   const locale = useLocale();
   const tName = useTranslations('zmanim.names');
@@ -161,7 +180,7 @@ export function ZmanimPanel() {
 
   // Candle lighting + havdalah for the rest period (both bookends on both days),
   // plus any fast times for the selected day.
-  const events = buildDayTimes(selectedDay, location, candleLightingOffset);
+  const events = buildDayTimes(selectedDay, location, candleLightingOffset, havdalahOpinion);
 
   // Candle lighting now lives in the events strip above, so keep it out of the
   // zmanim list to avoid showing the same time twice.
@@ -171,18 +190,14 @@ export function ZmanimPanel() {
   );
 
   return (
-    <Card className="gap-0 py-0">
-      <CardHeader className="gap-1.5 px-5 py-4">
-        <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-          <MapPin className="size-3.5" />
-          <span className="truncate">{location.label}</span>
-        </div>
-        <h3 className="text-lg font-semibold">
+    <Card className="gap-0 py-0 lg:h-full">
+      <CardHeader className="gap-1 px-5 py-3">
+        <h3 className="text-lg font-semibold leading-tight">
           {selectedDay.setLocale(locale).toLocaleString({ weekday: 'long', month: 'long', day: 'numeric' })}
+          <span className="text-muted-foreground ms-2 text-sm font-normal">
+            {info.hebrewDayOfMonth} {info.hebrewMonth}
+          </span>
         </h3>
-        <p className="text-muted-foreground text-sm">
-          {info.hebrewDayOfMonth} {info.hebrewMonth}
-        </p>
         {chips.length > 0 && (
           <div className="mt-0.5 flex flex-wrap gap-1.5">
             {chips.map(({ key, ...chip }) => (
@@ -199,6 +214,16 @@ export function ZmanimPanel() {
                   <span className="flex items-center gap-2 font-medium">
                     <Icon className={cn('size-4 shrink-0', className)} />
                     {tEvents(event.type)}
+                    {event.type === 'candle' && (
+                      <Badge variant="secondary" className="font-normal tabular-nums">
+                        {tEvents('candleOffset', { minutes: candleLightingOffset })}
+                      </Badge>
+                    )}
+                    {event.type === 'havdalah' && (
+                      <Badge variant="secondary" className="font-normal tabular-nums">
+                        {tShita(havdalahZmanKey(havdalahOpinion))}
+                      </Badge>
+                    )}
                   </span>
                   <time className="font-mono tabular-nums">{formatTime(event.time, locale)}</time>
                 </div>
@@ -208,7 +233,7 @@ export function ZmanimPanel() {
         )}
       </CardHeader>
       <Separator />
-      <CardContent className="flex flex-col gap-3 px-5 py-3">
+      <CardContent className="flex flex-col gap-3 px-5 py-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         {isToday && <NextZman />}
         <ZmanimList groups={groups} locale={locale} />
       </CardContent>
