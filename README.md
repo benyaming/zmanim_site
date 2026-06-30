@@ -20,7 +20,9 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-Copy `.env.example` to `.env` and set `NEXT_PUBLIC_SITE_URL` for correct SEO URLs.
+`NEXT_PUBLIC_SITE_URL` defaults to `http://localhost:3000`; set it (env or repo variable) for correct SEO URLs in production.
+
+> Working on the code? Start with [`CLAUDE.md`](CLAUDE.md), then [`docs/`](docs/) — [architecture](docs/architecture.md), [zmanim domain](docs/zmanim.md), [deployment](docs/deployment.md).
 
 ### Scripts
 
@@ -52,7 +54,7 @@ i18n routing and dynamic deep-links — it is **not** a static site).
 docker compose up --build          # serves on 127.0.0.1:3000
 ```
 
-On the server, CI pushes an image to GHCR; deploy with:
+CI builds and pushes an image to GHCR (it does **not** auto-deploy). On the server:
 
 ```bash
 docker compose pull
@@ -66,12 +68,10 @@ Put your host nginx in front as a reverse proxy — see [`deploy/nginx.conf`](de
 
 `.github/workflows/ci.yml`:
 
-- **Every push/PR:** lint, typecheck, test, build
-- **Push to `main`:** build the Docker image, push to GHCR, then SSH to the server and `docker compose pull && up -d`
+- **Every push/PR to `main`:** lint, typecheck, test, build + Playwright e2e
+- **Push to `main`:** build the Docker image and push to GHCR (`:latest` + `:sha`)
 
-Required repository **secrets**: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`, `DEPLOY_DIR`.
-Required repository **variable**: `NEXT_PUBLIC_SITE_URL`.
-The server must have Docker + a `docker-compose.yml` referencing the GHCR image, and be able to pull it.
+Required repository **variable**: `NEXT_PUBLIC_SITE_URL`. No secrets are needed (no auto-deploy, no runtime tokens). See [`docs/deployment.md`](docs/deployment.md) for server setup, GHCR auth, and the cross-platform lockfile requirement.
 
 ## Project structure
 
