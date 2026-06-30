@@ -69,7 +69,7 @@ Put your host nginx in front as a reverse proxy — see [`deploy/nginx.conf`](de
 `.github/workflows/ci.yml`:
 
 - **Every push/PR to `main`:** lint, typecheck, test, build + Playwright e2e
-- **Push to `main`:** build the Docker image and push to GHCR (`:latest` + `:sha`)
+- **Push to `main`:** build the Docker image and push to GHCR (`:latest` + `:sha-<commit>`)
 
 Required repository **variable**: `NEXT_PUBLIC_SITE_URL`. No secrets are needed (no auto-deploy, no runtime tokens). See [`docs/deployment.md`](docs/deployment.md) for server setup, GHCR auth, and the cross-platform lockfile requirement.
 

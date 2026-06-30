@@ -50,8 +50,8 @@ src/
     calendar/              grid, navigation, day-info, day-events, holidays-ru
     geo/                   geocoding (keyless), timezone (offline)
     location.ts site.ts cities.ts format.ts utils.ts
+  proxy.ts                 next-intl middleware (Next 16's renamed middleware.ts)
 messages/                  en / he / ru catalogs
-proxy.ts                   next-intl middleware (Next 16 name)
 ```
 
 Data flow: `app-state` (selected day, location, candle offset) → `use-zmanim` → `computeZmanim()` → `buildZmanimGroups()` → panel; the calendar grid computes per-cell `getDayInfo` + `getDayEvents`. The calendar renders **client-only after mount** so "today"/selection can't cause a hydration mismatch.
@@ -83,7 +83,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full narrative.
 
 ## Deployment
 
-Image-only CI (`.github/workflows/ci.yml`): lint/typecheck/test/build + Playwright gate, then **build & push** `ghcr.io/<repo>:latest` and `:sha` on push to `main`. There is **no auto-deploy** — pull + `docker compose up -d` on the server manually. The app has **no runtime secrets** (all client-side). Full guide: [`docs/deployment.md`](docs/deployment.md).
+Image-only CI (`.github/workflows/ci.yml`): lint/typecheck/test/build + Playwright gate, then **build & push** `ghcr.io/<repo>:latest` and `:sha-<commit>` on push to `main`. There is **no auto-deploy** — pull + `docker compose up -d` on the server manually. The app has **no runtime secrets** (all client-side). Full guide: [`docs/deployment.md`](docs/deployment.md).
 
 - The committed **`package-lock.json` must be cross-platform** because CI uses strict `npm ci`. If you change dependencies, regenerate the lockfile on Linux or CI will fail with `EUSAGE` (missing Linux/WASM optional deps):
   ```bash

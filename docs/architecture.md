@@ -7,20 +7,20 @@ How the app is put together and why. For the halachic domain specifics see [zman
 The codebase is split into a **pure domain layer** and a **UI layer**, with a thin state/provider seam between them.
 
 ```
-lib/  (pure, framework-free, unit-tested)
+src/lib/  (pure, framework-free, unit-tested)
   zmanim/     time computation + display grouping
   calendar/   month grid, day classification, day events, navigation
   geo/        geocoding + timezone
   location.ts site.ts cities.ts format.ts
 
-components/providers/  client state (app-state, accessibility, theme, query)
-hooks/                 use-zmanim, use-geolocation
+src/components/providers/  client state (app-state, accessibility, theme, query)
+src/hooks/                 use-zmanim, use-geolocation
 
-components/  (presentational; read state via hooks/providers)
-app/         routes + metadata
+src/components/  (presentational; read state via hooks/providers)
+src/app/         routes + metadata
 ```
 
-Everything under `lib/` is deterministic and has no React/Next imports, so it can be unit-tested in isolation and reused on both server (SEO city pages) and client. UI components stay thin and read derived data from hooks.
+Everything under `src/lib/` is deterministic and has no React/Next imports, so it can be unit-tested in isolation and reused on both server (SEO city pages) and client. UI components stay thin and read derived data from hooks.
 
 ## State
 
@@ -33,15 +33,15 @@ Two client providers hold app state (no global store, no server state for the co
 
 ### Hydration strategy
 
-The calendar depends on "today" and the selected day, which differ between server and client. To avoid hydration mismatches, `components/app.tsx` gates the real UI behind a client-only mount check (`useIsClient` via `useSyncExternalStore`) and renders a skeleton during SSR. Because the calendar tree only mounts on the client, components inside it (e.g. `CalendarGrid` reading the accessibility font scale) can safely use client-only values.
+The calendar depends on "today" and the selected day, which differ between server and client. To avoid hydration mismatches, `src/components/app.tsx` gates the real UI behind a client-only mount check (`useIsClient` via `useSyncExternalStore`) and renders a skeleton during SSR. Because the calendar tree only mounts on the client, components inside it (e.g. `CalendarGrid` reading the accessibility font scale) can safely use client-only values.
 
 ## Rendering & routes
 
-- `app/[locale]/layout.tsx` — fonts, `<html dir>` per locale, theme + accessibility + next-intl providers, `viewport`/`metadata`. `generateStaticParams` pre-renders the three locales.
-- `app/[locale]/page.tsx` — home; supports deep-linked location.
-- `app/[locale]/zmanim/page.tsx` — city index; `app/[locale]/zmanim/[city]/page.tsx` — per-city SEO page (ISR), server-rendered using the same `lib/` domain code.
-- `app/{sitemap,robots,manifest}.ts` — generated metadata routes (server, build-time).
-- `proxy.ts` — next-intl locale middleware (Next 16's renamed `middleware.ts`).
+- `src/app/[locale]/layout.tsx` — fonts, `<html dir>` per locale, theme + accessibility + next-intl providers, `viewport`/`metadata`. `generateStaticParams` pre-renders the three locales.
+- `src/app/[locale]/page.tsx` — home; supports deep-linked location.
+- `src/app/[locale]/zmanim/page.tsx` — city index; `src/app/[locale]/zmanim/[city]/page.tsx` — per-city SEO page (ISR), server-rendered using the same `src/lib/` domain code.
+- `src/app/{sitemap,robots,manifest}.ts` — generated metadata routes (server, build-time).
+- `src/proxy.ts` — next-intl locale middleware (Next 16's renamed `middleware.ts`).
 
 Because of ISR, locale routing, and dynamic deep-links, the app is **not** a static export — it runs as a standalone Node server in the container.
 
@@ -49,8 +49,8 @@ Because of ISR, locale routing, and dynamic deep-links, the app is **not** a sta
 
 ```
 app-state (day, location, offset)
-  → use-zmanim → computeZmanim()        // lib/zmanim/calculator.ts
-  → buildZmanimGroups()                 // lib/zmanim/groups.ts (day-part → base → shitot)
+  → use-zmanim → computeZmanim()        // src/lib/zmanim/calculator.ts
+  → buildZmanimGroups()                 // src/lib/zmanim/groups.ts (day-part → base → shitot)
   → ZmanimPanel / ZmanimList
 ```
 
@@ -60,7 +60,7 @@ See [zmanim.md](zmanim.md) for `definitions.ts` (the locked `key → method` map
 
 ## The calendar
 
-`CalendarGrid` builds a dynamic month grid (`lib/calendar/grid.ts`, 4–6 week rows) and computes, per cell, `getDayInfo` (category, holiday label, parsha, omer, rosh chodesh…) and `getDayEvents` (candle/havdalah/fast times). `CalendarDay` renders a cell.
+`CalendarGrid` builds a dynamic month grid (`src/lib/calendar/grid.ts`, 4–6 week rows) and computes, per cell, `getDayInfo` (category, holiday label, parsha, omer, rosh chodesh…) and `getDayEvents` (candle/havdalah/fast times). `CalendarDay` renders a cell.
 
 ### Responsive / fixed-viewport layout
 
@@ -72,7 +72,7 @@ The defining UI constraint: **the month must always fit the screen without scrol
 
 ### Color system
 
-`components/calendar/day-style.ts` is the single source of truth for significant-day colors. `significantTone(category, dayOfChanukah)` maps a day to a `DayTone`, and `DAY_TONE[tone]` provides matching `chip` (panel) and `dot` (grid) classes — so the grid dot and the panel chip for the same day can never drift apart.
+`src/components/calendar/day-style.ts` is the single source of truth for significant-day colors. `significantTone(category, dayOfChanukah)` maps a day to a `DayTone`, and `DAY_TONE[tone]` provides matching `chip` (panel) and `dot` (grid) classes — so the grid dot and the panel chip for the same day can never drift apart.
 
 ## Accessibility
 
@@ -82,8 +82,8 @@ The defining UI constraint: **the month must always fit the screen without scrol
 
 ## i18n
 
-`next-intl` with locale-prefixed routing (`as-needed`: `/`, `/he`, `/ru`). `i18n/request.ts` loads `messages/{locale}.json` per request; the client provider inherits them (no `messages` prop). Display terminology is unified with the companion `zmanim_bot`. HE/EN holiday & parsha names come from the `kosher-zmanim` formatter; only Russian holiday names are overridden (`lib/calendar/holidays-ru.ts`).
+`next-intl` with locale-prefixed routing (`as-needed`: `/`, `/he`, `/ru`). `src/i18n/request.ts` loads `messages/{locale}.json` per request; the client provider inherits them (no `messages` prop). Display terminology is unified with the companion `zmanim_bot`. HE/EN holiday & parsha names come from the `kosher-zmanim` formatter; only Russian holiday names are overridden (`src/lib/calendar/holidays-ru.ts`).
 
 ## Geo (keyless, no tokens)
 
-`lib/geo/geocoding.ts` — forward city search via **Open-Meteo**, reverse (coords → name) via **BigDataCloud**'s free client endpoint. `lib/geo/timezone.ts` — timezone resolved **offline** with `tz-lookup`. There are no API keys anywhere; the legacy Mapbox dependency was intentionally dropped.
+`src/lib/geo/geocoding.ts` — forward city search via **Open-Meteo**, reverse (coords → name) via **BigDataCloud**'s free client endpoint. `src/lib/geo/timezone.ts` — timezone resolved **offline** with `tz-lookup`. There are no API keys anywhere; the legacy Mapbox dependency was intentionally dropped.
