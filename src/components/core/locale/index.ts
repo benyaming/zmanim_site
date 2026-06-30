@@ -1,1 +1,0 @@
-export { LangSwitch } from './LangSwitch';

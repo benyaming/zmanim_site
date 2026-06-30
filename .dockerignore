@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.github
+legacy
+.preview
+*.log
+.DS_Store
+.env*
+README.md
+Dockerfile
+.dockerignore
+docker-compose.yml
+coverage
+playwright-report
+test-results

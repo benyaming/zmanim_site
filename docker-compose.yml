@@ -1,0 +1,21 @@
+services:
+  web:
+    # On the server this pulls the image built & pushed by CI.
+    # Locally, `docker compose up --build` builds it from source.
+    image: ${ZMANIM_IMAGE:-ghcr.io/benyaming/zmanim_site:latest}
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+    restart: unless-stopped
+    ports:
+      # Bind on all interfaces (0.0.0.0). If a host nginx is the only intended
+      # entry point, prefer "127.0.0.1:${ZMANIM_PORT:-3000}:3000" and firewall it.
+      - "0.0.0.0:${ZMANIM_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
