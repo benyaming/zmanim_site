@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 export type FontScale = 'default' | 'lg' | 'xl' | 'xxl';
 
@@ -32,7 +32,7 @@ function loadPrefs(): Persisted {
   }
 }
 
-export function AccessibilityProvider({ children }: { children: React.ReactNode }) {
+export function AccessibilityProvider({ children }: { children: ReactNode }) {
   // Read once on the client (matches the no-flash inline script in the layout).
   const [fontScale, setFontScale] = useState<FontScale>(() => loadPrefs().fontScale ?? 'default');
   const [reduceMotion, setReduceMotion] = useState<boolean>(() => loadPrefs().reduceMotion ?? false);

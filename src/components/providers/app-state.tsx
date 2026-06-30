@@ -1,7 +1,7 @@
 'use client';
 
 import { DateTime } from 'luxon';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 import type { CalendarMode } from '@/lib/calendar';
 import { type AppLocation, DEFAULT_LOCATION, isIsraelTimezone, makeLocation } from '@/lib/location';
@@ -51,7 +51,7 @@ export function AppStateProvider({
   children,
   initialLocation,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   initialLocation?: AppLocation;
 }) {
   const today = DateTime.now();

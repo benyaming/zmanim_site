@@ -6,8 +6,8 @@ export type ZmanCategory = 'dawn' | 'morning' | 'midday' | 'afternoon' | 'evenin
 
 /**
  * A method name on `ComplexZmanimCalendar`. This catches typos at compile time;
- * the definitions test additionally asserts at runtime that each one is a
- * zero-arg-callable returning a `DateTime`.
+ * the definitions test additionally asserts at runtime that each one resolves
+ * to a real function on the calendar prototype.
  */
 export type ZmanMethod = Extract<keyof ComplexZmanimCalendar, string>;
 
