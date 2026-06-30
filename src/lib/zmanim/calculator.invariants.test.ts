@@ -37,6 +37,10 @@ const ORDER: Pair[] = [
   { before: 'plagHamincha', after: 'sunset', strict: true },
   { before: 'candleLighting', after: 'sunset', strict: true },
   { before: 'sunset', after: 'tzais', strict: true },
+  { before: 'sunset', after: 'tzais42', strict: true },
+  // Both fixed offsets off the same sunset, so 42 < 72 holds everywhere (unlike
+  // the degree-based tzais, whose order vs. the fixed ones varies by latitude).
+  { before: 'tzais42', after: 'tzais72', strict: true },
   { before: 'sunset', after: 'tzais72', strict: true },
 ];
 

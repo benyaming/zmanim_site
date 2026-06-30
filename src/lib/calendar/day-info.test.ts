@@ -35,10 +35,24 @@ describe('getDayInfo', () => {
     expect(weekday.label).toBeNull();
   });
 
+  it('localizes the parsha for the ru locale', () => {
+    const shabbos = getDayInfo(DateTime.fromISO('2024-03-23'), undefined, 'ru');
+    expect(shabbos.parsha).toBe('Ваикра');
+    // weekParsha is meaningful on weekdays too and must also be Russian.
+    const weekday = getDayInfo(DateTime.fromISO('2024-03-19'), undefined, 'ru');
+    expect(weekday.parsha).toBeNull();
+    expect(weekday.weekParsha).toBe('Ваикра');
+  });
+
   it('reports the Hebrew date', () => {
     const info = getDayInfo(DateTime.fromISO('2024-04-23')); // 15 Nissan 5784
     expect(info.hebrewDayOfMonth).toBe(15);
     expect(info.hebrewMonth).toBe('Nissan');
+  });
+
+  it('localizes the Hebrew month for the ru locale', () => {
+    const info = getDayInfo(DateTime.fromISO('2024-04-23'), undefined, 'ru'); // 15 Nissan 5784
+    expect(info.hebrewMonth).toBe('Нисан');
   });
 
   it('uses the Israel vs. diaspora parsha schedule per the inIsrael flag', () => {

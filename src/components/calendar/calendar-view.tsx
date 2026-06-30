@@ -19,7 +19,7 @@ function useMonthTitle(): string {
   const locale = useLocale();
   if (mode === 'hebrew') {
     const jd = new JewishDate(monthDate);
-    return `${createHebrewFormatter(locale === 'he').formatMonth(jd)} ${jd.getJewishYear()}`;
+    return `${createHebrewFormatter(locale).formatMonth(jd)} ${jd.getJewishYear()}`;
   }
   return monthDate.setLocale(locale).toLocaleString({ month: 'long', year: 'numeric' });
 }

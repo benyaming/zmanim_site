@@ -49,9 +49,17 @@ describe('ZMANIM definitions integrity', () => {
       sunset: 'getSunset',
       tzaisGeonim: 'getTzaisGeonim5Point95Degrees',
       tzais: 'getTzais',
+      tzais42: 'getSunset',
       tzais72: 'getTzais72',
       chatzosLaila: 'getSolarMidnight',
     });
+  });
+
+  it('locks the fixed-minute offsets (e.g. tzeit 42 = sunset + 42)', () => {
+    const offsets = Object.fromEntries(
+      ZMANIM.filter((z) => z.offsetMinutes != null).map((z) => [z.key, z.offsetMinutes]),
+    );
+    expect(offsets).toEqual({ tzais42: 42 });
   });
 
   it('marks candle lighting as the only erev-only zman', () => {

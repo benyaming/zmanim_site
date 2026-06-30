@@ -1,15 +1,25 @@
 import { HebrewDateFormatter, JewishCalendar } from 'kosher-zmanim';
 import type { DateTime } from 'luxon';
 
+import { RU_MONTHS } from './months-ru';
+import { RU_PARSHIYOS } from './parshiyos-ru';
 import type { DayCategory, DayInfo } from './types';
 
 /**
  * A reusable formatter so callers can avoid re-instantiating per cell (42×/render).
- * Pass `hebrew` to get Hebrew-script Yom Tov / parsha names (used for the he locale).
+ * For `he` it formats Yom Tov / parsha / month names in Hebrew script; for `ru` it
+ * installs the Russian parsha and month transliterations (kosher-zmanim has no
+ * Russian dataset, so Russian Yom Tov names are overridden separately in
+ * `holidays-ru.ts`).
  */
-export function createHebrewFormatter(hebrew = false): HebrewDateFormatter {
+export function createHebrewFormatter(locale = 'en'): HebrewDateFormatter {
   const formatter = new HebrewDateFormatter();
-  if (hebrew) formatter.setHebrewFormat(true);
+  if (locale === 'he') {
+    formatter.setHebrewFormat(true);
+  } else if (locale === 'ru') {
+    formatter.setTransliteratedParshiosList(RU_PARSHIYOS);
+    formatter.setTransliteratedMonthList(RU_MONTHS);
+  }
   return formatter;
 }
 
@@ -52,7 +62,7 @@ function getWeekParsha(date: DateTime, fmt: HebrewDateFormatter, inIsrael: boole
 }
 
 export function getDayInfo(date: DateTime, formatter?: HebrewDateFormatter, locale = 'en', inIsrael = false): DayInfo {
-  const fmt = formatter ?? createHebrewFormatter(locale === 'he');
+  const fmt = formatter ?? createHebrewFormatter(locale);
   const jc = new JewishCalendar(date);
   jc.setInIsrael(inIsrael); // Israel vs. diaspora luach (parsha schedule, 1- vs 2-day Yom Tov)
   const isShabbos = date.weekday === 6; // Luxon: Saturday === 6

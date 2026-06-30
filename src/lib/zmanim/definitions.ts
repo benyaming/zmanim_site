@@ -40,6 +40,9 @@ export const ZMANIM: readonly ZmanDefinition[] = [
   // Tzeit HaKochavim — Geonim (lenient) → 8.5° → Rabbeinu Tam (stringent).
   { key: 'tzaisGeonim', base: 'tzais', method: 'getTzaisGeonim5Point95Degrees', category: 'evening', order: 125 },
   { key: 'tzais', base: 'tzais', method: 'getTzais', category: 'evening', order: 130 }, // 8.5°
+  // 42 fixed minutes after sunset. kosher-zmanim has no getTzais42 (only 50/60/72…),
+  // so it's expressed as getSunset + 42. Matches zmanim_api/zmanim_bot's tzeis_42_minutes.
+  { key: 'tzais42', base: 'tzais', method: 'getSunset', offsetMinutes: 42, category: 'evening', order: 135 },
   { key: 'tzais72', base: 'tzais', method: 'getTzais72', category: 'evening', order: 140 }, // Rabbeinu Tam
   { key: 'chatzosLaila', base: 'chatzosLaila', method: 'getSolarMidnight', category: 'evening', order: 150 },
 ] as const;

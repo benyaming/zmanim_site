@@ -7,7 +7,7 @@ import type { CSSProperties } from 'react';
 import { useAccessibility } from '@/components/providers/accessibility-provider';
 import { useAppState } from '@/components/providers/app-state';
 import { buildMonthGrid, createHebrewFormatter, getDayEvents, getDayInfo, localizedHolidayLabel } from '@/lib/calendar';
-import { computeZmanim } from '@/lib/zmanim';
+import { computeZmanim, havdalahTime } from '@/lib/zmanim';
 
 import { CalendarDay } from './calendar-day';
 
@@ -18,7 +18,8 @@ function weekdayHeaders(locale: string): string[] {
 }
 
 export function CalendarGrid() {
-  const { monthDate, mode, selectedDay, setSelectedDay, location, candleLightingOffset } = useAppState();
+  const { monthDate, mode, selectedDay, setSelectedDay, location, candleLightingOffset, havdalahOpinion } =
+    useAppState();
   const { fontScale } = useAccessibility();
   const locale = useLocale();
   const tCat = useTranslations('categories');
@@ -34,7 +35,7 @@ export function CalendarGrid() {
   // memoizes this on monthDate/mode/locale/location, so it does NOT recompute on
   // every selected-day change.
   const grid = buildMonthGrid(monthDate, mode);
-  const formatter = createHebrewFormatter(locale === 'he');
+  const formatter = createHebrewFormatter(locale);
   const days = grid.cells.map((cell) => {
     const info = getDayInfo(cell.date, formatter, locale, location.inIsrael);
     const label = localizedHolidayLabel(locale, info.label, info.yomTovIndex, info.dayOfChanukah);
@@ -55,6 +56,7 @@ export function CalendarGrid() {
         alos: byKey.alosHashachar,
         sunset: byKey.sunset,
         tzais: byKey.tzais,
+        havdalah: havdalahTime(havdalahOpinion, byKey),
       },
       location.inIsrael,
     );

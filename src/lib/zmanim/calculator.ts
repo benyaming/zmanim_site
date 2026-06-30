@@ -30,7 +30,8 @@ export function computeZmanim(input: ComputeZmanimInput): ComputedZman[] {
   calendar.setDate(localNoon);
 
   return ZMANIM.map((def) => {
-    const raw = (calendar[def.method] as () => DateTime | null)();
+    const base = (calendar[def.method] as () => DateTime | null)();
+    const raw = base && def.offsetMinutes != null ? base.plus({ minutes: def.offsetMinutes }) : base;
     const time = raw ? raw.setZone(timeZoneId) : null;
     return { ...def, time };
   });

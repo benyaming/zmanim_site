@@ -4,8 +4,10 @@ import { useSyncExternalStore } from 'react';
 
 import { CalendarGrid } from '@/components/calendar/calendar-grid';
 import { CalendarView } from '@/components/calendar/calendar-view';
+import { AppearanceSettings } from '@/components/layout/appearance-settings';
+import { CalendarSettings } from '@/components/layout/calendar-settings';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
-import { SettingsDialog } from '@/components/layout/settings-dialog';
+import { ToolsMenu } from '@/components/layout/tools-menu';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
 import { LocationPicker } from '@/components/location/location-picker';
@@ -55,7 +57,9 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
               <>
                 <LocationPicker />
                 <LanguageSwitcher />
-                <SettingsDialog />
+                <CalendarSettings />
+                <ToolsMenu />
+                <AppearanceSettings />
               </>
             }
           />
@@ -67,7 +71,7 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
                     <CalendarView />
                     <CalendarGrid />
                   </div>
-                  <div className="flex-1 lg:min-h-0 lg:overflow-y-auto 2xl:flex-[2]">
+                  <div className="flex-1 lg:min-h-0 2xl:flex-[2]">
                     <ZmanimPanel />
                   </div>
                 </div>

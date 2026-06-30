@@ -27,3 +27,15 @@ export const DEFAULT_LOCATION: AppLocation = {
   label: 'Jerusalem',
   inIsrael: true,
 };
+
+/**
+ * Whether a location is the un-chosen fallback (same coordinates as
+ * {@link DEFAULT_LOCATION}). Such a value can land in storage from the eager
+ * persist-on-mount, so it must NOT count as an explicit choice — otherwise it
+ * would permanently suppress IP/GPS auto-detection. Compared by coordinates only,
+ * since the label is localized per locale; a real Jerusalem pick from search
+ * carries its own (different) coordinates, so this won't misfire on it.
+ */
+export function isDefaultLocation(loc: AppLocation): boolean {
+  return loc.lat === DEFAULT_LOCATION.lat && loc.lng === DEFAULT_LOCATION.lng;
+}

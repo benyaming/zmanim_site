@@ -25,6 +25,12 @@ export interface ZmanDefinition {
   base: string;
   /** The exact `ComplexZmanimCalendar` method that computes this time. */
   method: ZmanMethod;
+  /**
+   * Fixed minutes to add to `method`'s result. For tzeitim with no dedicated
+   * kosher-zmanim method (e.g. tzeit 42 = sunset + 42 min). Omitted = use the
+   * method's time as-is.
+   */
+  offsetMinutes?: number;
   /** Day-part group for sectioning the display. */
   category: ZmanCategory;
   /** Chronological sort order within a normal day (lower = earlier). */
