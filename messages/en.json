@@ -23,7 +23,8 @@
     "myLocation": "My location",
     "selected": "Selected location",
     "notSupported": "Geolocation is not supported by your browser.",
-    "failed": "Could not get your location."
+    "failed": "Could not get your location.",
+    "defaultCity": "Jerusalem"
   },
   "zmanim": {
     "groups": {

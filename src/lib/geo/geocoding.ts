@@ -45,11 +45,16 @@ export async function searchCities(query: string, signal?: AbortSignal, language
   }));
 }
 
-export async function reverseGeocode(lat: number, lng: number, signal?: AbortSignal): Promise<string | null> {
+export async function reverseGeocode(
+  lat: number,
+  lng: number,
+  signal?: AbortSignal,
+  language = 'en',
+): Promise<string | null> {
   const url = new URL('https://api.bigdatacloud.net/data/reverse-geocode-client');
   url.searchParams.set('latitude', String(lat));
   url.searchParams.set('longitude', String(lng));
-  url.searchParams.set('localityLanguage', 'en');
+  url.searchParams.set('localityLanguage', language);
 
   const res = await fetch(url, { signal });
   if (!res.ok) return null;

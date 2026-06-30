@@ -1,15 +1,22 @@
 'use client';
 
 import { DateTime } from 'luxon';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { CalendarMode } from '@/lib/calendar';
-import { type AppLocation, DEFAULT_LOCATION, isIsraelTimezone, makeLocation } from '@/lib/location';
+import { browserGeolocate } from '@/lib/geo/browser-location';
+import { ipGeolocate } from '@/lib/geo/ip-location';
+import { type AppLocation, DEFAULT_LOCATION, isDefaultLocation, isIsraelTimezone, makeLocation } from '@/lib/location';
+import { DEFAULT_HAVDALAH_OPINION, type HavdalahOpinion, isHavdalahOpinion } from '@/lib/zmanim';
 
 export { DEFAULT_LOCATION, makeLocation };
 export type { AppLocation };
 
 export const DEFAULT_CANDLE_OFFSET = 18;
+/** Candle lighting is always *before* sunset, so the offset must be ≥ 1 minute. */
+export const CANDLE_OFFSET_MIN = 1;
+export const CANDLE_OFFSET_MAX = 120;
 
 interface AppStateValue {
   location: AppLocation;
@@ -26,6 +33,9 @@ interface AppStateValue {
   /** Candle-lighting minutes before sunset. */
   candleLightingOffset: number;
   setCandleLightingOffset: (m: number) => void;
+  /** Which tzeit opinion determines the havdalah time. */
+  havdalahOpinion: HavdalahOpinion;
+  setHavdalahOpinion: (o: HavdalahOpinion) => void;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -35,6 +45,7 @@ const STORAGE_KEY = 'zmanim:prefs:v1';
 interface PersistedPrefs {
   location?: AppLocation;
   candleLightingOffset?: number;
+  havdalahOpinion?: HavdalahOpinion;
 }
 
 function loadPrefs(): PersistedPrefs | null {
@@ -56,35 +67,92 @@ export function AppStateProvider({
 }) {
   const today = DateTime.now();
   const urlProvided = Boolean(initialLocation);
-  const [location, setLocation] = useState<AppLocation>(initialLocation ?? DEFAULT_LOCATION);
+
+  // Captured at mount for the one-shot auto-detect below, so the detected city is
+  // labelled in the active language (and the effect deps stay [urlProvided]).
+  const locale = useLocale();
+  const tLocation = useTranslations('location');
+  const localeRef = useRef(locale);
+  const fallbackLabelRef = useRef(tLocation('myLocation'));
+
+  // The fallback shown until auto-detection resolves (or if it fails) — Jerusalem,
+  // with its name in the active language.
+  const [location, setLocationState] = useState<AppLocation>(
+    initialLocation ?? { ...DEFAULT_LOCATION, label: tLocation('defaultCity') },
+  );
+
+  // True once the location is explicitly chosen (URL deep link, saved pref, or a
+  // user action). Guards the async IP soft-default from overwriting that choice.
+  const locationLocked = useRef(urlProvided);
+  const setLocation = (loc: AppLocation) => {
+    locationLocked.current = true;
+    setLocationState(loc);
+  };
   const [monthDate, setMonthDate] = useState<DateTime>(today.set({ day: 15 }).startOf('day'));
   const [mode, setMode] = useState<CalendarMode>('gregorian');
   const [selectedDay, setSelectedDay] = useState<DateTime>(today.startOf('day'));
   const [candleLightingOffset, setCandleLightingOffset] = useState(DEFAULT_CANDLE_OFFSET);
+  const [havdalahOpinion, setHavdalahOpinion] = useState<HavdalahOpinion>(DEFAULT_HAVDALAH_OPINION);
 
   // Load saved preferences once after mount. Done in an effect (not the initial
   // render) so server and client first-render agree — avoids hydration drift.
   useEffect(() => {
     const prefs = loadPrefs();
     if (!prefs) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (prefs.candleLightingOffset != null) setCandleLightingOffset(prefs.candleLightingOffset);
-    // A location from the URL (deep link) takes precedence over the saved one.
-    // Backfill inIsrael for locations persisted before that field existed.
-    if (!urlProvided && prefs.location) {
-      const saved = prefs.location;
-      setLocation({ ...saved, inIsrael: saved.inIsrael ?? isIsraelTimezone(saved.timeZoneId) });
+    // Apply a saved offset only if it's a sane value; otherwise keep the default
+    // (this also heals a previously-persisted 0, which is invalid for candle lighting).
+    const savedOffset = prefs.candleLightingOffset;
+    if (typeof savedOffset === 'number' && savedOffset >= CANDLE_OFFSET_MIN) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCandleLightingOffset(Math.min(CANDLE_OFFSET_MAX, Math.round(savedOffset)));
     }
+    if (isHavdalahOpinion(prefs.havdalahOpinion)) setHavdalahOpinion(prefs.havdalahOpinion);
+    // A location from the URL (deep link) takes precedence over the saved one.
+    // Ignore a persisted *default* (eager-persisted, not a real choice) so it
+    // doesn't lock out auto-detection. Backfill inIsrael for locations persisted
+    // before that field existed.
+    if (!urlProvided && prefs.location && !isDefaultLocation(prefs.location)) {
+      const saved = prefs.location;
+      locationLocked.current = true; // a saved location is an explicit choice
+      setLocationState({ ...saved, inIsrael: saved.inIsrael ?? isIsraelTimezone(saved.timeZoneId) });
+    }
+  }, [urlProvided]);
+
+  // Auto-detect on first visit, when nothing explicit is set (no URL param, no
+  // saved location). Two-stage, best-effort, both abortable:
+  //   1. IP lookup — instant, no permission, city-level approximate.
+  //   2. Browser GPS — prompts the user; if granted, upgrades to a precise fix.
+  // A manual choice made while these are in flight wins (locationLocked). GPS
+  // locks the choice so a slower IP response can't clobber the precise fix; IP
+  // does not lock, so GPS can still upgrade it. The result is persisted like any
+  // location, so auto-detection runs at most once per device. The user can always
+  // re-trigger GPS or search from the location picker afterwards.
+  useEffect(() => {
+    const saved = loadPrefs()?.location;
+    // Re-detect when nothing explicit is saved — a persisted *default* doesn't count.
+    if (urlProvided || (saved && !isDefaultLocation(saved))) return;
+    const controller = new AbortController();
+
+    ipGeolocate(controller.signal, localeRef.current, fallbackLabelRef.current).then((loc) => {
+      if (loc && !locationLocked.current) setLocationState(loc); // soft, unlocked
+    });
+    browserGeolocate(fallbackLabelRef.current, localeRef.current).then((loc) => {
+      if (!loc || locationLocked.current) return;
+      locationLocked.current = true; // precise fix wins; a late IP can't clobber it
+      setLocationState(loc);
+    });
+
+    return () => controller.abort();
   }, [urlProvided]);
 
   // Persist preferences whenever they change.
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ location, candleLightingOffset }));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ location, candleLightingOffset, havdalahOpinion }));
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [location, candleLightingOffset]);
+  }, [location, candleLightingOffset, havdalahOpinion]);
 
   // Restore calendar state (mode + selected day) from the URL on mount, so a
   // shared link reopens the same day. Read post-mount to stay hydration-safe.
@@ -127,6 +195,8 @@ export function AppStateProvider({
     setSelectedDay,
     candleLightingOffset,
     setCandleLightingOffset,
+    havdalahOpinion,
+    setHavdalahOpinion,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

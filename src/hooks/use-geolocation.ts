@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 
 import { makeLocation, useAppState } from '@/components/providers/app-state';
@@ -19,6 +19,7 @@ interface UseGeolocation {
  */
 export function useGeolocation(onDone?: () => void): UseGeolocation {
   const t = useTranslations('location');
+  const locale = useLocale();
   const { setLocation } = useAppState();
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +36,7 @@ export function useGeolocation(onDone?: () => void): UseGeolocation {
         const { latitude, longitude } = pos.coords;
         let label = t('myLocation');
         try {
-          const name = await reverseGeocode(latitude, longitude);
+          const name = await reverseGeocode(latitude, longitude, undefined, locale);
           if (name) label = name;
         } catch {
           // Reverse geocoding is best-effort; keep the fallback label.
@@ -50,7 +51,7 @@ export function useGeolocation(onDone?: () => void): UseGeolocation {
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 },
     );
-  }, [setLocation, onDone, t]);
+  }, [setLocation, onDone, t, locale]);
 
   return { locating, error, locate };
 }
