@@ -1,0 +1,176 @@
+{
+  "brand": "Zmanim",
+  "nav": {
+    "allCities": "All cities",
+    "openCalendar": "Open calendar"
+  },
+  "calendar": {
+    "today": "Today",
+    "civil": "Civil",
+    "hebrew": "Hebrew",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "prevYear": "Previous year",
+    "nextYear": "Next year",
+    "jumpTo": "Jump to date"
+  },
+  "location": {
+    "choose": "Choose location",
+    "hint": "Search for a city or use your current location.",
+    "useCurrent": "Use my current location",
+    "searchPlaceholder": "Search city…",
+    "noResults": "No cities found.",
+    "myLocation": "My location",
+    "selected": "Selected location",
+    "notSupported": "Geolocation is not supported by your browser.",
+    "failed": "Could not get your location."
+  },
+  "zmanim": {
+    "groups": {
+      "dawn": "Dawn",
+      "morning": "Morning",
+      "midday": "Midday",
+      "afternoon": "Afternoon",
+      "evening": "Evening & night"
+    },
+    "names": {
+      "alosHashachar": "Alot ha-Shachar",
+      "alos72": "Alot ha-Shachar",
+      "misheyakir115": "Misheyakir",
+      "misheyakir11": "Misheyakir",
+      "misheyakir102": "Misheyakir",
+      "sunrise": "Hanetz ha-Chama",
+      "sofZmanShmaMGA": "Sof zman Shema",
+      "sofZmanShmaGRA": "Sof zman Shema",
+      "sofZmanTfilaMGA": "Sof zman Tefila",
+      "sofZmanTfilaGRA": "Sof zman Tefila",
+      "chatzos": "Chatzot",
+      "minchaGedola": "Mincha Gedola",
+      "minchaKetana": "Mincha Ketana",
+      "plagHamincha": "Plag ha-Mincha",
+      "candleLighting": "Candle lighting",
+      "sunset": "Shkia",
+      "tzaisGeonim": "Tzeit ha-Kochavim",
+      "tzais": "Tzeit ha-Kochavim",
+      "tzais72": "Tzeit ha-Kochavim",
+      "chatzosLaila": "Chatzot Laila"
+    },
+    "shitot": {
+      "alosHashachar": "16.1°",
+      "alos72": "72 min",
+      "misheyakir115": "11.5°",
+      "misheyakir11": "11°",
+      "misheyakir102": "10.2°",
+      "sunrise": "",
+      "sofZmanShmaMGA": "Magen Avraham",
+      "sofZmanShmaGRA": "Vilna Gaon",
+      "sofZmanTfilaMGA": "Magen Avraham",
+      "sofZmanTfilaGRA": "Vilna Gaon",
+      "chatzos": "",
+      "minchaGedola": "",
+      "minchaKetana": "",
+      "plagHamincha": "",
+      "candleLighting": "",
+      "sunset": "",
+      "tzaisGeonim": "Geonim · 5.95°",
+      "tzais": "8.5°",
+      "tzais72": "72 min",
+      "chatzosLaila": ""
+    },
+    "descriptions": {
+      "alosHashachar": "First light, with the sun 16.1° below the horizon — the degree equivalent of a 72-minute dawn, so it tracks the same twilight at any latitude or season.",
+      "alos72": "A fixed 72 minutes before sunrise (the time to walk 4 mil at 18 min each; Rambam and Rishonim) — the dawn the Magen Avraham uses for his proportional-hour zmanim.",
+      "misheyakir115": "Earliest tallit and tefillin — sun 11.5° below the horizon (≈52 min before sunrise in Jerusalem near the equinox; the actual offset varies by place and season).",
+      "misheyakir11": "Sun 11° below the horizon (≈48 min before sunrise in Jerusalem near the equinox; the actual offset varies by place and season).",
+      "misheyakir102": "Sun 10.2° below the horizon (≈45 min before sunrise in Jerusalem near the equinox; the actual offset varies by place and season).",
+      "sunrise": "Sunrise (HaNetz). The vatikin complete the morning Shema just before this moment and begin the Amidah exactly at sunrise.",
+      "sofZmanShmaMGA": "End of the 3rd proportional hour by the Magen Avraham — the day measured from dawn (72 min before sunrise) to nightfall (72 min after sunset), an earlier deadline.",
+      "sofZmanShmaGRA": "End of the 3rd proportional hour by the Vilna Gaon (GRA) — the day measured from sunrise to sunset.",
+      "sofZmanTfilaMGA": "End of the 4th proportional hour by the Magen Avraham — day measured from dawn (72 min) to nightfall (72 min).",
+      "sofZmanTfilaGRA": "End of the 4th proportional hour by the Vilna Gaon (GRA) — day measured from sunrise to sunset.",
+      "chatzos": "Solar noon — the midpoint of the day, halfway between sunrise and sunset.",
+      "minchaGedola": "Earliest time to pray Mincha — 6½ proportional hours into the day (a half-hour after midday).",
+      "minchaKetana": "Preferred time to pray Mincha — 9½ proportional hours into the day.",
+      "plagHamincha": "10¾ proportional hours into the day (1¼ hours before sunset) — the earliest one may pray Maariv or accept Shabbat.",
+      "candleLighting": "Candle lighting before Shabbat / Yom Tov — the set minutes before sunset (18 by default; 40 is the Jerusalem custom).",
+      "sunset": "Sunset (Shkia) — Shabbat / Yom Tov begins, and the doubtful twilight (bein hashmashot) starts.",
+      "tzaisGeonim": "An early, lenient nightfall — sun 5.95° below the horizon (the Geonim / Baal HaTanya, ≈24 min after sunset in Jerusalem near the equinox). Some rely on it to end rabbinic fasts.",
+      "tzais": "Three small stars are visible — sun 8.5° below the horizon (≈36 min after sunset in Jerusalem near the equinox). A slightly stringent nightfall; the new day begins.",
+      "tzais72": "Rabbeinu Tam's stringent nightfall — a fixed 72 minutes after sunset (4 mil × 18 min). Relied on for ending Shabbat, Yom Tov, and Yom Kippur.",
+      "chatzosLaila": "Solar midnight — the halachic midpoint of the night, halfway between sunset and sunrise."
+    },
+    "baseDescriptions": {
+      "alos": "Dawn — first light; the start of the halachic day for many mitzvot.",
+      "misheyakir": "Earliest time to don tallit and tefillin — when there is enough light to recognize an acquaintance.",
+      "sofZmanShma": "Latest time to recite the morning Shema — the end of the third proportional hour.",
+      "sofZmanTfila": "Latest time for the morning Amidah (Shacharit) — the end of the fourth proportional hour.",
+      "tzais": "Nightfall — three stars are visible and the new halachic day begins."
+    }
+  },
+  "categories": {
+    "yomTov": "Yom Tov",
+    "cholHamoed": "Chol HaMoed",
+    "erevYomTov": "Erev Yom Tov",
+    "chanukah": "Chanukah",
+    "taanis": "Fast Day",
+    "roshChodesh": "Rosh Chodesh",
+    "shabbos": "Shabbat",
+    "weekday": ""
+  },
+  "events": {
+    "candle": "Candle lighting",
+    "havdalah": "Havdala",
+    "fastStart": "Fast begins",
+    "fastEnd": "Fast ends"
+  },
+  "panel": {
+    "next": "Next",
+    "allPassed": "All of today's zmanim have passed.",
+    "omer": "Day {day} of the Omer",
+    "shabbatMevarchim": "Shabbat Mevarchim",
+    "parasha": "Parashat {name}"
+  },
+  "settings": {
+    "title": "Settings",
+    "open": "Settings",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "candleOffset": "Candle lighting",
+    "candleOffsetHint": "Minutes before sunset (40 is common in Jerusalem).",
+    "minutes": "min",
+    "accessibility": "Accessibility",
+    "textSize": "Text size",
+    "size_default": "Default",
+    "size_lg": "Large",
+    "size_xl": "Larger",
+    "size_xxl": "Largest",
+    "reduceMotion": "Reduce motion",
+    "highContrast": "High contrast",
+    "on": "On",
+    "off": "Off"
+  },
+  "footer": {
+    "disclaimer": "Zmanim times computed with <link>kosher-zmanim</link>. For halachic decisions, consult your local rabbinic authority."
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "he": "עברית",
+    "ru": "Русский"
+  },
+  "city": {
+    "metaTitle": "Zmanim for {city}, {country}",
+    "metaDescription": "Today's halachic zmanim (Jewish prayer times) for {city}: sunrise, sof zman shma, chatzot, mincha, candle lighting, sunset and nightfall.",
+    "heading": "Zmanim for {city}, {country}",
+    "otherCities": "Zmanim in other cities",
+    "indexTitle": "Zmanim by city",
+    "indexDescription": "Find halachic zmanim (Jewish prayer times) for cities around the world.",
+    "indexLede": "Pick a city for today's prayer times, or open the calendar to choose any location."
+  },
+  "home": {
+    "metaTitle": "Zmanim — Jewish prayer times & calendar",
+    "metaDescription": "Accurate halachic zmanim (Jewish prayer times) and calendar for any location, with Hebrew and civil dates."
+  }
+}
