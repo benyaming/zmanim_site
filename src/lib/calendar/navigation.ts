@@ -1,7 +1,43 @@
 import { JewishDate } from 'kosher-zmanim';
-import type { DateTime } from 'luxon';
+import { DateTime } from 'luxon';
 
 import type { CalendarMode } from './types';
+
+/**
+ * Convert a kosher-zmanim `JewishDate` into a Luxon `DateTime` in **this app's**
+ * Luxon instance, anchored at local midnight.
+ *
+ * kosher-zmanim bundles its own copy of Luxon, so `JewishDate.getDate()` returns a
+ * DateTime whose zone object comes from that copy. Cross-instance operations like
+ * `DateTime#hasSame` then silently return the wrong answer against our Luxon (a
+ * same-instant date reports as a *different* day), which is why Hebrew-mode cells
+ * never matched "today"/the selected day. Rebuilding from plain calendar
+ * components severs the foreign Luxon so every date the calendar emits compares
+ * cleanly with `DateTime.now()` and the selected day.
+ */
+function jewishToLocalDay(jd: JewishDate): DateTime {
+  const d = jd.getDate();
+  return DateTime.fromObject({ year: d.year, month: d.month, day: d.day }).startOf('day');
+}
+
+/**
+ * A stable in-month anchor (the 15th) for the month that contains `date`, used as
+ * the viewed-month pointer so navigation can't overflow a short month.
+ *
+ * Crucially this is **mode-aware**: in Hebrew mode it anchors on the 15th of the
+ * *Hebrew* month, not the Gregorian 15th. The Gregorian 15th usually falls in the
+ * *next* Hebrew month (Hebrew months start mid-Gregorian-month), so using it as a
+ * Hebrew-grid anchor renders the wrong month and hides "today". Always derive the
+ * anchor through this helper when setting `monthDate`.
+ */
+export function monthAnchor(date: DateTime, mode: CalendarMode): DateTime {
+  if (mode === 'hebrew') {
+    const jd = new JewishDate(date);
+    jd.setJewishDayOfMonth(15);
+    return jewishToLocalDay(jd);
+  }
+  return date.set({ day: 15 }).startOf('day');
+}
 
 /**
  * Move the viewed month by one step. The returned DateTime is anchored on the
@@ -55,7 +91,7 @@ function shiftHebrewYear(date: DateTime, direction: 1 | -1): DateTime {
   // Adar II (month 13) only exists in leap years; clamp to Adar (12) otherwise.
   if (month === 13 && !isHebrewLeapYear(targetYear)) month = 12;
   jd.setJewishDate(targetYear, month, 15);
-  return jd.getDate().startOf('day');
+  return jewishToLocalDay(jd);
 }
 
 /**
@@ -76,5 +112,5 @@ function shiftHebrewMonth(date: DateTime, direction: 1 | -1): DateTime {
 
   const anchored = new JewishDate(target);
   anchored.setJewishDayOfMonth(15);
-  return anchored.getDate().startOf('day');
+  return jewishToLocalDay(anchored);
 }

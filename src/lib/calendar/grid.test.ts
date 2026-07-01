@@ -70,4 +70,18 @@ describe('buildMonthGrid (Hebrew)', () => {
     const jd = new JewishDate(firstInMonth.date);
     expect(jd.getJewishDayOfMonth()).toBe(1);
   });
+
+  it('emits cells that compare via DateTime#hasSame (kosher-zmanim Luxon isolation)', () => {
+    // Regression: kosher-zmanim bundles its own Luxon, so JewishDate.getDate()
+    // returns a DateTime with a foreign zone object. hasSame() against the app's
+    // Luxon then wrongly reports a same-instant date as a *different* day, so the
+    // Hebrew grid never highlighted "today"/the selected day. Cells must rebuild
+    // in the app's Luxon.
+    const anchor = DateTime.fromObject({ year: 2026, month: 7, day: 1 }); // 16 Tammuz 5786
+    const grid = buildMonthGrid(anchor, 'hebrew');
+    const target = DateTime.fromObject({ year: 2026, month: 7, day: 1 });
+    const match = grid.cells.filter((c) => c.date.hasSame(target, 'day'));
+    expect(match).toHaveLength(1);
+    expect(match[0].inMonth).toBe(true);
+  });
 });

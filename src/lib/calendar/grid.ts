@@ -1,5 +1,5 @@
 import { JewishDate } from 'kosher-zmanim';
-import type { DateTime } from 'luxon';
+import { DateTime } from 'luxon';
 
 import type { CalendarMode, MonthGrid, MonthGridCell } from './types';
 
@@ -13,7 +13,10 @@ export function firstDayOfMonth(date: DateTime, mode: CalendarMode): DateTime {
   if (mode === 'hebrew') {
     const jd = new JewishDate(date);
     jd.setJewishDayOfMonth(1);
-    return jd.getDate().startOf('day');
+    // Rebuild in the app's Luxon (kosher-zmanim ships its own copy) so the grid's
+    // cells compare cleanly with "today"/the selected day via DateTime#hasSame.
+    const d = jd.getDate();
+    return DateTime.fromObject({ year: d.year, month: d.month, day: d.day }).startOf('day');
   }
   return date.set({ day: 1 }).startOf('day');
 }

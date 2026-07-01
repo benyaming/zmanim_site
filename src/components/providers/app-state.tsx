@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 import { useLocale, useTranslations } from 'next-intl';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
-import type { CalendarMode } from '@/lib/calendar';
+import { type CalendarMode, monthAnchor } from '@/lib/calendar';
 import { browserGeolocate } from '@/lib/geo/browser-location';
 import { ipGeolocate } from '@/lib/geo/ip-location';
 import { type AppLocation, DEFAULT_LOCATION, isDefaultLocation, isIsraelTimezone, makeLocation } from '@/lib/location';
@@ -88,9 +88,18 @@ export function AppStateProvider({
     locationLocked.current = true;
     setLocationState(loc);
   };
-  const [monthDate, setMonthDate] = useState<DateTime>(today.set({ day: 15 }).startOf('day'));
-  const [mode, setMode] = useState<CalendarMode>('gregorian');
+  const [monthDate, setMonthDate] = useState<DateTime>(monthAnchor(today, 'gregorian'));
+  const [mode, setModeState] = useState<CalendarMode>('gregorian');
   const [selectedDay, setSelectedDay] = useState<DateTime>(today.startOf('day'));
+
+  // Switching calendar system re-anchors on the *currently viewed* month (not the
+  // selected day), so you keep looking at the same period. Since monthDate always
+  // sits mid-month (the 15th), re-anchoring in the new mode lands on the month that
+  // overlaps the current view the most.
+  const setMode = (m: CalendarMode) => {
+    setModeState(m);
+    setMonthDate(monthAnchor(monthDate, m));
+  };
   const [candleLightingOffset, setCandleLightingOffset] = useState(DEFAULT_CANDLE_OFFSET);
   const [havdalahOpinion, setHavdalahOpinion] = useState<HavdalahOpinion>(DEFAULT_HAVDALAH_OPINION);
 
@@ -159,16 +168,22 @@ export function AppStateProvider({
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const m = p.get('m');
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (m === 'hebrew' || m === 'gregorian') setMode(m);
+    const restoredMode: CalendarMode | null = m === 'hebrew' || m === 'gregorian' ? m : null;
     const d = p.get('d');
-    if (d) {
-      const dt = DateTime.fromISO(d);
-      if (dt.isValid) {
-        setSelectedDay(dt.startOf('day'));
-        setMonthDate(dt.set({ day: 15 }).startOf('day'));
-      }
-    }
+    const dt = d ? DateTime.fromISO(d) : null;
+    const restoredDay = dt?.isValid ? dt.startOf('day') : null;
+    if (!restoredMode && !restoredDay) return;
+
+    // Re-anchor the viewed month to the restored day (or today) in the restored
+    // mode, so a shared `?m=hebrew` link opens on the correct Hebrew month. On
+    // mount the mode state is still the 'gregorian' default, so fall back to it.
+    const anchorMode = restoredMode ?? 'gregorian';
+    const anchorDay = restoredDay ?? DateTime.now().startOf('day');
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (restoredMode) setModeState(restoredMode);
+    if (restoredDay) setSelectedDay(restoredDay);
+    setMonthDate(monthAnchor(anchorDay, anchorMode));
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   // Reflect mode + selected day in the URL (without a navigation) for sharing.
@@ -180,7 +195,7 @@ export function AppStateProvider({
     window.history.replaceState(null, '', `${window.location.pathname}?${p.toString()}`);
   }, [mode, selectedDay]);
 
-  const toggleMode = () => setMode((m) => (m === 'gregorian' ? 'hebrew' : 'gregorian'));
+  const toggleMode = () => setMode(mode === 'gregorian' ? 'hebrew' : 'gregorian');
 
   // The React Compiler memoizes this provider value automatically.
   const value: AppStateValue = {
