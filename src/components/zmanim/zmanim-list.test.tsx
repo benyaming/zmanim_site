@@ -31,22 +31,25 @@ const groups: ZmanGroup[] = [
 ];
 
 describe('ZmanimList', () => {
-  it('renders a single zman flat with its description', () => {
+  it('renders a single zman flat, its description behind an info popover', () => {
     render(<ZmanimList groups={groups} />);
     expect(screen.getByText('Morning')).toBeInTheDocument();
     expect(screen.getByText('Sunrise')).toBeInTheDocument();
-    expect(screen.getByText('The ideal time to begin the morning Shema.')).toBeInTheDocument();
+    // The description is tucked behind the name's info button, not shown inline.
+    expect(screen.getByRole('button', { name: 'Sunrise — details' })).toBeInTheDocument();
+    expect(screen.queryByText('The ideal time to begin the morning Shema.')).not.toBeInTheDocument();
   });
 
-  it('shows a multi-shita zman with a whole-zman caption and per-shita info', () => {
+  it('shows a multi-shita zman with description and per-shita detail behind info', () => {
     render(<ZmanimList groups={groups} />);
     expect(screen.getByText('Latest Shema')).toBeInTheDocument();
-    // The visible caption describes the whole zman.
-    expect(screen.getByText('Latest time to recite the morning Shema.')).toBeInTheDocument();
     expect(screen.getByText('Magen Avraham')).toBeInTheDocument();
     expect(screen.getByText('Vilna Gaon')).toBeInTheDocument();
-    // The opinion-specific detail lives behind an info button (popover), not inline.
+    // Both the whole-zman description and each opinion detail hide behind info
+    // buttons (popovers), so nothing shows inline.
+    expect(screen.getByRole('button', { name: 'Latest Shema — details' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Magen Avraham — details' })).toBeInTheDocument();
+    expect(screen.queryByText('Latest time to recite the morning Shema.')).not.toBeInTheDocument();
     expect(screen.queryByText('MGA — dawn to nightfall.')).not.toBeInTheDocument();
   });
 
