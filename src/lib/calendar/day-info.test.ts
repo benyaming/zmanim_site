@@ -1,7 +1,9 @@
 import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
 
-import { getDayInfo } from './day-info';
+import { JewishDate } from 'kosher-zmanim';
+
+import { createHebrewFormatter, getDayInfo } from './day-info';
 
 describe('getDayInfo', () => {
   it.each([
@@ -50,9 +52,25 @@ describe('getDayInfo', () => {
     expect(info.hebrewMonth).toBe('Nissan');
   });
 
-  it('localizes the Hebrew month for the ru locale', () => {
+  it('uses the genitive Hebrew month for the ru day+month label', () => {
+    // Russian dates put the month in the genitive after a day number: "15 Нисана".
     const info = getDayInfo(DateTime.fromISO('2024-04-23'), undefined, 'ru'); // 15 Nissan 5784
-    expect(info.hebrewMonth).toBe('Нисан');
+    expect(info.hebrewMonth).toBe('Нисана');
+
+    const tammuz = getDayInfo(DateTime.fromISO('2026-07-01'), undefined, 'ru'); // 16 Tammuz 5786
+    expect(tammuz.hebrewMonth).toBe('Таммуза');
+  });
+
+  it('keeps the ru month header in the nominative', () => {
+    // The standalone month+year title ("Нисан 5784") stays nominative.
+    const jd = new JewishDate(DateTime.fromISO('2024-04-23'));
+    expect(createHebrewFormatter('ru').formatMonth(jd)).toBe('Нисан');
+  });
+
+  it('resolves the genitive leap-month name (Adar II) in ru', () => {
+    // 2024-03-20 is in Adar II 5784 (a leap year) — must decline correctly.
+    const info = getDayInfo(DateTime.fromISO('2024-03-20'), undefined, 'ru');
+    expect(info.hebrewMonth).toBe('Адара II');
   });
 
   it('uses the Israel vs. diaspora parsha schedule per the inIsrael flag', () => {

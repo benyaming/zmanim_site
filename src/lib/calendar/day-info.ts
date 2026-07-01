@@ -1,7 +1,7 @@
 import { HebrewDateFormatter, JewishCalendar } from 'kosher-zmanim';
 import type { DateTime } from 'luxon';
 
-import { RU_MONTHS } from './months-ru';
+import { RU_MONTHS, RU_MONTHS_GENITIVE } from './months-ru';
 import { RU_PARSHIYOS } from './parshiyos-ru';
 import type { DayCategory, DayInfo } from './types';
 
@@ -21,6 +21,24 @@ export function createHebrewFormatter(locale = 'en'): HebrewDateFormatter {
     formatter.setTransliteratedMonthList(RU_MONTHS);
   }
   return formatter;
+}
+
+/**
+ * Russian renders the day+month label in the genitive ("16 Таммуза"), so we can't
+ * reuse the nominative formatter installed for the header. A dedicated formatter
+ * carries the genitive list yet still delegates leap-year month resolution
+ * (Adar I/II) to kosher-zmanim. Built lazily and cached (getDayInfo runs 42×/render).
+ */
+let ruGenitiveFormatter: HebrewDateFormatter | undefined;
+
+/** Hebrew month name for the day+month label — genitive in Russian, else default. */
+function hebrewMonthLabel(jc: JewishCalendar, fmt: HebrewDateFormatter, locale: string): string {
+  if (locale !== 'ru') return fmt.formatMonth(jc);
+  if (!ruGenitiveFormatter) {
+    ruGenitiveFormatter = new HebrewDateFormatter();
+    ruGenitiveFormatter.setTransliteratedMonthList(RU_MONTHS_GENITIVE);
+  }
+  return ruGenitiveFormatter.formatMonth(jc);
 }
 
 /**
@@ -82,6 +100,6 @@ export function getDayInfo(date: DateTime, formatter?: HebrewDateFormatter, loca
     omer: jc.getDayOfOmer(),
     isShabbosMevorchim: jc.isShabbosMevorchim(),
     hebrewDayOfMonth: jc.getJewishDayOfMonth(),
-    hebrewMonth: fmt.formatMonth(jc),
+    hebrewMonth: hebrewMonthLabel(jc, fmt, locale),
   };
 }
