@@ -1,6 +1,7 @@
 import { JewishDate } from 'kosher-zmanim';
 import type { DateTime } from 'luxon';
 
+import { jewishToLocalDay } from './jewish-date';
 import type { CalendarMode, MonthGrid, MonthGridCell } from './types';
 
 /** Sunday-first weekday index: Luxon weekday is Mon=1..Sun=7, we want Sun=0..Sat=6. */
@@ -13,7 +14,9 @@ export function firstDayOfMonth(date: DateTime, mode: CalendarMode): DateTime {
   if (mode === 'hebrew') {
     const jd = new JewishDate(date);
     jd.setJewishDayOfMonth(1);
-    return jd.getDate().startOf('day');
+    // Rebuild in the app's Luxon (kosher-zmanim ships its own copy) so the grid's
+    // cells compare cleanly with "today"/the selected day via DateTime#hasSame.
+    return jewishToLocalDay(jd);
   }
   return date.set({ day: 1 }).startOf('day');
 }

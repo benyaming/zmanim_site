@@ -5,8 +5,10 @@ import { BookOpen, Flame, Moon, Sparkles, Utensils, UtensilsCrossed, Wheat } fro
 import { useLocale, useTranslations } from 'next-intl';
 import { DateTime } from 'luxon';
 import type { LucideIcon } from 'lucide-react';
+import type { ComponentType } from 'react';
 
 import { DAY_TONE, significantTone, type DayTone } from '@/components/calendar/day-style';
+import { CandleFlames } from '@/components/icons/candle-flames';
 import { useAppState, type AppLocation } from '@/components/providers/app-state';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -17,11 +19,10 @@ import { formatTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { buildZmanimGroups, computeZmanim, havdalahTime, havdalahZmanKey, type HavdalahOpinion } from '@/lib/zmanim';
 
-import { NextZman } from './next-zman';
 import { ZmanimList } from './zmanim-list';
 
-const EVENT_META: Record<DayEventType, { Icon: LucideIcon; className: string }> = {
-  candle: { Icon: Flame, className: 'text-amber-600 dark:text-amber-400' },
+const EVENT_META: Record<DayEventType, { Icon: ComponentType<{ className?: string }>; className: string }> = {
+  candle: { Icon: CandleFlames, className: 'text-amber-600 dark:text-amber-400' },
   havdalah: { Icon: Sparkles, className: 'text-violet-600 dark:text-violet-400' },
   fastStart: { Icon: UtensilsCrossed, className: 'text-rose-600 dark:text-rose-400' },
   fastEnd: { Icon: Utensils, className: 'text-emerald-600 dark:text-emerald-400' },
@@ -174,7 +175,6 @@ export function ZmanimPanel() {
   const tEvents = useTranslations('events');
 
   const info = getDayInfo(selectedDay, undefined, locale, location.inIsrael);
-  const isToday = selectedDay.hasSame(DateTime.now(), 'day');
 
   const chips = buildDayChips(info, locale, { cat: tCat, panel: tPanel });
 
@@ -234,7 +234,6 @@ export function ZmanimPanel() {
       </CardHeader>
       <Separator />
       <CardContent className="flex flex-col gap-3 px-5 py-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-        {isToday && <NextZman />}
         <ZmanimList groups={groups} locale={locale} />
       </CardContent>
     </Card>

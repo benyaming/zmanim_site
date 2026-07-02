@@ -27,3 +27,26 @@ export const RU_MONTHS: string[] = [
   'Адар II',
   'Адар I',
 ];
+
+/**
+ * Genitive-case forms, same order as {@link RU_MONTHS}. Russian dates put the
+ * month in the genitive after a day number ("16 Таммуза" = "16th of Tammuz"),
+ * mirroring civil dates ("16 июля"). Used for the day+month label; the standalone
+ * month+year header keeps the nominative {@link RU_MONTHS}.
+ */
+export const RU_MONTHS_GENITIVE: string[] = [
+  'Нисана',
+  'Ияра',
+  'Сивана',
+  'Таммуза',
+  'Ава',
+  'Элула',
+  'Тишрея',
+  'Хешвана',
+  'Кислева',
+  'Тевета',
+  'Швата',
+  'Адара',
+  'Адара II',
+  'Адара I',
+];

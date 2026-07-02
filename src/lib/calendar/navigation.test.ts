@@ -2,7 +2,34 @@ import { JewishDate } from 'kosher-zmanim';
 import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
 
-import { nextMonth, nextYear, prevMonth, prevYear } from './navigation';
+import { monthAnchor, nextMonth, nextYear, prevMonth, prevYear } from './navigation';
+
+describe('monthAnchor', () => {
+  it('anchors the Gregorian 15th in Gregorian mode', () => {
+    const anchor = monthAnchor(DateTime.fromISO('2026-07-01'), 'gregorian');
+    expect(anchor.year).toBe(2026);
+    expect(anchor.month).toBe(7);
+    expect(anchor.day).toBe(15);
+  });
+
+  it('anchors on the Hebrew month containing the date, not the Gregorian 15th', () => {
+    // 2026-07-01 is 16 Tammuz; the Gregorian 15th (2026-07-15) is already 1 Av.
+    // The Hebrew anchor must stay in Tammuz so "today" remains on the grid.
+    const date = DateTime.fromISO('2026-07-01');
+    expect(new JewishDate(date).getJewishMonth()).toBe(4); // Tammuz
+    const anchor = monthAnchor(date, 'hebrew');
+    const jd = new JewishDate(anchor);
+    expect(jd.getJewishMonth()).toBe(4); // still Tammuz, not Av (5)
+    expect(jd.getJewishDayOfMonth()).toBe(15);
+  });
+
+  it('keeps the anchored day within the same month as the source day', () => {
+    // Late-in-the-Hebrew-month dates must not spill into the next month.
+    const date = DateTime.fromISO('2026-07-14'); // 29 Tammuz
+    const jd = new JewishDate(monthAnchor(date, 'hebrew'));
+    expect(jd.getJewishMonth()).toBe(new JewishDate(date).getJewishMonth());
+  });
+});
 
 describe('Gregorian navigation', () => {
   it('moves forward and back by exactly one month', () => {

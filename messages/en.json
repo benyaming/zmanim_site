@@ -86,7 +86,7 @@
       "misheyakir115": "Earliest tallit and tefillin — sun 11.5° below the horizon (≈52 min before sunrise in Jerusalem near the equinox; the actual offset varies by place and season).",
       "misheyakir11": "Sun 11° below the horizon (≈48 min before sunrise in Jerusalem near the equinox; the actual offset varies by place and season).",
       "misheyakir102": "Sun 10.2° below the horizon (≈45 min before sunrise in Jerusalem near the equinox; the actual offset varies by place and season).",
-      "sunrise": "Sunrise (HaNetz). The vatikin complete the morning Shema just before this moment and begin the Amidah exactly at sunrise.",
+      "sunrise": "Sunrise (Hanetz). The vatikin complete the morning Shema just before this moment and begin the Amidah exactly at sunrise.",
       "sofZmanShmaMGA": "End of the 3rd proportional hour by the Magen Avraham — the day measured from dawn (72 min before sunrise) to nightfall (72 min after sunset), an earlier deadline.",
       "sofZmanShmaGRA": "End of the 3rd proportional hour by the Vilna Gaon (GRA) — the day measured from sunrise to sunset.",
       "sofZmanTfilaMGA": "End of the 4th proportional hour by the Magen Avraham — day measured from dawn (72 min) to nightfall (72 min).",
@@ -129,8 +129,6 @@
     "candleOffset": "{minutes} min before sunset"
   },
   "panel": {
-    "next": "Next",
-    "allPassed": "All of today's zmanim have passed.",
     "omer": "Day {day} of the Omer",
     "shabbatMevarchim": "Shabbat Mevarchim",
     "parasha": "Parashat {name}"

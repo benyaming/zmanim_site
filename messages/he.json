@@ -129,8 +129,6 @@
     "candleOffset": "{minutes} דק׳ לפני השקיעה"
   },
   "panel": {
-    "next": "הבא",
-    "allPassed": "כל זמני היום עברו.",
     "omer": "יום {day} לעומר",
     "shabbatMevarchim": "שבת מברכים",
     "parasha": "פרשת {name}"

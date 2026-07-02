@@ -15,7 +15,7 @@ export interface ZmanRow {
 export interface ZmanBaseGroup {
   base: string;
   name: string;
-  /** Short, general description of the zman (shown once, inline). */
+  /** Short, general description of the zman (shown behind the name's info popover). */
   description: string;
   rows: ZmanRow[];
 }
@@ -30,7 +30,7 @@ export interface ZmanGroup {
 export interface ZmanTranslators {
   name: (key: string) => string;
   shita: (key: string) => string;
-  /** Per-key detailed clarification (hover). */
+  /** Per-key detailed clarification (info popover). */
   detail: (key: string) => string;
   /** General description for a multi-opinion base zman. */
   baseDescription: (base: string) => string;
@@ -42,7 +42,7 @@ const GROUP_ORDER: ZmanCategory[] = ['dawn', 'morning', 'midday', 'afternoon', '
 /**
  * Group computed zmanim by day-part, and within each by base zman, so that the
  * several opinions of one zman are shown together under a single name. The base
- * shows a general one-line description; per-opinion detail is hover-only.
+ * description and each per-opinion detail are tucked behind info popovers.
  */
 export function buildZmanimGroups(zmanim: ComputedZman[], t: ZmanTranslators): ZmanGroup[] {
   const byCategory = new Map<ZmanCategory, Map<string, ZmanBaseGroup>>();

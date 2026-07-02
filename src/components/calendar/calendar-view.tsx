@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { createHebrewFormatter, nextMonth, nextYear, prevMonth, prevYear } from '@/lib/calendar';
+import { createHebrewFormatter, monthAnchor, nextMonth, nextYear, prevMonth, prevYear } from '@/lib/calendar';
 import { dirForLocale } from '@/i18n/routing';
 
 function useMonthTitle(): string {
@@ -40,14 +40,14 @@ export function CalendarView() {
 
   const goToday = () => {
     const now = DateTime.now();
-    setMonthDate(now.set({ day: 15 }).startOf('day'));
+    setMonthDate(monthAnchor(now, mode));
     setSelectedDay(now.startOf('day'));
   };
 
   const jumpTo = (iso: string) => {
     const d = DateTime.fromISO(iso);
     if (!d.isValid) return;
-    setMonthDate(d.set({ day: 15 }).startOf('day'));
+    setMonthDate(monthAnchor(d, mode));
     setSelectedDay(d.startOf('day'));
     setPickerOpen(false);
   };
