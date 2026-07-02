@@ -2,9 +2,8 @@
 
 import { Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
-
 import { type FontScale, useAccessibility } from '@/components/providers/accessibility-provider';
+import { type Theme, useTheme } from '@/components/providers/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -21,7 +20,7 @@ const FONT_SCALES: { value: FontScale; px: string }[] = [
 /** Appearance menu: theme + accessibility (text size, motion, contrast). */
 export function AppearanceSettings() {
   const t = useTranslations('settings');
-  const { theme = 'system', setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { fontScale, setFontScale, reduceMotion, setReduceMotion, highContrast, setHighContrast } = useAccessibility();
 
   return (
@@ -31,7 +30,7 @@ export function AppearanceSettings() {
         <ToggleGroup
           type="single"
           value={theme}
-          onValueChange={(v) => v && setTheme(v)}
+          onValueChange={(v) => v && setTheme(v as Theme)}
           variant="outline"
           size="sm"
           className="w-full"
