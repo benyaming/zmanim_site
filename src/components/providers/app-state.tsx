@@ -130,11 +130,8 @@ export function AppStateProvider({
     if (!urlProvided && prefs.location && !isDefaultLocation(prefs.location)) {
       const saved = prefs.location;
       locationLocked.current = true; // a saved location is an explicit choice
-      setLocationState({
-        ...saved,
-        timeZoneId: normalizeIsraelAreaTimezone(saved.timeZoneId),
-        inIsrael: isIsraelTimezone(saved.timeZoneId),
-      });
+      const timeZoneId = normalizeIsraelAreaTimezone(saved.timeZoneId);
+      setLocationState({ ...saved, timeZoneId, inIsrael: isIsraelTimezone(timeZoneId) });
     }
   }, [urlProvided]);
 

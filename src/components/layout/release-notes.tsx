@@ -48,8 +48,9 @@ export function ReleaseNotesPane() {
                 </span>
               </h3>
               <ul className="text-muted-foreground mt-1.5 list-disc space-y-1 ps-5 text-sm">
-                {releaseNotes(release, locale).map((note) => (
-                  <li key={note}>{note}</li>
+                {releaseNotes(release, locale).map((note, i) => (
+                  // Index keys are fine here: the list is static per release.
+                  <li key={i}>{note}</li>
                 ))}
               </ul>
             </section>
