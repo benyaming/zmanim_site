@@ -20,8 +20,10 @@ function weekdayHeaders(locale: string): string[] {
 // Cell-size thresholds (in rem, so they track the accessibility text scale).
 const MEDIUM_MIN_WIDTH_REM = 4; // narrower than this only a number + dot fits
 const FULL_MIN_WIDTH_REM = 6; // narrower than this the omer/parsha lines don't fit
-// Content height each tier needs at scale 1 (measured against the busiest months).
-const CONTENT_NEED_REM: Record<CellDensity, number> = { full: 5.4, medium: 3.7, compact: 2.4 };
+// First-pass estimate of each tier's content height. Only used until a tier has
+// been rendered once — after that its real height is measured from the DOM
+// (which, unlike a constant, accounts for wrapped labels and the locale).
+const ESTIMATED_NEED_REM: Record<CellDensity, number> = { full: 5.4, medium: 3.7, compact: 2.4 };
 const TIER_ORDER: CellDensity[] = ['full', 'medium', 'compact'];
 const MIN_SCALE = 0.72; // don't shrink text past this before dropping a tier
 
@@ -31,21 +33,35 @@ interface CellFit {
 }
 
 /**
- * Decide, from the *measured* cell size, how much each cell shows and how much to
- * shrink it so it fits without clipping:
+ * Decide, from the measured cell size and content, how much each cell shows and
+ * how much to shrink it so it fits without clipping:
  *  · Width picks the base tier (compact → medium → full) — horizontal room.
  *  · In the fixed-viewport (lg+) layout the rows are a height-constrained `1fr`,
- *    so the content is scaled down (via `zoom`) to fit that height. Only if it
- *    would have to shrink past {@link MIN_SCALE} does the tier step down.
+ *    so the content is scaled down (via `zoom`) to fit the tallest cell's real
+ *    content. Only if it would have to shrink past {@link MIN_SCALE} does the
+ *    tier step down.
  * Below lg the grid is content-sized, so height never constrains (scale stays 1).
  *
- * Both dimensions are viewport-driven (column width and the `1fr` track), never
- * content-driven, so changing tier/scale can't change the measurement — no
- * oscillation. Measuring in rem folds in the accessibility text scaling; the
- * `fontScale` dep re-measures when the scale changes but the element size doesn't.
+ * The content height is measured with zoom/width reset to their natural values,
+ * so the measurement is independent of the currently applied scale — applying a
+ * new fit can't change the next measurement, and there's no oscillation. Tiers
+ * that haven't been rendered yet use {@link ESTIMATED_NEED_REM}; choosing one
+ * re-renders, which re-runs the effect (`fit.density` dep) and measures it for
+ * real. Measuring in rem folds in the accessibility text scaling; the
+ * `fontScale` dep re-measures when the scale changes but the element size
+ * doesn't, and the `contentKey` dep re-measures when the month's content
+ * changes without the grid resizing.
  */
-function useCellFit(gridRef: RefObject<HTMLDivElement | null>, fontScale: string): CellFit {
+function useCellFit(gridRef: RefObject<HTMLDivElement | null>, fontScale: string, contentKey: string): CellFit {
   const [fit, setFit] = useState<CellFit>({ density: 'full', scale: 1 });
+  // Measured natural content height (rem) per rendered tier, valid for one
+  // content + cell-width + font-scale combination.
+  const measuredRef = useRef<{ key: string; width: number; need: Partial<Record<CellDensity, number>> }>({
+    key: '',
+    width: 0,
+    need: {},
+  });
+  const rendered = fit.density;
   useEffect(() => {
     const el = gridRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
@@ -55,25 +71,57 @@ function useCellFit(gridRef: RefObject<HTMLDivElement | null>, fontScale: string
       if (!cell || cell.clientWidth === 0) return;
       const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       const w = cell.clientWidth / rem;
-      let density: CellDensity = w < MEDIUM_MIN_WIDTH_REM ? 'compact' : w < FULL_MIN_WIDTH_REM ? 'medium' : 'full';
-      let scale = 1;
-      if (window.matchMedia('(min-width: 1024px)').matches) {
-        const h = cell.clientHeight / rem;
-        // Shrink to fit the row; step the tier down only when we'd shrink too far.
-        for (let i = TIER_ORDER.indexOf(density); i < TIER_ORDER.length; i++) {
-          density = TIER_ORDER[i];
-          scale = h / CONTENT_NEED_REM[density];
-          if (scale >= MIN_SCALE || i === TIER_ORDER.length - 1) break;
+      const widthTier: CellDensity =
+        w < MEDIUM_MIN_WIDTH_REM ? 'compact' : w < FULL_MIN_WIDTH_REM ? 'medium' : 'full';
+
+      if (!window.matchMedia('(min-width: 1024px)').matches) {
+        setFit((prev) => (prev.density === widthTier && prev.scale === 1 ? prev : { density: widthTier, scale: 1 }));
+        return;
+      }
+
+      const cache = measuredRef.current;
+      const cacheKey = `${contentKey}|${fontScale}`;
+      if (cache.key !== cacheKey || Math.abs(cache.width - w) > 0.01) {
+        cache.key = cacheKey;
+        cache.width = w;
+        cache.need = {};
+      }
+
+      // Natural height of the tallest cell's content for the tier currently
+      // rendered. zoom is reset during the read so the result doesn't depend
+      // on the currently applied scale. (Wrapping at natural width is never
+      // looser than at the zoomed width, so this can only overestimate —
+      // content never clips.)
+      const wrappers = Array.from(el.querySelectorAll<HTMLElement>('[data-day-content]'));
+      const saved = wrappers.map((n) => n.style.getPropertyValue('zoom'));
+      for (const n of wrappers) n.style.setProperty('zoom', '1');
+      let needPx = 0;
+      for (const n of wrappers) needPx = Math.max(needPx, n.offsetHeight);
+      wrappers.forEach((n, i) => n.style.setProperty('zoom', saved[i]));
+      cache.need[rendered] = needPx / rem;
+
+      const cellStyle = getComputedStyle(cell);
+      const availRem =
+        (cell.clientHeight - parseFloat(cellStyle.paddingTop) - parseFloat(cellStyle.paddingBottom) - 1) / rem;
+
+      // Densest tier (from the width baseline down) that fits the row without
+      // shrinking past MIN_SCALE.
+      let next: CellFit = { density: 'compact', scale: MIN_SCALE };
+      for (let i = TIER_ORDER.indexOf(widthTier); i < TIER_ORDER.length; i++) {
+        const tier = TIER_ORDER[i];
+        const scale = Math.min(1, availRem / (cache.need[tier] ?? ESTIMATED_NEED_REM[tier]));
+        if (scale >= MIN_SCALE || i === TIER_ORDER.length - 1) {
+          next = { density: tier, scale: Math.max(MIN_SCALE, scale) };
+          break;
         }
-        scale = Math.max(MIN_SCALE, Math.min(1, scale));
       }
       setFit((prev) =>
-        prev.density === density && Math.abs(prev.scale - scale) < 0.01 ? prev : { density, scale },
+        prev.density === next.density && Math.abs(prev.scale - next.scale) < 0.01 ? prev : next,
       );
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [gridRef, fontScale]);
+  }, [gridRef, fontScale, contentKey, rendered]);
   return fit;
 }
 
@@ -84,10 +132,21 @@ export function CalendarGrid() {
   const locale = useLocale();
   const tCat = useTranslations('categories');
 
-  // Each cell shows compact / medium / full detail — and shrinks to fit — based on
-  // its measured size.
+  // Each cell shows compact / medium / full detail — and shrinks to fit — based
+  // on its measured size and content. Everything that changes what the cells
+  // render (and so their measured height) is folded into the key.
   const gridRef = useRef<HTMLDivElement>(null);
-  const { density, scale } = useCellFit(gridRef, fontScale);
+  const contentKey = [
+    monthDate.toISODate(),
+    mode,
+    locale,
+    location.lat,
+    location.lng,
+    location.timeZoneId,
+    candleLightingOffset,
+    havdalahOpinion,
+  ].join('|');
+  const { density, scale } = useCellFit(gridRef, fontScale, contentKey);
 
   const headers = weekdayHeaders(locale);
 
