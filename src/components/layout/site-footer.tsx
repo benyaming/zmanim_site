@@ -61,7 +61,7 @@ export function SiteFooter() {
   const t = useTranslations('footer');
   return (
     <footer className="text-muted-foreground shrink-0 border-t py-2.5 text-center text-[0.6875rem] leading-tight">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 2xl:max-w-[2200px]">
+      <div className="mx-auto flex max-w-[2200px] flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4">
         <span className="inline-flex items-center gap-1.5">
           <span>{t('madeBy')}</span>
           <span className="inline-flex items-center gap-1.5">
