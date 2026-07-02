@@ -48,10 +48,10 @@ function useCellFit(gridRef: RefObject<HTMLDivElement | null>, fontScale: string
   const [fit, setFit] = useState<CellFit>({ density: 'full', scale: 1 });
   useEffect(() => {
     const el = gridRef.current;
-    if (!el) return;
+    if (!el || typeof ResizeObserver === 'undefined') return;
     // ResizeObserver fires once on observe, so no synchronous setState is needed.
     const ro = new ResizeObserver(() => {
-      const cell = el.children[7] as HTMLElement | undefined; // 7 weekday headers precede the day cells
+      const cell = el.querySelector<HTMLElement>('[data-day-cell]');
       if (!cell || cell.clientWidth === 0) return;
       const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       const w = cell.clientWidth / rem;

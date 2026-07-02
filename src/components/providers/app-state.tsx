@@ -98,7 +98,9 @@ export function AppStateProvider({
   // overlaps the current view the most.
   const setMode = (m: CalendarMode) => {
     setModeState(m);
-    setMonthDate(monthAnchor(monthDate, m));
+    // Functional update so the anchor always uses the latest monthDate, even if
+    // setMode fires alongside other setMonthDate updates before a re-render.
+    setMonthDate((prev) => monthAnchor(prev, m));
   };
   const [candleLightingOffset, setCandleLightingOffset] = useState(DEFAULT_CANDLE_OFFSET);
   const [havdalahOpinion, setHavdalahOpinion] = useState<HavdalahOpinion>(DEFAULT_HAVDALAH_OPINION);

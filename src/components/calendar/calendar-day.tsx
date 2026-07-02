@@ -84,6 +84,7 @@ export function CalendarDay({
   return (
     <button
       type="button"
+      data-day-cell
       onClick={() => onSelect(date)}
       aria-pressed={isSelected}
       aria-current={isToday ? 'date' : undefined}
