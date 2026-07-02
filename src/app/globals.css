@@ -104,7 +104,7 @@
   --day-yomtov-cell: #f9edf3; /* the Yom Tov cell wash */
   --day-cholhamoed: #f6dfea; /* lighter rose than Yom Tov */
   --day-chanukah: #92cfb0;
-  --day-erev: #f7eedd; /* soft sand */
+  --day-erev: #f9f3e7; /* soft sand — deliberately faint: erev is a lead-in, not the event */
   --day-taanis: #e0e2ea;
   --day-holiday: #f7efc3; /* soft butter — labeled minor holidays (Purim, Tu B'Av, …) */
   --day-isruchag: #eaebef; /* light grey — quieter than the minor-holiday yellow */
@@ -152,7 +152,7 @@
   --day-yomtov-cell: oklch(0.25 0.02 350); /* the Yom Tov cell wash */
   --day-cholhamoed: oklch(0.33 0.045 350); /* lighter rose than Yom Tov */
   --day-chanukah: oklch(0.45 0.08 160);
-  --day-erev: oklch(0.36 0.035 80); /* soft sand */
+  --day-erev: oklch(0.32 0.025 80); /* soft sand — deliberately faint: erev is a lead-in, not the event */
   --day-taanis: oklch(0.38 0.02 265);
   --day-holiday: oklch(0.4 0.05 95); /* soft butter — labeled minor holidays */
   --day-isruchag: oklch(0.35 0.01 265); /* muted grey — quieter than the minor-holiday yellow */
