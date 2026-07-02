@@ -9,7 +9,7 @@ import { useAppState } from '@/components/providers/app-state';
 import { buildMonthGrid, createHebrewFormatter, getDayEvents, getDayInfo, localizedHolidayLabel } from '@/lib/calendar';
 import { computeZmanim, havdalahTime } from '@/lib/zmanim';
 
-import { CalendarDay, type CellDensity } from './calendar-day';
+import { CalendarDay, type CellChip, type CellDensity } from './calendar-day';
 
 /** Sunday-first localized short weekday names. */
 function weekdayHeaders(locale: string): string[] {
@@ -167,7 +167,13 @@ export function CalendarGrid() {
   const days = grid.cells.map((cell) => {
     const info = getDayInfo(cell.date, formatter, locale, location.inIsrael);
     const label = localizedHolidayLabel(locale, info.label, info.yomTovIndex, info.dayOfChanukah);
-    const chipLabel = label ?? (info.isRoshChodesh ? tCat('roshChodesh') : null);
+    // A day can carry two markers (Chanukah on Rosh Chodesh) — show both rather
+    // than letting one win.
+    const chips: CellChip[] = [];
+    if (label) chips.push({ label, category: info.category });
+    if (info.isRoshChodesh && !(label && info.category === 'roshChodesh')) {
+      chips.push({ label: tCat('roshChodesh'), category: 'roshChodesh' });
+    }
 
     const zmanim = computeZmanim({
       lat: location.lat,
@@ -189,7 +195,7 @@ export function CalendarGrid() {
       location.inIsrael,
     );
 
-    return { cell, info, chipLabel, events };
+    return { cell, info, chips, events };
   });
 
   // Safe to call now() here: the app shell gates rendering until mounted, so
@@ -213,13 +219,13 @@ export function CalendarGrid() {
           {name}
         </div>
       ))}
-      {days.map(({ cell, info, chipLabel, events }) => (
+      {days.map(({ cell, info, chips, events }) => (
         <CalendarDay
           key={cell.date.toISODate()}
           date={cell.date}
           inMonth={cell.inMonth}
           info={info}
-          chipLabel={chipLabel}
+          chips={chips}
           events={events}
           mode={mode}
           locale={locale}

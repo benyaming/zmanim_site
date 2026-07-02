@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { createHebrewFormatter, monthAnchor, nextMonth, nextYear, prevMonth, prevYear } from '@/lib/calendar';
+import { createHebrewFormatter, jewishToLocalDay, monthAnchor, nextMonth, nextYear, prevMonth, prevYear } from '@/lib/calendar';
 import { dirForLocale } from '@/i18n/routing';
 
 function useMonthTitle(): string {
@@ -24,11 +24,44 @@ function useMonthTitle(): string {
   return monthDate.setLocale(locale).toLocaleString({ month: 'long', year: 'numeric' });
 }
 
+/**
+ * The viewed month expressed in the *other* calendar system — the Hebrew
+ * month(s) a civil month spans, or the civil month(s) a Hebrew month spans.
+ * Years are repeated only when the span crosses a year boundary.
+ */
+function useAlternateMonths(): string {
+  const { monthDate, mode } = useAppState();
+  const locale = useLocale();
+
+  if (mode === 'hebrew') {
+    const jd = new JewishDate(monthDate);
+    jd.setJewishDayOfMonth(1);
+    // jewishToLocalDay severs kosher-zmanim's bundled Luxon — its DateTimes
+    // don't interoperate safely with this app's Luxon instance.
+    const start = jewishToLocalDay(jd).setLocale(locale);
+    const end = start.plus({ days: jd.getDaysInJewishMonth() - 1 });
+    if (start.month === end.month) return start.toLocaleString({ month: 'long', year: 'numeric' });
+    const endLabel = end.toLocaleString({ month: 'long', year: 'numeric' });
+    if (start.year === end.year) return `${start.toLocaleString({ month: 'long' })} – ${endLabel}`;
+    return `${start.toLocaleString({ month: 'long', year: 'numeric' })} – ${endLabel}`;
+  }
+
+  const fmt = createHebrewFormatter(locale);
+  const start = new JewishDate(monthDate.startOf('month'));
+  const end = new JewishDate(monthDate.endOf('month').startOf('day'));
+  if (start.getJewishMonth() === end.getJewishMonth()) return `${fmt.formatMonth(start)} ${start.getJewishYear()}`;
+  if (start.getJewishYear() === end.getJewishYear()) {
+    return `${fmt.formatMonth(start)} – ${fmt.formatMonth(end)} ${end.getJewishYear()}`;
+  }
+  return `${fmt.formatMonth(start)} ${start.getJewishYear()} – ${fmt.formatMonth(end)} ${end.getJewishYear()}`;
+}
+
 export function CalendarView() {
   const { monthDate, mode, setMode, setMonthDate, selectedDay, setSelectedDay } = useAppState();
   const t = useTranslations('calendar');
   const locale = useLocale();
   const title = useMonthTitle();
+  const alternateMonths = useAlternateMonths();
   const rtl = dirForLocale(locale) === 'rtl';
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -59,10 +92,13 @@ export function CalendarView() {
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-1.5 text-xl font-semibold tracking-tight capitalize hover:opacity-80 sm:text-2xl"
+              className="flex flex-wrap items-center gap-x-2 gap-y-0 text-xl font-semibold tracking-tight hover:opacity-80 sm:text-2xl"
             >
-              {title}
-              <ChevronDown className="size-4 opacity-50" />
+              <span className="flex items-center gap-1.5 capitalize">
+                {title}
+                <ChevronDown className="size-4 opacity-50" />
+              </span>
+              <span className="text-muted-foreground text-sm font-normal tracking-normal">{alternateMonths}</span>
             </button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-auto space-y-2">

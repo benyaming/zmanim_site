@@ -6,7 +6,7 @@ import type { DateTime } from 'luxon';
 import type { ComponentType, CSSProperties } from 'react';
 
 import { CandleFlames } from '@/components/icons/candle-flames';
-import type { CalendarMode, DayEvent, DayEventType, DayInfo } from '@/lib/calendar';
+import type { CalendarMode, DayCategory, DayEvent, DayEventType, DayInfo } from '@/lib/calendar';
 import { formatTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -30,11 +30,17 @@ const EVENT_META: Record<DayEventType, { Icon: ComponentType<{ className?: strin
  */
 export type CellDensity = 'compact' | 'medium' | 'full';
 
+/** A significant-day marker for a cell — a labeled chip in medium/full, a dot in compact. */
+export interface CellChip {
+  label: string;
+  category: DayCategory;
+}
+
 interface CalendarDayProps {
   date: DateTime;
   inMonth: boolean;
   info: DayInfo;
-  chipLabel: string | null;
+  chips: CellChip[];
   events: DayEvent[];
   mode: CalendarMode;
   locale: string;
@@ -50,7 +56,7 @@ export function CalendarDay({
   date,
   inMonth,
   info,
-  chipLabel,
+  chips,
   events,
   mode,
   locale,
@@ -68,8 +74,9 @@ export function CalendarDay({
       ? date.setLocale(locale).toLocaleString({ day: 'numeric', month: 'long' })
       : `${info.hebrewDayOfMonth} ${info.hebrewMonth}`;
 
-  // Rosh Chodesh days that aren't otherwise labeled still use the Rosh Chodesh tint.
-  const chipCategory = info.category === 'weekday' && info.isRoshChodesh ? 'roshChodesh' : info.category;
+  // The dot mirrors its chip's color; a Chanukah label keeps its Chanukah tone.
+  const chipTone = (chip: CellChip) =>
+    significantTone(chip.category, chip.category === 'weekday' ? info.dayOfChanukah : 0);
 
   const showLabels = density !== 'compact'; // medium + full
   const showExtras = density === 'full'; // omer + parsha
@@ -129,30 +136,35 @@ export function CalendarDay({
         <span className="text-muted-foreground truncate text-[0.625rem] leading-tight">{secondary}</span>
       )}
 
-      {/* Compact: a single dot marks a significant day. */}
-      {chipLabel && !showLabels && (
-        <div className="flex" aria-hidden>
-          <span
-            className={cn('size-1.5 shrink-0 rounded-full', DAY_TONE[significantTone(info.category, info.dayOfChanukah)].dot)}
-            title={chipLabel}
-          />
+      {/* Compact: a dot per significant-day marker. */}
+      {chips.length > 0 && !showLabels && (
+        <div className="flex gap-0.5" aria-hidden>
+          {chips.map((chip) => (
+            <span
+              key={chip.label}
+              className={cn('size-1.5 shrink-0 rounded-full', DAY_TONE[chipTone(chip)].dot)}
+              title={chip.label}
+            />
+          ))}
         </div>
       )}
 
-      {/* Medium + full: the significant-day label. Long names wrap (up to two
+      {/* Medium + full: the significant-day labels. Long names wrap (up to two
           lines) rather than clip — the grid's fit measurement absorbs the
           extra line. */}
-      {chipLabel && showLabels && (
-        <span
-          className={cn(
-            'line-clamp-2 rounded px-1 text-[0.6875rem] leading-tight font-medium text-[color:var(--day-label)]',
-            categoryChipClass(chipCategory),
-          )}
-          title={chipLabel}
-        >
-          {chipLabel}
-        </span>
-      )}
+      {showLabels &&
+        chips.map((chip) => (
+          <span
+            key={chip.label}
+            className={cn(
+              'line-clamp-2 rounded px-1 text-[0.6875rem] leading-tight font-medium text-[color:var(--day-label)]',
+              categoryChipClass(chip.category),
+            )}
+            title={chip.label}
+          >
+            {chip.label}
+          </span>
+        ))}
 
       {/* Medium + full: candle-lighting / havdalah / fast times. */}
       {events.length > 0 && showLabels && (
