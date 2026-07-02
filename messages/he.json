@@ -12,7 +12,8 @@
     "nextMonth": "חודש הבא",
     "prevYear": "שנה קודמת",
     "nextYear": "שנה הבאה",
-    "jumpTo": "מעבר לתאריך"
+    "jumpTo": "מעבר לחודש",
+    "year": "שנה"
   },
   "location": {
     "choose": "בחירת מיקום",
