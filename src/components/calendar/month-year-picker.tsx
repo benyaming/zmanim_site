@@ -12,8 +12,9 @@ import { dirForLocale } from '@/i18n/routing';
 import { createHebrewFormatter, hebrewMonthsOfYear, jewishToLocalDay, monthAnchor } from '@/lib/calendar';
 import { cn } from '@/lib/utils';
 
-// kosher-zmanim rejects Jewish years before 3761 (the Gregorian epoch); Luxon
-// tops out at year 9999. Same numeric cap works for both systems.
+// kosher-zmanim only supports dates from 18 Teves 3761 (1 CE), so 3762 is the
+// first Jewish year every month of which can be constructed; Luxon tops out at
+// year 9999. The same numeric cap works for both systems.
 const MIN_YEAR = { gregorian: 1, hebrew: 3762 } as const;
 const MAX_YEAR = 9999;
 

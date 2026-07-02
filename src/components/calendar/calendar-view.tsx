@@ -96,7 +96,10 @@ export function CalendarView() {
           </PopoverTrigger>
           <PopoverContent align="start" className="w-auto space-y-2">
             <p className="text-sm font-medium">{t('jumpTo')}</p>
-            <MonthYearPicker onPicked={() => setPickerOpen(false)} />
+            {/* Keyed so the picker's browsed-year state resets if the mode or
+                viewed month changes while it is mounted — a stale Gregorian
+                year fed into a Hebrew-mode render would be out of range. */}
+            <MonthYearPicker key={`${mode}-${monthDate.toISODate()}`} onPicked={() => setPickerOpen(false)} />
           </PopoverContent>
         </Popover>
 
