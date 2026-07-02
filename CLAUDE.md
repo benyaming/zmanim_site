@@ -93,4 +93,5 @@ Image-only CI (`.github/workflows/ci.yml`): lint/typecheck/test/build + Playwrig
 ## Conventions
 
 - **Conventional Commits** enforced by commitlint (husky `commit-msg`); `pre-commit` runs `eslint --fix` via lint-staged.
+- **Version & release notes** — `src/lib/releases.ts` is the source of truth for the visible app version (not package.json); the footer's corner shows it as a `v…` button that opens the release-notes pane. **Every PR must** bump the version (+0.1; major bumps only when the maintainer calls a milestone) by prepending a `RELEASES` entry — same date-cut PR = one entry — with a short list of the PR's user-facing changes in **all three locales** (en/he/ru). Internal-only refactors still bump, with a one-line note.
 - **No AI/agent attribution anywhere** — commits, PR titles/bodies, code comments, authors. This is the maintainer's standing rule; keep all output clean of it.
