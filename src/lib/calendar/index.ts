@@ -4,6 +4,6 @@ export { localizedHolidayLabel, ruHolidayLabel } from './holidays-ru';
 export { RU_MONTHS, RU_MONTHS_GENITIVE } from './months-ru';
 export { RU_PARSHIYOS } from './parshiyos-ru';
 export { buildMonthGrid, daysInActiveMonth, firstDayOfMonth } from './grid';
-export { monthAnchor, nextMonth, nextYear, prevMonth, prevYear, shiftMonth, shiftYear } from './navigation';
+export { hebrewMonthsOfYear, isHebrewLeapYear, monthAnchor, nextMonth, nextYear, prevMonth, prevYear, shiftMonth, shiftYear } from './navigation';
 export { jewishToLocalDay } from './jewish-date';
 export type { CalendarMode, DayCategory, DayInfo, MonthGrid, MonthGridCell } from './types';

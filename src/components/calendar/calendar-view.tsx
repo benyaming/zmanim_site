@@ -8,11 +8,12 @@ import { useState } from 'react';
 
 import { useAppState } from '@/components/providers/app-state';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { createHebrewFormatter, jewishToLocalDay, monthAnchor, nextMonth, nextYear, prevMonth, prevYear } from '@/lib/calendar';
 import { dirForLocale } from '@/i18n/routing';
+
+import { MonthYearPicker } from './month-year-picker';
 
 function useMonthTitle(): string {
   const { monthDate, mode } = useAppState();
@@ -57,7 +58,7 @@ function useAlternateMonths(): string {
 }
 
 export function CalendarView() {
-  const { monthDate, mode, setMode, setMonthDate, selectedDay, setSelectedDay } = useAppState();
+  const { monthDate, mode, setMode, setMonthDate, setSelectedDay } = useAppState();
   const t = useTranslations('calendar');
   const locale = useLocale();
   const title = useMonthTitle();
@@ -75,14 +76,6 @@ export function CalendarView() {
     const now = DateTime.now();
     setMonthDate(monthAnchor(now, mode));
     setSelectedDay(now.startOf('day'));
-  };
-
-  const jumpTo = (iso: string) => {
-    const d = DateTime.fromISO(iso);
-    if (!d.isValid) return;
-    setMonthDate(monthAnchor(d, mode));
-    setSelectedDay(d.startOf('day'));
-    setPickerOpen(false);
   };
 
   return (
@@ -103,7 +96,10 @@ export function CalendarView() {
           </PopoverTrigger>
           <PopoverContent align="start" className="w-auto space-y-2">
             <p className="text-sm font-medium">{t('jumpTo')}</p>
-            <Input type="date" value={selectedDay.toISODate() ?? ''} onChange={(e) => jumpTo(e.target.value)} className="w-44" />
+            {/* Keyed so the picker's browsed-year state resets if the mode or
+                viewed month changes while it is mounted — a stale Gregorian
+                year fed into a Hebrew-mode render would be out of range. */}
+            <MonthYearPicker key={`${mode}-${monthDate.toISODate()}`} onPicked={() => setPickerOpen(false)} />
           </PopoverContent>
         </Popover>
 

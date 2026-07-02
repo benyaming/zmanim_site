@@ -12,7 +12,8 @@
     "nextMonth": "Next month",
     "prevYear": "Previous year",
     "nextYear": "Next year",
-    "jumpTo": "Jump to date"
+    "jumpTo": "Jump to month",
+    "year": "Year"
   },
   "location": {
     "choose": "Choose location",
