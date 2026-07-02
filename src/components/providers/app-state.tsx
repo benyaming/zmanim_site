@@ -165,8 +165,9 @@ export function AppStateProvider({
     }
   }, [location, candleLightingOffset, havdalahOpinion]);
 
-  // Restore calendar state (mode + selected day) from the URL on mount, so a
-  // shared link reopens the same day. Read post-mount to stay hydration-safe.
+  // Restore calendar state (mode + selected day + viewed month) from the URL on
+  // mount, so a shared link reopens the same view. Read post-mount to stay
+  // hydration-safe.
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const m = p.get('m');
@@ -174,13 +175,19 @@ export function AppStateProvider({
     const d = p.get('d');
     const dt = d ? DateTime.fromISO(d) : null;
     const restoredDay = dt?.isValid ? dt.startOf('day') : null;
-    if (!restoredMode && !restoredDay) return;
+    // The viewed month can differ from the selected day's month (the user
+    // browsed away) — it's carried separately so a reload keeps the view.
+    const v = p.get('v');
+    const vt = v ? DateTime.fromISO(v) : null;
+    const restoredView = vt?.isValid ? vt.startOf('day') : null;
+    if (!restoredMode && !restoredDay && !restoredView) return;
 
-    // Re-anchor the viewed month to the restored day (or today) in the restored
-    // mode, so a shared `?m=hebrew` link opens on the correct Hebrew month. On
-    // mount the mode state is still the 'gregorian' default, so fall back to it.
+    // Re-anchor the viewed month in the restored mode, so a shared `?m=hebrew`
+    // link opens on the correct Hebrew month. Older links have no `v` — fall
+    // back to the restored day (or today). On mount the mode state is still
+    // the 'gregorian' default, so fall back to it.
     const anchorMode = restoredMode ?? 'gregorian';
-    const anchorDay = restoredDay ?? DateTime.now().startOf('day');
+    const anchorDay = restoredView ?? restoredDay ?? DateTime.now().startOf('day');
     /* eslint-disable react-hooks/set-state-in-effect */
     if (restoredMode) setModeState(restoredMode);
     if (restoredDay) setSelectedDay(restoredDay);
@@ -188,14 +195,17 @@ export function AppStateProvider({
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
-  // Reflect mode + selected day in the URL (without a navigation) for sharing.
+  // Reflect mode + selected day + viewed month in the URL (without a
+  // navigation) for sharing and reloads.
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     p.set('m', mode);
     const iso = selectedDay.toISODate();
     if (iso) p.set('d', iso);
+    const view = monthDate.toISODate();
+    if (view) p.set('v', view);
     window.history.replaceState(null, '', `${window.location.pathname}?${p.toString()}`);
-  }, [mode, selectedDay]);
+  }, [mode, selectedDay, monthDate]);
 
   const toggleMode = () => setMode(mode === 'gregorian' ? 'hebrew' : 'gregorian');
 
