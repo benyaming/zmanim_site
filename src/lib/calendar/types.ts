@@ -10,6 +10,7 @@ export type DayCategory =
   | 'taanis'
   | 'roshChodesh'
   | 'shabbos'
+  | 'isruChag'
   | 'weekday';
 
 export interface MonthGridCell {

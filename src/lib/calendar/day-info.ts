@@ -53,10 +53,16 @@ function classify(jc: JewishCalendar, isShabbos: boolean): DayCategory {
   if (jc.isChanukah()) return 'weekday';
   if (jc.isCholHamoed()) return 'cholHamoed';
   if (jc.isErevYomTov()) return 'erevYomTov';
-  if (jc.isYomTov()) return 'yomTov';
+  // Only work-prohibited days count as Yom Tov for coloring. The broad
+  // isYomTov() also reports minor holidays (Purim, Pesach Sheni, Tu B'Av, …),
+  // which must fall through to the labeled-weekday (minor holiday) tint.
+  if (jc.isYomTovAssurBemelacha()) return 'yomTov';
   if (jc.isTaanis()) return 'taanis';
   if (jc.isRoshChodesh()) return 'roshChodesh';
   if (isShabbos) return 'shabbos';
+  // Isru Chag is quieter than the other labeled weekdays (Purim & co.) — it
+  // gets a neutral grey rather than the holiday tint.
+  if (jc.getYomTovIndex() === JewishCalendar.ISRU_CHAG) return 'isruChag';
   return 'weekday';
 }
 

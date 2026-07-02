@@ -49,10 +49,13 @@
 
   /* Calendar day-category colors (carried over from the original palette). */
   --color-day-yomtov: var(--day-yomtov);
+  --color-day-yomtov-cell: var(--day-yomtov-cell);
   --color-day-cholhamoed: var(--day-cholhamoed);
   --color-day-chanukah: var(--day-chanukah);
   --color-day-erev: var(--day-erev);
   --color-day-taanis: var(--day-taanis);
+  --color-day-holiday: var(--day-holiday);
+  --color-day-isruchag: var(--day-isruchag);
   --color-day-roshchodesh: var(--day-roshchodesh);
   --color-day-shabbos: var(--day-shabbos);
   --color-day-label: var(--day-label);
@@ -93,13 +96,19 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* Holiday / significant-day tints (light). */
-  --day-yomtov: #edbdd4;
-  --day-cholhamoed: #f8e6ef;
+  /* Holiday / significant-day tints (light). One pastel family — hues carry the
+     meaning, the weight stays uniform so a busy month (Tishrei) reads calm.
+     Yom Tov is the deepest chip and the only category that also fills its cell,
+     with a whisper of the same rose (matched to the Shabbat tint's weight). */
+  --day-yomtov: #ecc0d5; /* rose — the strongest chip in the system */
+  --day-yomtov-cell: #f9edf3; /* the Yom Tov cell wash */
+  --day-cholhamoed: #f6dfea; /* lighter rose than Yom Tov */
   --day-chanukah: #92cfb0;
-  --day-erev: #fbeede;
-  --day-taanis: #dfe1ea;
-  --day-roshchodesh: #c6def4;
+  --day-erev: #f7eedd; /* soft sand */
+  --day-taanis: #e0e2ea;
+  --day-holiday: #f7efc3; /* soft butter — labeled minor holidays (Purim, Tu B'Av, …) */
+  --day-isruchag: #eaebef; /* light grey — quieter than the minor-holiday yellow */
+  --day-roshchodesh: #d4e4f5;
   --day-shabbos: #f2f8fe;
   --day-label: #2c2d35;
   --day-selected: #2563eb;
@@ -138,13 +147,16 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 
-  /* Holiday / significant-day tints (dark, muted). */
-  --day-yomtov: oklch(0.45 0.09 350);
-  --day-cholhamoed: oklch(0.36 0.05 350);
+  /* Holiday / significant-day tints (dark, muted — same family as light). */
+  --day-yomtov: oklch(0.42 0.08 350); /* rose — the strongest chip in the system */
+  --day-yomtov-cell: oklch(0.25 0.02 350); /* the Yom Tov cell wash */
+  --day-cholhamoed: oklch(0.33 0.045 350); /* lighter rose than Yom Tov */
   --day-chanukah: oklch(0.45 0.08 160);
-  --day-erev: oklch(0.42 0.05 70);
+  --day-erev: oklch(0.36 0.035 80); /* soft sand */
   --day-taanis: oklch(0.38 0.02 265);
-  --day-roshchodesh: oklch(0.45 0.07 245);
+  --day-holiday: oklch(0.4 0.05 95); /* soft butter — labeled minor holidays */
+  --day-isruchag: oklch(0.35 0.01 265); /* muted grey — quieter than the minor-holiday yellow */
+  --day-roshchodesh: oklch(0.42 0.055 245);
   --day-shabbos: oklch(0.32 0.03 245);
   --day-label: oklch(0.985 0 0);
   --day-selected: #3b82f6;
