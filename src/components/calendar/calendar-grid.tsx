@@ -26,6 +26,10 @@ const FULL_MIN_WIDTH_REM = 6; // narrower than this the omer/parsha lines don't 
 const ESTIMATED_NEED_REM: Record<CellDensity, number> = { full: 5.4, medium: 3.7, compact: 2.4 };
 const TIER_ORDER: CellDensity[] = ['full', 'medium', 'compact'];
 const MIN_SCALE = 0.72; // don't shrink text past this before dropping a tier
+// Safety slack against sub-pixel rounding of the `1fr` row tracks and the
+// applied zoom — without it an exact-fit cell can clip its last line by a
+// hairline.
+const FIT_SLACK_PX = 1;
 
 interface CellFit {
   density: CellDensity;
@@ -91,18 +95,23 @@ function useCellFit(gridRef: RefObject<HTMLDivElement | null>, fontScale: string
       // rendered. zoom is reset during the read so the result doesn't depend
       // on the currently applied scale. (Wrapping at natural width is never
       // looser than at the zoomed width, so this can only overestimate —
-      // content never clips.)
-      const wrappers = Array.from(el.querySelectorAll<HTMLElement>('[data-day-content]'));
-      const saved = wrappers.map((n) => n.style.getPropertyValue('zoom'));
-      for (const n of wrappers) n.style.setProperty('zoom', '1');
-      let needPx = 0;
-      for (const n of wrappers) needPx = Math.max(needPx, n.offsetHeight);
-      wrappers.forEach((n, i) => n.style.setProperty('zoom', saved[i]));
-      cache.need[rendered] = needPx / rem;
+      // content never clips.) The cache is invalidated on every input that
+      // could change the result (content, font scale, cell width, tier), so a
+      // hit — e.g. a height-only resize — skips the whole write/read pass.
+      if (cache.need[rendered] === undefined) {
+        const wrappers = Array.from(el.querySelectorAll<HTMLElement>('[data-day-content]'));
+        const saved = wrappers.map((n) => n.style.getPropertyValue('zoom'));
+        for (const n of wrappers) n.style.setProperty('zoom', '1');
+        let needPx = 0;
+        for (const n of wrappers) needPx = Math.max(needPx, n.offsetHeight);
+        wrappers.forEach((n, i) => n.style.setProperty('zoom', saved[i]));
+        cache.need[rendered] = needPx / rem;
+      }
 
       const cellStyle = getComputedStyle(cell);
       const availRem =
-        (cell.clientHeight - parseFloat(cellStyle.paddingTop) - parseFloat(cellStyle.paddingBottom) - 1) / rem;
+        (cell.clientHeight - parseFloat(cellStyle.paddingTop) - parseFloat(cellStyle.paddingBottom) - FIT_SLACK_PX) /
+        rem;
 
       // Densest tier (from the width baseline down) that fits the row without
       // shrinking past MIN_SCALE.
