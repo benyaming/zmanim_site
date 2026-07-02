@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 
 import { type CalendarMode, monthAnchor } from '@/lib/calendar';
 import { browserGeolocate } from '@/lib/geo/browser-location';
+import { reverseGeocode } from '@/lib/geo/geocoding';
 import { ipGeolocate } from '@/lib/geo/ip-location';
 import { type AppLocation, DEFAULT_LOCATION, isDefaultLocation, isIsraelTimezone, makeLocation } from '@/lib/location';
 import { DEFAULT_HAVDALAH_OPINION, type HavdalahOpinion, isHavdalahOpinion } from '@/lib/zmanim';
@@ -78,7 +79,7 @@ export function AppStateProvider({
   // The fallback shown until auto-detection resolves (or if it fails) — Jerusalem,
   // with its name in the active language.
   const [location, setLocationState] = useState<AppLocation>(
-    initialLocation ?? { ...DEFAULT_LOCATION, label: tLocation('defaultCity') },
+    initialLocation ?? { ...DEFAULT_LOCATION, label: tLocation('defaultCity'), labelLocale: locale },
   );
 
   // True once the location is explicitly chosen (URL deep link, saved pref, or a
@@ -155,6 +156,31 @@ export function AppStateProvider({
 
     return () => controller.abort();
   }, [urlProvided]);
+
+  // Re-resolve the location label when the UI language changes: a saved label
+  // keeps the locale it was resolved in (e.g. "Петах-Тиква" after switching to
+  // English), and older saves carry no labelLocale at all — both re-resolve
+  // here. Deep-link labels are respected verbatim for the session, and the
+  // default's label is already translated at init.
+  useEffect(() => {
+    if (urlProvided) return;
+    const loc = location;
+    if (isDefaultLocation(loc) || loc.labelLocale === locale) return;
+    const controller = new AbortController();
+    reverseGeocode(loc.lat, loc.lng, controller.signal, locale)
+      .then((name) => {
+        if (!name) return;
+        // Patch only if the location hasn't changed meanwhile, and without
+        // locking — renaming isn't a location choice.
+        setLocationState((prev) =>
+          prev.lat === loc.lat && prev.lng === loc.lng ? { ...prev, label: name, labelLocale: locale } : prev,
+        );
+      })
+      .catch(() => {
+        // Best-effort: keep the stale label; the next mount retries.
+      });
+    return () => controller.abort();
+  }, [location, locale, urlProvided]);
 
   // Persist preferences whenever they change.
   useEffect(() => {

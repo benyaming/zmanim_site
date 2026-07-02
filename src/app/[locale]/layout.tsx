@@ -11,6 +11,7 @@ import { AccessibilityProvider } from '@/components/providers/accessibility-prov
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { dirForLocale, routing } from '@/i18n/routing';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
+import { themeInitScript } from '@/lib/theme';
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
@@ -68,13 +69,21 @@ export default async function LocaleLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        {/* Apply saved accessibility prefs before paint to avoid a flash. */}
-        <script
+        {/* Apply the saved theme + accessibility prefs before paint to avoid
+            a flash. The scripts are emitted through a wrapper's innerHTML
+            rather than as React <script> elements: the HTML parser executes
+            them on the initial document, while client re-renders of this
+            layout (a locale switch remounts it) merely set innerHTML — inert
+            per spec — so React never client-renders a script tag (it warns
+            about those and wouldn't execute them; the theme and accessibility
+            providers re-apply the classes on mount anyway). */}
+        <div
+          hidden
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=JSON.parse(localStorage.getItem('zmanim:a11y:v1')||'{}');var e=document.documentElement;if(p.fontScale&&p.fontScale!=='default')e.classList.add('text-scale-'+p.fontScale);if(p.reduceMotion)e.classList.add('reduce-motion');if(p.highContrast)e.classList.add('high-contrast');}catch(e){}})();`,
+            __html: `<script>${themeInitScript}(function(){try{var p=JSON.parse(localStorage.getItem('zmanim:a11y:v1')||'{}');var e=document.documentElement;if(p.fontScale&&p.fontScale!=='default')e.classList.add('text-scale-'+p.fontScale);if(p.reduceMotion)e.classList.add('reduce-motion');if(p.highContrast)e.classList.add('high-contrast');}catch(e){}})();</script>`,
           }}
         />
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider>
           <AccessibilityProvider>
             <NextIntlClientProvider>{children}</NextIntlClientProvider>
           </AccessibilityProvider>

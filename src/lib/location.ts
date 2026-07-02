@@ -5,6 +5,13 @@ export interface AppLocation {
   lng: number;
   timeZoneId: string;
   label: string;
+  /**
+   * The UI locale the label was resolved in. When it doesn't match the active
+   * locale the label is re-resolved (see the app-state relabel effect), so a
+   * persisted "Петах-Тиква" doesn't survive a switch to English. Absent when
+   * the label's language is unknown (deep-link labels, older saved prefs).
+   */
+  labelLocale?: string;
   /** Whether to use the Israel luach (1-day Yom Tov, Israel parsha schedule). */
   inIsrael: boolean;
 }
@@ -14,10 +21,14 @@ export function isIsraelTimezone(timeZoneId: string): boolean {
   return timeZoneId === 'Asia/Jerusalem';
 }
 
-/** Build a location, resolving its IANA timezone locally from the coordinates. */
-export function makeLocation(lat: number, lng: number, label: string): AppLocation {
+/**
+ * Build a location, resolving its IANA timezone locally from the coordinates.
+ * Pass `labelLocale` when the label is known to be in a specific UI language;
+ * omit it for language-neutral or unknown labels.
+ */
+export function makeLocation(lat: number, lng: number, label: string, labelLocale?: string): AppLocation {
   const timeZoneId = tzFromLatLng(lat, lng);
-  return { lat, lng, timeZoneId, label, inIsrael: isIsraelTimezone(timeZoneId) };
+  return { lat, lng, timeZoneId, label, labelLocale, inIsrael: isIsraelTimezone(timeZoneId) };
 }
 
 export const DEFAULT_LOCATION: AppLocation = {

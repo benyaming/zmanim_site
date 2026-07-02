@@ -18,13 +18,18 @@ export function browserGeolocate(fallbackLabel = 'My location', locale = 'en'): 
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         let label = fallbackLabel;
+        let labelLocale: string | undefined;
         try {
           const name = await reverseGeocode(latitude, longitude, undefined, locale);
-          if (name) label = name;
+          if (name) {
+            label = name;
+            labelLocale = locale;
+          }
         } catch {
           // Reverse geocoding is best-effort; keep the fallback label.
+          // labelLocale stays unset so the label can be re-resolved later.
         }
-        resolve(makeLocation(latitude, longitude, label));
+        resolve(makeLocation(latitude, longitude, label, labelLocale));
       },
       () => resolve(null),
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 },
