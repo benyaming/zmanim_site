@@ -48,7 +48,7 @@ src/
   lib/
     zmanim/                definitions (locked mapping), calculator, groups, types
     calendar/              grid, navigation, day-info, day-events, holidays-ru
-    geo/                   geocoding (keyless), timezone (offline)
+    geo/                   geocoding (keyless), timezone (offline), settlements (bundled index)
     location.ts site.ts cities.ts format.ts utils.ts
   proxy.ts                 next-intl middleware (Next 16's renamed middleware.ts)
 messages/                  en / he / ru catalogs
@@ -62,7 +62,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full narrative.
 
 1. **Timezone day handling** — build a calendar day's noon from date *components* in the target zone: `DateTime.fromObject({year,month,day,hour:12},{zone:tz})`. Never `setZone()` an instant to derive the day (it shifts across tz/DST). Convert each computed time with `.setZone(tz)`. A golden test catches regressions.
 2. **Work-prohibited day** — use `isYomTovAssurBemelacha()`, **not** the broad `isYomTov()` (true for Purim/Chanukah). Chanukah classifies as `weekday` in `classify()`.
-3. **Israel vs diaspora** — `location.inIsrael` (tz `=== 'Asia/Jerusalem'`) is threaded through `getDayInfo`/`getDayEvents`; it changes the parsha schedule and 1- vs 2-day Yom Tov. Persisted locations missing `inIsrael` are backfilled.
+3. **Israel vs diaspora** — `location.inIsrael` is threaded through `getDayInfo`/`getDayEvents`; it changes the parsha schedule and 1- vs 2-day Yom Tov. It is always derived from the timezone and recomputed on load. tz-lookup's coarse polygons put the whole West Bank — including Gilo, Ma'ale Adumim, Ariel — in `Asia/Hebron` (and Gaza in `Asia/Gaza`); `tzFromLatLng` normalizes both to `Asia/Jerusalem`, and `isIsraelTimezone` still accepts all three for legacy persisted locations. Don't reduce the check back to `=== 'Asia/Jerusalem'`.
 4. **Week parsha** — `kosher-zmanim`'s `getUpcomingParsha()` is broken in 0.9 (throws). Compute it by walking to the coming Saturday.
 5. **`candleLighting` is returned every day** by `computeZmanim` (sunset − offset). It is only a real zman on Erev Shabbat / Erev Yom Tov — filter it out elsewhere (e.g. the "next zman" banner gates it on `isErev`).
 6. **Descriptions** — verified against KosherJava/myzmanim. The "≈ X min before sunrise" figures on degree-based zmanim are the **Jerusalem-equinox anchor** and vary by location/season; keep that qualifier. Details in [`docs/zmanim.md`](docs/zmanim.md).

@@ -8,6 +8,7 @@ import { type CalendarMode, monthAnchor } from '@/lib/calendar';
 import { browserGeolocate } from '@/lib/geo/browser-location';
 import { reverseGeocode } from '@/lib/geo/geocoding';
 import { ipGeolocate } from '@/lib/geo/ip-location';
+import { normalizeIsraelAreaTimezone } from '@/lib/geo/timezone';
 import { type AppLocation, DEFAULT_LOCATION, isDefaultLocation, isIsraelTimezone, makeLocation } from '@/lib/location';
 import { DEFAULT_HAVDALAH_OPINION, type HavdalahOpinion, isHavdalahOpinion } from '@/lib/zmanim';
 
@@ -121,12 +122,19 @@ export function AppStateProvider({
     if (isHavdalahOpinion(prefs.havdalahOpinion)) setHavdalahOpinion(prefs.havdalahOpinion);
     // A location from the URL (deep link) takes precedence over the saved one.
     // Ignore a persisted *default* (eager-persisted, not a real choice) so it
-    // doesn't lock out auto-detection. Backfill inIsrael for locations persisted
-    // before that field existed.
+    // doesn't lock out auto-detection. inIsrael is always derived from the
+    // timezone, so recompute it on load — this backfills locations persisted
+    // before the field existed and heals ones saved with a stale `false` when
+    // Asia/Hebron wasn't yet recognized as Israel. The timezone itself is
+    // re-normalized for the same legacy saves (see normalizeIsraelAreaTimezone).
     if (!urlProvided && prefs.location && !isDefaultLocation(prefs.location)) {
       const saved = prefs.location;
       locationLocked.current = true; // a saved location is an explicit choice
-      setLocationState({ ...saved, inIsrael: saved.inIsrael ?? isIsraelTimezone(saved.timeZoneId) });
+      setLocationState({
+        ...saved,
+        timeZoneId: normalizeIsraelAreaTimezone(saved.timeZoneId),
+        inIsrael: isIsraelTimezone(saved.timeZoneId),
+      });
     }
   }, [urlProvided]);
 
