@@ -92,7 +92,9 @@ export function CalendarDay({
       aria-pressed={isSelected}
       aria-current={isToday ? 'date' : undefined}
       className={cn(
-        'block h-full min-h-11 overflow-hidden p-1 text-start transition-colors sm:min-h-12',
+        // flex (not block): buttons vertically center their content, which made
+        // cells with less content sit lower than their row siblings.
+        'flex h-full min-h-11 flex-col overflow-hidden p-1 text-start transition-colors sm:min-h-12',
         'focus-visible:ring-day-selected focus-visible:ring-2 focus-visible:outline-none',
         // Base: the day's category tint (dimmed for out-of-month padding days).
         cellBackgroundClass(info.category, !inMonth),
