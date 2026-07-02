@@ -184,5 +184,10 @@
   "home": {
     "metaTitle": "Zmanim — Jewish prayer times & calendar",
     "metaDescription": "Accurate halachic zmanim (Jewish prayer times) and calendar for any location, with Hebrew and civil dates."
+  },
+  "releases": {
+    "title": "What's new",
+    "subtitle": "Changes in each release.",
+    "changelog": "Changelog"
   }
 }

@@ -16,9 +16,14 @@ export interface AppLocation {
   inIsrael: boolean;
 }
 
-/** A location is treated as "in Israel" (for the Jewish calendar) by its timezone. */
+/**
+ * A location is treated as "in Israel" (for the Jewish calendar) by its timezone.
+ * Fresh lookups normalize `Asia/Hebron`/`Asia/Gaza` away (see `tzFromLatLng`),
+ * but they survive in locations persisted before that normalization existed —
+ * all of them are Eretz Yisrael for the luach (1-day Yom Tov, Israel parsha).
+ */
 export function isIsraelTimezone(timeZoneId: string): boolean {
-  return timeZoneId === 'Asia/Jerusalem';
+  return timeZoneId === 'Asia/Jerusalem' || timeZoneId === 'Asia/Hebron' || timeZoneId === 'Asia/Gaza';
 }
 
 /**

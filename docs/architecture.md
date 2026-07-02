@@ -10,7 +10,7 @@ The codebase is split into a **pure domain layer** and a **UI layer**, with a th
 src/lib/  (pure, framework-free, unit-tested)
   zmanim/     time computation + display grouping
   calendar/   month grid, day classification, day events, navigation
-  geo/        geocoding + timezone
+  geo/        geocoding + timezone + settlements index
   location.ts site.ts cities.ts format.ts
 
 src/components/providers/  client state (app-state, accessibility, theme, query)
@@ -87,3 +87,5 @@ The defining UI constraint: **the month must always fit the screen without scrol
 ## Geo (keyless, no tokens)
 
 `src/lib/geo/geocoding.ts` — forward city search via **Open-Meteo**, reverse (coords → name) via **BigDataCloud**'s free client endpoint. `src/lib/geo/timezone.ts` — timezone resolved **offline** with `tz-lookup`. There are no API keys anywhere; the legacy Mapbox dependency was intentionally dropped.
+
+Both external services fail on Israeli settlements (missing/variant GeoNames spellings; BigDataCloud labels users there with neighboring Palestinian cities), so `src/lib/geo/settlements.ts` bundles a curated trilingual index that backstops both directions: settlement matches are merged into search results and win reverse-geocode labels within 3 km. `tzFromLatLng` also normalizes `Asia/Hebron`/`Asia/Gaza` (tz-lookup's coarse polygons swallow Gilo, Ma'ale Adumim, Ariel) to `Asia/Jerusalem`, which keeps `inIsrael` — and with it the Israel luach — correct near the Green Line.

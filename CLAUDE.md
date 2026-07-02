@@ -48,7 +48,7 @@ src/
   lib/
     zmanim/                definitions (locked mapping), calculator, groups, types
     calendar/              grid, navigation, day-info, day-events, holidays-ru
-    geo/                   geocoding (keyless), timezone (offline)
+    geo/                   geocoding (keyless), timezone (offline), settlements (bundled index)
     location.ts site.ts cities.ts format.ts utils.ts
   proxy.ts                 next-intl middleware (Next 16's renamed middleware.ts)
 messages/                  en / he / ru catalogs
@@ -62,7 +62,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full narrative.
 
 1. **Timezone day handling** — build a calendar day's noon from date *components* in the target zone: `DateTime.fromObject({year,month,day,hour:12},{zone:tz})`. Never `setZone()` an instant to derive the day (it shifts across tz/DST). Convert each computed time with `.setZone(tz)`. A golden test catches regressions.
 2. **Work-prohibited day** — use `isYomTovAssurBemelacha()`, **not** the broad `isYomTov()` (true for Purim/Chanukah). Chanukah classifies as `weekday` in `classify()`.
-3. **Israel vs diaspora** — `location.inIsrael` (tz `=== 'Asia/Jerusalem'`) is threaded through `getDayInfo`/`getDayEvents`; it changes the parsha schedule and 1- vs 2-day Yom Tov. Persisted locations missing `inIsrael` are backfilled.
+3. **Israel vs diaspora** — `location.inIsrael` is threaded through `getDayInfo`/`getDayEvents`; it changes the parsha schedule and 1- vs 2-day Yom Tov. It is always derived from the timezone and recomputed on load. tz-lookup's coarse polygons put the whole West Bank — including Gilo, Ma'ale Adumim, Ariel — in `Asia/Hebron` (and Gaza in `Asia/Gaza`); `tzFromLatLng` normalizes both to `Asia/Jerusalem`, and `isIsraelTimezone` still accepts all three for legacy persisted locations. Don't reduce the check back to `=== 'Asia/Jerusalem'`.
 4. **Week parsha** — `kosher-zmanim`'s `getUpcomingParsha()` is broken in 0.9 (throws). Compute it by walking to the coming Saturday.
 5. **`candleLighting` is returned every day** by `computeZmanim` (sunset − offset). It is only a real zman on Erev Shabbat / Erev Yom Tov — filter it out elsewhere (e.g. the "next zman" banner gates it on `isErev`).
 6. **Descriptions** — verified against KosherJava/myzmanim. The "≈ X min before sunrise" figures on degree-based zmanim are the **Jerusalem-equinox anchor** and vary by location/season; keep that qualifier. Details in [`docs/zmanim.md`](docs/zmanim.md).
@@ -93,4 +93,5 @@ Image-only CI (`.github/workflows/ci.yml`): lint/typecheck/test/build + Playwrig
 ## Conventions
 
 - **Conventional Commits** enforced by commitlint (husky `commit-msg`); `pre-commit` runs `eslint --fix` via lint-staged.
+- **Version & release notes** — `src/lib/releases.ts` is the source of truth for the visible app version (not package.json); the footer's corner shows it as a `v…` button that opens the release-notes pane. **Every PR must** bump the version (+0.1; major bumps only when the maintainer calls a milestone) by prepending a `RELEASES` entry — same date-cut PR = one entry — with a short list of the PR's user-facing changes in **all three locales** (en/he/ru). Internal-only refactors still bump, with a one-line note.
 - **No AI/agent attribution anywhere** — commits, PR titles/bodies, code comments, authors. This is the maintainer's standing rule; keep all output clean of it.

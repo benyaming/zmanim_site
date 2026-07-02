@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import type { ReactNode, SVGProps } from 'react';
 
+import { ReleaseNotesPane } from './release-notes';
+
 const TELEGRAM_URL = 'https://t.me/benyomin';
 const FACEBOOK_URL = 'https://www.facebook.com/benyomin.94';
 const GITHUB_URL = 'https://github.com/benyaming';
@@ -60,8 +62,10 @@ function GithubIcon(props: SVGProps<SVGSVGElement>) {
 export function SiteFooter() {
   const t = useTranslations('footer');
   return (
-    <footer className="text-muted-foreground shrink-0 border-t py-2.5 text-center text-[0.6875rem] leading-tight">
-      <div className="mx-auto flex max-w-[2200px] flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4">
+    <footer className="text-muted-foreground relative shrink-0 border-t py-2.5 text-center text-[0.6875rem] leading-tight">
+      {/* sm:px-36 keeps the centered content clear of the corner changelog button;
+          on mobile the button drops into its own centered row below instead. */}
+      <div className="mx-auto flex max-w-[2200px] flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 sm:px-36">
         <span className="inline-flex items-center gap-1.5">
           <span>{t('madeBy')}</span>
           <span className="inline-flex items-center gap-1.5">
@@ -105,6 +109,10 @@ export function SiteFooter() {
             ),
           })}
         </span>
+      </div>
+
+      <div className="mt-1 flex items-center justify-center sm:absolute sm:inset-y-0 sm:end-6 sm:mt-0">
+        <ReleaseNotesPane />
       </div>
     </footer>
   );
