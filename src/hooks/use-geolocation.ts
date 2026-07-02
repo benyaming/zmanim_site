@@ -35,13 +35,17 @@ export function useGeolocation(onDone?: () => void): UseGeolocation {
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         let label = t('myLocation');
+        let labelLocale: string | undefined = locale; // the fallback label is localized too
         try {
           const name = await reverseGeocode(latitude, longitude, undefined, locale);
           if (name) label = name;
+          else labelLocale = undefined;
         } catch {
-          // Reverse geocoding is best-effort; keep the fallback label.
+          // Reverse geocoding is best-effort; keep the localized fallback but
+          // leave labelLocale unset so a real city name can be resolved later.
+          labelLocale = undefined;
         }
-        setLocation(makeLocation(latitude, longitude, label));
+        setLocation(makeLocation(latitude, longitude, label, labelLocale));
         setLocating(false);
         onDone?.();
       },

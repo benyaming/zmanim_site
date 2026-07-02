@@ -34,13 +34,18 @@ export async function ipGeolocate(signal?: AbortSignal, locale = 'en', fallbackL
     if (typeof latitude !== 'number' || typeof longitude !== 'number') return null;
 
     let label = city?.trim() || fallbackLabel;
+    let labelLocale: string | undefined;
     try {
       const localized = await reverseGeocode(latitude, longitude, signal, locale);
-      if (localized) label = localized;
+      if (localized) {
+        label = localized;
+        labelLocale = locale;
+      }
     } catch {
       // Reverse geocoding is best-effort; keep the IP service's city name.
+      // labelLocale stays unset so the label can be re-resolved later.
     }
-    return makeLocation(latitude, longitude, label);
+    return makeLocation(latitude, longitude, label, labelLocale);
   } catch {
     // Network error, abort, bad JSON — all non-fatal; caller keeps the default.
     return null;

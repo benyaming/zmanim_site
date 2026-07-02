@@ -77,7 +77,7 @@ export function LocationPicker() {
                   key={place.id}
                   value={place.id}
                   onSelect={() => {
-                    setLocation(makeLocation(place.lat, place.lng, place.name));
+                    setLocation(makeLocation(place.lat, place.lng, place.name, locale));
                     setOpen(false);
                     setQuery('');
                   }}
