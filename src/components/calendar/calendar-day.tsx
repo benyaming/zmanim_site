@@ -76,10 +76,13 @@ export function CalendarDay({
 
   // Shrink the content to fit a short row instead of clipping it. `zoom` scales
   // the whole subtree (text, icons, gaps) and — unlike `transform` — affects
-  // layout, so the cell's `overflow-hidden` respects the smaller size. The width
-  // is pre-inflated by 1/scale so the zoomed content still fills the cell.
-  const fitStyle: CSSProperties | undefined =
-    scale < 1 ? { zoom: scale, width: `${(100 / scale).toFixed(3)}%` } : undefined;
+  // layout, so the cell's `overflow-hidden` respects the smaller size. With
+  // standardized `zoom` the element's own percentage width still resolves in
+  // the parent's (unzoomed) space, so the default 100% width already fills the
+  // cell and the children simply get 1/scale more room inside — do NOT
+  // pre-inflate the width, or the wrapper overflows the cell and its right
+  // edge gets clipped.
+  const fitStyle: CSSProperties | undefined = scale < 1 ? { zoom: scale } : undefined;
 
   return (
     <button
@@ -103,7 +106,7 @@ export function CalendarDay({
         isSelected && 'ring-day-selected ring-2 ring-inset',
       )}
     >
-      <div className="flex flex-col gap-0.5" style={fitStyle}>
+      <div data-day-content className="flex flex-col gap-0.5" style={fitStyle}>
         <div className="flex items-baseline justify-between gap-1">
         <span
           className={cn(
@@ -134,11 +137,13 @@ export function CalendarDay({
         </div>
       )}
 
-      {/* Medium + full: the significant-day label. */}
+      {/* Medium + full: the significant-day label. Long names wrap (up to two
+          lines) rather than clip — the grid's fit measurement absorbs the
+          extra line. */}
       {chipLabel && showLabels && (
         <span
           className={cn(
-            'truncate rounded px-1 text-[0.6875rem] leading-tight font-medium text-[color:var(--day-label)]',
+            'line-clamp-2 rounded px-1 text-[0.6875rem] leading-tight font-medium text-[color:var(--day-label)]',
             categoryChipClass(chipCategory),
           )}
           title={chipLabel}
@@ -166,22 +171,27 @@ export function CalendarDay({
         </div>
       )}
 
-      {/* Full only: the omer count. */}
+      {/* Full only: the omer count. Wraps to a second line instead of clipping
+          (`text-overflow` doesn't apply to flex containers, so `truncate` here
+          used to cut the text with no ellipsis at all). */}
       {info.omer > 0 && showExtras && (
         <span
-          className="text-muted-foreground flex items-center gap-1 truncate text-[0.6875rem]"
+          className="text-muted-foreground flex items-start gap-1 text-[0.6875rem] leading-tight"
           title={tPanel('omer', { day: info.omer })}
         >
-          <Wheat className="size-3 shrink-0" />
-          {tPanel('omer', { day: info.omer })}
+          <Wheat className="mt-px size-3 shrink-0" />
+          <span className="line-clamp-2 min-w-0">{tPanel('omer', { day: info.omer })}</span>
         </span>
       )}
 
       {/* Full only: the weekly parsha. */}
       {info.parsha && showExtras && (
-        <span className="text-muted-foreground flex items-center gap-1 truncate text-[0.6875rem]" title={info.parsha}>
-          <BookOpen className="size-3 shrink-0" />
-          {info.parsha}
+        <span
+          className="text-muted-foreground flex items-start gap-1 text-[0.6875rem] leading-tight"
+          title={info.parsha}
+        >
+          <BookOpen className="mt-px size-3 shrink-0" />
+          <span className="line-clamp-2 min-w-0">{info.parsha}</span>
         </span>
       )}
       </div>

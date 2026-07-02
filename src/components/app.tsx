@@ -18,7 +18,7 @@ import { ZmanimPanel } from '@/components/zmanim/zmanim-panel';
 
 function AppSkeleton() {
   return (
-    <div className="mx-auto flex h-full w-full max-w-6xl flex-col px-4 py-3 2xl:max-w-[2200px]">
+    <div className="mx-auto flex h-full w-full max-w-[2200px] flex-col px-4 py-3">
       <Skeleton className="mb-3 h-9 w-48 shrink-0" />
       <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
         <Skeleton className="min-h-0 flex-1 lg:flex-[2] 2xl:flex-[3]" />
@@ -65,7 +65,7 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
           />
           <main className="flex-1 lg:min-h-0">
             {mounted ? (
-              <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-3 lg:h-full 2xl:max-w-[2200px]">
+              <div className="mx-auto flex w-full max-w-[2200px] flex-col px-4 py-3 lg:h-full">
                 <div className="flex flex-1 flex-col gap-4 lg:min-h-0 lg:flex-row">
                   <div className="flex flex-col gap-2 lg:min-h-0 lg:flex-[2] 2xl:flex-[3]">
                     <CalendarView />
