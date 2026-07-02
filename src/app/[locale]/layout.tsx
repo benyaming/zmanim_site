@@ -8,9 +8,10 @@ import type { ReactNode } from 'react';
 import '../globals.css';
 
 import { AccessibilityProvider } from '@/components/providers/accessibility-provider';
-import { ThemeProvider, themeInitScript } from '@/components/providers/theme-provider';
+import { ThemeProvider } from '@/components/providers/theme-provider';
 import { dirForLocale, routing } from '@/i18n/routing';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
+import { themeInitScript } from '@/lib/theme';
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });

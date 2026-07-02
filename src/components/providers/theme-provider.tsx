@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
+import { THEME_STORAGE_KEY as STORAGE_KEY } from '@/lib/theme';
+
 /**
  * Minimal light/dark/system theme provider (replaces next-themes).
  *
@@ -9,18 +11,12 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
  * app's [locale] layout remounts on every language switch, and React warns
  * about (and never executes) client-rendered script tags. Here the pre-paint
  * script lives in the layout inside a parser-executed innerHTML block (see
- * `themeInitScript`), and the provider itself only manages state + classes.
- *
- * Storage key and html classes ('light'/'dark' + color-scheme) are kept
- * next-themes-compatible so existing saved preferences survive.
+ * `themeInitScript` in src/lib/theme.ts — a server-safe module, since strings
+ * exported from a 'use client' module reach Server Components as client-
+ * reference stubs), and the provider itself only manages state + classes.
  */
 
 export type Theme = 'light' | 'dark' | 'system';
-
-const STORAGE_KEY = 'theme';
-
-/** Pre-paint theme application — inline this in the document via innerHTML. */
-export const themeInitScript = `(function(){try{var t=localStorage.getItem('${STORAGE_KEY}');var d=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);var e=document.documentElement;e.classList.add(d?'dark':'light');e.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
 
 interface ThemeContextValue {
   theme: Theme;
