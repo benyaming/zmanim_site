@@ -10,7 +10,7 @@ import { useAppState } from '@/components/providers/app-state';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { createHebrewFormatter, monthAnchor, nextMonth, nextYear, prevMonth, prevYear } from '@/lib/calendar';
+import { createHebrewFormatter, jewishToLocalDay, monthAnchor, nextMonth, nextYear, prevMonth, prevYear } from '@/lib/calendar';
 import { dirForLocale } from '@/i18n/routing';
 
 import { MonthYearPicker } from './month-year-picker';
@@ -37,7 +37,9 @@ function useAlternateMonths(): string {
   if (mode === 'hebrew') {
     const jd = new JewishDate(monthDate);
     jd.setJewishDayOfMonth(1);
-    const start = jd.getDate().setLocale(locale);
+    // jewishToLocalDay severs kosher-zmanim's bundled Luxon — its DateTimes
+    // don't interoperate safely with this app's Luxon instance.
+    const start = jewishToLocalDay(jd).setLocale(locale);
     const end = start.plus({ days: jd.getDaysInJewishMonth() - 1 });
     if (start.month === end.month) return start.toLocaleString({ month: 'long', year: 'numeric' });
     const endLabel = end.toLocaleString({ month: 'long', year: 'numeric' });
