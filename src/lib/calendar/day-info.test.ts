@@ -12,6 +12,13 @@ describe('getDayInfo', () => {
     ['2024-10-12', 'yomTov', 'Yom Kippur'], // also a Shabbos + fast — yomTov wins
     ['2024-12-26', 'weekday', 'Chanukah 1'], // minor festival — neutral chip, not Yom Tov
     ['2024-07-23', 'taanis', 'Seventeenth of Tammuz'],
+    // Minor holidays: isYomTov() reports them, but work is permitted — they must
+    // classify as labeled weekdays (holiday tint), never as Yom Tov.
+    ['2026-03-03', 'weekday', 'Purim'],
+    ['2026-05-01', 'weekday', 'Pesach Sheni'],
+    ['2026-07-29', 'weekday', "Tu B'Av"],
+    ['2026-05-22', 'yomTov', 'Shavuos'], // work-prohibited — stays Yom Tov
+    ['2026-04-10', 'isruChag', 'Isru Chag'], // day after Pesach (diaspora) — neutral grey, not the holiday tint
   ])('classifies %s as %s (%s)', (iso, category, label) => {
     const info = getDayInfo(DateTime.fromISO(iso));
     expect(info.category).toBe(category);
