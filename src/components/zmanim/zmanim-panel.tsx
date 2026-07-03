@@ -162,7 +162,7 @@ function buildDayChips(info: DayInfo, locale: string, t: { cat: Translator; pane
 }
 
 export function ZmanimPanel() {
-  const { selectedDay, location, candleLightingOffset, havdalahOpinion } = useAppState();
+  const { selectedDay, location, candleLightingOffset, havdalahOpinion, hiddenZmanim } = useAppState();
   const zmanim = useZmanim();
   const locale = useLocale();
   const tName = useTranslations('zmanim.names');
@@ -183,9 +183,11 @@ export function ZmanimPanel() {
   const events = buildDayTimes(selectedDay, location, candleLightingOffset, havdalahOpinion);
 
   // Candle lighting now lives in the events strip above, so keep it out of the
-  // zmanim list to avoid showing the same time twice.
+  // zmanim list to avoid showing the same time twice. User-hidden zmanim are
+  // filtered here (display only) — events above still use the full computation.
+  const hidden = new Set(hiddenZmanim);
   const groups = buildZmanimGroups(
-    zmanim.filter((z) => z.key !== 'candleLighting'),
+    zmanim.filter((z) => z.key !== 'candleLighting' && !hidden.has(z.key)),
     { name: tName, shita: tShita, detail: tDetail, baseDescription: tBaseDesc, group: tGroup },
   );
 
