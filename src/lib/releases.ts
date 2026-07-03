@@ -18,6 +18,15 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.1',
+    date: '2026-07-03',
+    notes: {
+      en: ['Calendar settings: choose which zmanim and opinions are shown in the day panel.'],
+      he: ['הגדרות לוח: בחירת הזמנים והשיטות שיוצגו בלוח היומי.'],
+      ru: ['Настройки календаря: выбор зманим и мнений, отображаемых в панели дня.'],
+    },
+  },
+  {
     version: '1.0',
     date: '2026-07-03',
     notes: {

@@ -10,7 +10,7 @@ import { reverseGeocode } from '@/lib/geo/geocoding';
 import { ipGeolocate } from '@/lib/geo/ip-location';
 import { normalizeIsraelAreaTimezone } from '@/lib/geo/timezone';
 import { type AppLocation, DEFAULT_LOCATION, isDefaultLocation, isIsraelTimezone, makeLocation } from '@/lib/location';
-import { DEFAULT_HAVDALAH_OPINION, type HavdalahOpinion, isHavdalahOpinion } from '@/lib/zmanim';
+import { DEFAULT_HAVDALAH_OPINION, type HavdalahOpinion, isHavdalahOpinion, sanitizeHiddenZmanim } from '@/lib/zmanim';
 
 export { DEFAULT_LOCATION, makeLocation };
 export type { AppLocation };
@@ -38,6 +38,10 @@ interface AppStateValue {
   /** Which tzeit opinion determines the havdalah time. */
   havdalahOpinion: HavdalahOpinion;
   setHavdalahOpinion: (o: HavdalahOpinion) => void;
+  /** Zman keys the user chose to hide from the day panel (empty = show all). */
+  hiddenZmanim: string[];
+  setZmanVisible: (key: string, visible: boolean) => void;
+  showAllZmanim: () => void;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -48,6 +52,8 @@ interface PersistedPrefs {
   location?: AppLocation;
   candleLightingOffset?: number;
   havdalahOpinion?: HavdalahOpinion;
+  /** Hidden (not visible) keys, so zmanim added later default to shown. */
+  hiddenZmanim?: string[];
 }
 
 function loadPrefs(): PersistedPrefs | null {
@@ -106,6 +112,13 @@ export function AppStateProvider({
   };
   const [candleLightingOffset, setCandleLightingOffset] = useState(DEFAULT_CANDLE_OFFSET);
   const [havdalahOpinion, setHavdalahOpinion] = useState<HavdalahOpinion>(DEFAULT_HAVDALAH_OPINION);
+  const [hiddenZmanim, setHiddenZmanim] = useState<string[]>([]);
+  const setZmanVisible = (key: string, visible: boolean) =>
+    setHiddenZmanim((prev) => {
+      if (visible) return prev.includes(key) ? prev.filter((k) => k !== key) : prev;
+      return prev.includes(key) ? prev : [...prev, key];
+    });
+  const showAllZmanim = () => setHiddenZmanim([]);
 
   // Load saved preferences once after mount. Done in an effect (not the initial
   // render) so server and client first-render agree — avoids hydration drift.
@@ -120,6 +133,9 @@ export function AppStateProvider({
       setCandleLightingOffset(Math.min(CANDLE_OFFSET_MAX, Math.round(savedOffset)));
     }
     if (isHavdalahOpinion(prefs.havdalahOpinion)) setHavdalahOpinion(prefs.havdalahOpinion);
+    // Unknown/stale keys are dropped, so a save from an old version self-heals.
+    const savedHidden = sanitizeHiddenZmanim(prefs.hiddenZmanim);
+    if (savedHidden.length > 0) setHiddenZmanim(savedHidden);
     // A location from the URL (deep link) takes precedence over the saved one.
     // Ignore a persisted *default* (eager-persisted, not a real choice) so it
     // doesn't lock out auto-detection. inIsrael is always derived from the
@@ -190,11 +206,14 @@ export function AppStateProvider({
   // Persist preferences whenever they change.
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ location, candleLightingOffset, havdalahOpinion }));
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ location, candleLightingOffset, havdalahOpinion, hiddenZmanim }),
+      );
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [location, candleLightingOffset, havdalahOpinion]);
+  }, [location, candleLightingOffset, havdalahOpinion, hiddenZmanim]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
@@ -255,6 +274,9 @@ export function AppStateProvider({
     setCandleLightingOffset,
     havdalahOpinion,
     setHavdalahOpinion,
+    hiddenZmanim,
+    setZmanVisible,
+    showAllZmanim,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
