@@ -18,6 +18,24 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.7',
+    date: '2026-07-05',
+    notes: {
+      en: [
+        'Optional elevation-adjusted zmanim: enable "Factor in elevation" in the calendar settings to compute sunrise, sunset and the zmanim measured from them for your location’s height above sea level (visible-horizon times). Off by default — the standard published times stay sea-level.',
+        'The location’s elevation is detected automatically; while the setting is on it is shown next to the location name in the header. Degree-based zmanim, chatzot and candle lighting are unaffected, following the accepted practice.',
+      ],
+      he: [
+        'זמנים מותאמי גובה (אופציונלי): הפעילו "התחשבות בגובה המקום" בהגדרות הלוח כדי לחשב את הנץ, השקיעה והזמנים הנמדדים מהם לפי גובה המקום מעל פני הים (אופק נראה). כבוי כברירת מחדל — הזמנים המקובלים נשארים לפי גובה פני הים.',
+        'גובה המקום מזוהה אוטומטית; כשההגדרה פעילה הוא מוצג לצד שם המקום בכותרת. זמנים המבוססים על מעלות, חצות והדלקת נרות אינם מושפעים, בהתאם למנהג המקובל.',
+      ],
+      ru: [
+        'Необязательная поправка на высоту: включите «Учитывать высоту местности» в настройках календаря, чтобы восход, закат и отсчитываемые от них зманим рассчитывались с учётом высоты над уровнем моря (видимый горизонт). По умолчанию выключено — стандартные времена остаются на уровне моря.',
+        'Высота определяется автоматически; пока настройка включена, она показана рядом с названием места в шапке. Зманим по градусам, хацот и зажигание свечей не меняются, в соответствии с принятым обычаем.',
+      ],
+    },
+  },
+  {
     version: '1.6',
     date: '2026-07-05',
     notes: {

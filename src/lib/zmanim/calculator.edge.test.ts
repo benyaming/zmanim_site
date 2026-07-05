@@ -33,10 +33,10 @@ describe('zmanim edge cases', () => {
     expect(summer.sunrise!.offset).toBe(-7 * 60);
   });
 
-  it('higher elevation yields an earlier sunrise and later sunset', () => {
+  it('higher elevation (opted in) yields an earlier sunrise and later sunset', () => {
     const date = DateTime.fromISO('2024-03-20');
-    const seaLevel = byKey(computeZmanim({ lat: 31.778, lng: 35.2354, date, elevation: 0 }));
-    const mountain = byKey(computeZmanim({ lat: 31.778, lng: 35.2354, date, elevation: 800 }));
+    const seaLevel = byKey(computeZmanim({ lat: 31.778, lng: 35.2354, date, elevation: 0, useElevation: true }));
+    const mountain = byKey(computeZmanim({ lat: 31.778, lng: 35.2354, date, elevation: 800, useElevation: true }));
     expect(mountain.sunrise!.toMillis()).toBeLessThan(seaLevel.sunrise!.toMillis());
     expect(mountain.sunset!.toMillis()).toBeGreaterThan(seaLevel.sunset!.toMillis());
   });

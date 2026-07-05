@@ -25,6 +25,10 @@ export interface Place {
   description: string;
   lat: number;
   lng: number;
+  /** Meters above sea level, when the source provides it (Open-Meteo results
+   *  do; settlement matches don't — those are backfilled from the elevation
+   *  API by the app-state effect). */
+  elevation?: number;
 }
 
 interface OpenMeteoResult {
@@ -32,6 +36,7 @@ interface OpenMeteoResult {
   name: string;
   latitude: number;
   longitude: number;
+  elevation?: number;
   country?: string;
   admin1?: string;
 }
@@ -80,6 +85,7 @@ export async function searchCities(query: string, signal?: AbortSignal, language
       description: [r.name, r.admin1, r.country].filter(Boolean).join(', '),
       lat: r.latitude,
       lng: r.longitude,
+      elevation: typeof r.elevation === 'number' && Number.isFinite(r.elevation) ? Math.round(r.elevation) : undefined,
     }))
     .filter((r) => !local.some((l) => haversineKm(l.lat, l.lng, r.lat, r.lng) < 3));
 
