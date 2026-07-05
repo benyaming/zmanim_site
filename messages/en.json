@@ -148,7 +148,10 @@
     "specialShabbat": "Shabbat {name}",
     "molad": "Molad: {weekday}, {time} and {chalakim} chalakim",
     "parasha": "Parashat {name}",
-    "detailsAria": "{label} — details"
+    "detailsAria": "{label} — details",
+    "zmanimSettingsHint": "More zmanim and opinions can be shown via the calendar settings.",
+    "observedPostponed": "Observed later this year because of Shabbat.",
+    "observedAdvanced": "Observed earlier this year because of Shabbat."
   },
   "learning": {
     "title": "Daily learning",

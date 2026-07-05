@@ -45,7 +45,13 @@ export function SettingsDialogShell({
           <TooltipContent>{label}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      <DialogContent className={cn('flex max-h-[85dvh] flex-col', wide ? 'sm:max-w-lg' : 'sm:max-w-sm')}>
+      <DialogContent
+        className={cn('flex max-h-[85dvh] flex-col', wide ? 'sm:max-w-lg' : 'sm:max-w-sm')}
+        // Radix focuses the first focusable element on open; when that's a text
+        // input, mobile browsers pop the keyboard over the menu. Keep focus on
+        // the dialog itself — the focus trap still lets keyboard users Tab in.
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
         <DialogHeader className="shrink-0">
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>

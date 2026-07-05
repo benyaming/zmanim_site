@@ -49,6 +49,29 @@ describe('getDayInfo', () => {
     expect(info.yomTovIndex).toBe(31);
   });
 
+  describe('observedShift', () => {
+    it.each([
+      ['2022-07-17', 'postponed'], // 17 Tammuz 5782 fell on Shabbat → fast on Sunday 18 Tammuz
+      ['2022-08-07', 'postponed'], // 9 Av 5782 fell on Shabbat → fast on Sunday 10 Av
+      ['2024-03-21', 'advanced'], // 13 Adar II 5784 fell on Shabbat → Ta'anit Esther on Thursday 11 Adar II
+      ['2024-05-14', 'postponed'], // 5 Iyar 5784 fell on Monday → Yom HaAtzmaut on Tuesday 6 Iyar
+      ['2024-05-13', 'postponed'], // …and Yom HaZikaron moved with it, 4 → 5 Iyar
+    ])('flags %s as %s because of Shabbat', (iso, shift) => {
+      const info = getDayInfo(DateTime.fromISO(iso));
+      expect(info.observedShift).toBe(shift);
+    });
+
+    it('is null when the observance falls on its nominal date', () => {
+      expect(getDayInfo(DateTime.fromISO('2026-07-02')).observedShift).toBeNull(); // 17 Tammuz in place
+      expect(getDayInfo(DateTime.fromISO('2026-07-23')).observedShift).toBeNull(); // 9 Av in place
+      expect(getDayInfo(DateTime.fromISO('2026-04-22')).observedShift).toBeNull(); // Yom HaAtzmaut on 5 Iyar
+    });
+
+    it('is null on the nominal date itself when the observance moved away', () => {
+      expect(getDayInfo(DateTime.fromISO('2022-07-16')).observedShift).toBeNull(); // Shabbat 17 Tammuz — no fast
+    });
+  });
+
   it.each([
     ['2024-04-20', 'Hagadol'], // Shabbat before Pesach
     ['2024-10-05', 'Shuva'], // Shabbat between Rosh Hashana and Yom Kippur

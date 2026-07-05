@@ -86,6 +86,33 @@ function getWeekParsha(date: DateTime, fmt: HebrewDateFormatter, inIsrael: boole
   return fmt.formatParsha(jc) || null;
 }
 
+/**
+ * Nominal Hebrew day-of-month for observances kosher-zmanim reports on a
+ * shifted date when the nominal one collides with Shabbat: the fasts that are
+ * nidche (postponed past Shabbat) or advanced (Ta'anit Esther), and the
+ * Israeli national days, which move by the Knesset rules. The month needn't be
+ * checked — the yomTovIndex already pins the observance.
+ */
+const NOMINAL_DAY_OF_MONTH: Record<number, number> = {
+  [JewishCalendar.FAST_OF_GEDALYAH]: 3, // Tishrei
+  [JewishCalendar.SEVENTEEN_OF_TAMMUZ]: 17,
+  [JewishCalendar.TISHA_BEAV]: 9,
+  [JewishCalendar.FAST_OF_ESTHER]: 13, // Adar
+  [JewishCalendar.YOM_HASHOAH]: 27, // Nissan
+  [JewishCalendar.YOM_HAZIKARON]: 4, // Iyar
+  [JewishCalendar.YOM_HAATZMAUT]: 5, // Iyar
+};
+
+/** Is this day's observance kept off its nominal date because of Shabbat? */
+function observedShift(jc: JewishCalendar): DayInfo['observedShift'] {
+  const nominal = NOMINAL_DAY_OF_MONTH[jc.getYomTovIndex()];
+  if (nominal === undefined) return null;
+  const day = jc.getJewishDayOfMonth();
+  if (day > nominal) return 'postponed';
+  if (day < nominal) return 'advanced';
+  return null;
+}
+
 /** Is the day Erev Pesach (14 Nissan) — when the chametz deadlines apply? */
 export function isErevPesach(date: DateTime): boolean {
   return new JewishCalendar(date).getYomTovIndex() === JewishCalendar.EREV_PESACH;
@@ -122,6 +149,7 @@ export function getDayInfo(date: DateTime, formatter?: HebrewDateFormatter, loca
     // Chodesh info; on a 30th (first RC day) getMolad already reads the
     // incoming month.
     molad: isRoshChodesh || isShabbosMevorchim ? getMolad(date) : null,
+    observedShift: observedShift(jc),
     hebrewDayOfMonth: jc.getJewishDayOfMonth(),
     hebrewMonth: hebrewMonthLabel(jc, fmt, locale),
   };

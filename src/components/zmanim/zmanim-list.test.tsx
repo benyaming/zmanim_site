@@ -29,6 +29,12 @@ const groups: ZmanGroup[] = [
         rows: [{ key: 'sunrise', shita: '', detail: 'The ideal time to begin the morning Shema.', time: DateTime.fromISO('2024-03-20T05:42:00', { zone: 'Asia/Jerusalem' }) }],
       },
       {
+        base: 'tzais',
+        name: 'Tzeit ha-Kochavim',
+        description: 'Sun 8.5° below the horizon.',
+        rows: [{ key: 'tzais', shita: '3 stars · 8.5°', detail: 'Sun 8.5° below the horizon.', time: DateTime.fromISO('2024-03-20T18:40:00', { zone: 'Asia/Jerusalem' }) }],
+      },
+      {
         base: 'sofZmanShma',
         name: 'Latest Shema',
         description: 'Latest time to recite the morning Shema.',
@@ -62,6 +68,28 @@ describe('ZmanimList', () => {
     expect(screen.getByRole('button', { name: 'Magen Avraham — details' })).toBeInTheDocument();
     expect(screen.queryByText('Latest time to recite the morning Shema.')).not.toBeInTheDocument();
     expect(screen.queryByText('MGA — dawn to nightfall.')).not.toBeInTheDocument();
+  });
+
+  it('renders a single-shita zman inline: shita next to the name, no indented block', () => {
+    render(<ZmanimList groups={groups} />);
+    const shita = screen.getByText('3 stars · 8.5°');
+    // Name, shita and time all share the one <li> — no nested per-opinion
+    // rows like multi-shita zmanim use.
+    const row = shita.closest('li')!;
+    expect(row).toContainElement(screen.getByText('Tzeit ha-Kochavim'));
+    expect(row).toContainElement(screen.getByText(/6:40/));
+    expect(row.querySelectorAll('li')).toHaveLength(0);
+  });
+
+  it('renders the footnote after the groups when provided, omits it otherwise', () => {
+    const { rerender } = render(<ZmanimList groups={groups} footnote="More zmanim in settings." />);
+    expect(screen.getByText('More zmanim in settings.')).toBeInTheDocument();
+    rerender(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <ZmanimList groups={groups} />
+      </NextIntlClientProvider>,
+    );
+    expect(screen.queryByText('More zmanim in settings.')).not.toBeInTheDocument();
   });
 
   it('formats a time and shows a dash for a null time', () => {

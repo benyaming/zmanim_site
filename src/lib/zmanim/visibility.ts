@@ -15,6 +15,34 @@ export const CONFIGURABLE_ZMANIM: readonly ZmanDefinition[] = ZMANIM.filter(
 const CONFIGURABLE_KEYS = new Set(CONFIGURABLE_ZMANIM.map((z) => z.key));
 
 /**
+ * The zmanim shown out of the box — the common everyday set, one shita per
+ * zman: alot 16.1°, misheyakir 10.2°, Shma/Tfila by the Vilna Gaon, tzeit
+ * 8.5°. Everything else starts hidden; a note under the day panel's list
+ * points users to the settings picker to turn more on.
+ */
+const DEFAULT_VISIBLE_KEYS = new Set([
+  'alosHashachar',
+  'misheyakir102',
+  'sunrise',
+  'sofZmanShmaGRA',
+  'sofZmanTfilaGRA',
+  'chatzos',
+  'minchaGedola',
+  'minchaKetana',
+  'plagHamincha',
+  'sunset',
+  'tzais',
+]);
+
+/**
+ * The default hidden set, derived as the complement of DEFAULT_VISIBLE_KEYS so
+ * visibility state keeps its hide-list convention (see sanitizeHiddenZmanim).
+ */
+export const DEFAULT_HIDDEN_ZMANIM: readonly string[] = CONFIGURABLE_ZMANIM.filter(
+  (z) => !DEFAULT_VISIBLE_KEYS.has(z.key),
+).map((z) => z.key);
+
+/**
  * Validate a persisted hidden-zmanim preference. Visibility is stored as the
  * set of HIDDEN keys (not visible ones) so zmanim added in future releases
  * default to shown for existing users. Unknown or malformed entries are

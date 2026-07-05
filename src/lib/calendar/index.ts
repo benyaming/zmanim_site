@@ -1,5 +1,5 @@
 export { createHebrewFormatter, getDayInfo, isErevPesach } from './day-info';
-export { type DayEvent, type DayEventType, getDayEvents } from './day-events';
+export { type DayEvent, type DayEventType, FAST_END_OPINIONS, type FastEndOpinion, getDayEvents } from './day-events';
 export { getMolad, type MoladInfo } from './molad';
 export { localizedHolidayLabel, ruHolidayLabel } from './holidays-ru';
 export { RU_MONTHS, RU_MONTHS_GENITIVE } from './months-ru';

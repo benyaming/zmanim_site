@@ -8,7 +8,9 @@ const TIMES = {
   candleLighting: DateTime.fromISO('2024-01-01T18:00'),
   alos: DateTime.fromISO('2024-01-01T04:00'),
   sunset: DateTime.fromISO('2024-01-01T18:18'),
+  tzaisGeonim: DateTime.fromISO('2024-01-01T18:45'),
   tzais: DateTime.fromISO('2024-01-01T18:50'),
+  tzais42: DateTime.fromISO('2024-01-01T19:00'),
   // Distinct from tzais, so we can assert havdalah uses the chosen-opinion time.
   havdalah: DateTime.fromISO('2024-01-01T19:05'),
 };
@@ -28,11 +30,13 @@ describe('getDayEvents', () => {
     expect(e[0]).toMatchObject({ type: 'havdalah', time: TIMES.havdalah });
   });
 
-  it('shows fast begin (dawn) and end (nightfall) for a minor fast', () => {
+  it('shows fast begin (dawn) and end at all three tzeit opinions for a minor fast', () => {
     const e = getDayEvents(DateTime.fromISO('2024-07-23'), TIMES); // 17 Tammuz
     expect(e).toEqual([
       { type: 'fastStart', time: TIMES.alos },
-      { type: 'fastEnd', time: TIMES.tzais },
+      { type: 'fastEnd', time: TIMES.tzaisGeonim, zmanKey: 'tzaisGeonim' },
+      { type: 'fastEnd', time: TIMES.tzais, zmanKey: 'tzais' },
+      { type: 'fastEnd', time: TIMES.tzais42, zmanKey: 'tzais42' },
     ]);
   });
 
@@ -45,10 +49,20 @@ describe('getDayEvents', () => {
     expect(events('2024-04-30')).toEqual(['havdalah']);
   });
 
-  it('handles Tisha B’Av: onset on the eve, end on the day', () => {
+  it('handles Tisha B’Av: onset on the eve, end on the day at all three opinions', () => {
     expect(events('2024-08-12')).toEqual(['fastStart']); // erev → sunset onset
     const day = getDayEvents(DateTime.fromISO('2024-08-13'), TIMES);
-    expect(day).toEqual([{ type: 'fastEnd', time: TIMES.tzais }]);
+    expect(day).toEqual([
+      { type: 'fastEnd', time: TIMES.tzaisGeonim, zmanKey: 'tzaisGeonim' },
+      { type: 'fastEnd', time: TIMES.tzais, zmanKey: 'tzais' },
+      { type: 'fastEnd', time: TIMES.tzais42, zmanKey: 'tzais42' },
+    ]);
+  });
+
+  it('keeps Yom Kippur as a single havdalah (no triple fast end)', () => {
+    // 2024-10-12 is Yom Kippur (a Saturday) → ends tonight as havdalah.
+    const e = getDayEvents(DateTime.fromISO('2024-10-12'), TIMES);
+    expect(e).toEqual([{ type: 'havdalah', time: TIMES.havdalah }]);
   });
 
   it('shows nothing on an ordinary weekday', () => {

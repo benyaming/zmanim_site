@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ZMANIM } from './definitions';
-import { CONFIGURABLE_ZMANIM, sanitizeHiddenZmanim } from './visibility';
+import { CONFIGURABLE_ZMANIM, DEFAULT_HIDDEN_ZMANIM, sanitizeHiddenZmanim } from './visibility';
 
 describe('CONFIGURABLE_ZMANIM', () => {
   it('is every zman except candle lighting and the Erev Pesach-only ones', () => {
@@ -9,6 +9,30 @@ describe('CONFIGURABLE_ZMANIM', () => {
     expect(keys).not.toContain('candleLighting');
     expect(keys).not.toContain('sofZmanAchilasChametzGRA');
     expect(keys).toEqual(ZMANIM.filter((z) => z.key !== 'candleLighting' && !z.erevPesachOnly).map((z) => z.key));
+  });
+});
+
+describe('DEFAULT_HIDDEN_ZMANIM', () => {
+  it('leaves exactly the everyday one-shita-per-zman set visible', () => {
+    const hidden = new Set(DEFAULT_HIDDEN_ZMANIM);
+    const visible = CONFIGURABLE_ZMANIM.map((z) => z.key).filter((k) => !hidden.has(k));
+    expect(visible).toEqual([
+      'alosHashachar', // 16.1°
+      'misheyakir102', // 10.2°
+      'sunrise',
+      'sofZmanShmaGRA',
+      'sofZmanTfilaGRA',
+      'chatzos',
+      'minchaGedola',
+      'minchaKetana',
+      'plagHamincha',
+      'sunset',
+      'tzais', // 8.5°
+    ]);
+  });
+
+  it('is a valid persisted hide list (survives sanitize unchanged)', () => {
+    expect(sanitizeHiddenZmanim([...DEFAULT_HIDDEN_ZMANIM])).toEqual([...DEFAULT_HIDDEN_ZMANIM]);
   });
 });
 

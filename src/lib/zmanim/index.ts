@@ -10,4 +10,4 @@ export {
   isHavdalahOpinion,
 } from './havdalah';
 export type { ComputedZman, ComputeZmanimInput, ZmanCategory, ZmanDefinition } from './types';
-export { CONFIGURABLE_ZMANIM, sanitizeHiddenZmanim } from './visibility';
+export { CONFIGURABLE_ZMANIM, DEFAULT_HIDDEN_ZMANIM, sanitizeHiddenZmanim } from './visibility';

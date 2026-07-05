@@ -183,17 +183,21 @@ export function CalendarGrid() {
       candleLightingOffset,
     });
     const byKey = Object.fromEntries(zmanim.map((z) => [z.key, z.time]));
+    // A cell only has room for one fast-end time — keep the earliest opinion
+    // (Geonim 5.95°); the day panel shows all three.
     const events = getDayEvents(
       cell.date,
       {
         candleLighting: byKey.candleLighting,
         alos: byKey.alosHashachar,
         sunset: byKey.sunset,
+        tzaisGeonim: byKey.tzaisGeonim,
         tzais: byKey.tzais,
+        tzais42: byKey.tzais42,
         havdalah: havdalahTime(havdalahOpinion, byKey),
       },
       location.inIsrael,
-    );
+    ).filter((e) => e.type !== 'fastEnd' || e.zmanKey === 'tzaisGeonim');
 
     return { cell, info, chips, events };
   });

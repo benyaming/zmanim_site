@@ -18,6 +18,36 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.6',
+    date: '2026-07-05',
+    notes: {
+      en: [
+        'The day panel now shows only the everyday zmanim by default — more zmanim and opinions can be enabled in the calendar settings.',
+        'A zman with a single opinion now fits on one line.',
+        'Fast ends are shown at three tzeit opinions; Tisha B’Av times appear on both the eve and the fast day.',
+        'Opening a settings menu on mobile no longer pops up the keyboard.',
+        'When a fast or national day is observed off its usual date because of Shabbat, the day panel says so.',
+        'Switching the language keeps the selected day instead of jumping back to today.',
+      ],
+      he: [
+        'פאנל היום מציג כעת כברירת מחדל רק את הזמנים השימושיים — זמנים ושיטות נוספים אפשר להפעיל בהגדרות לוח השנה.',
+        'זמן עם שיטה אחת מוצג כעת בשורה אחת.',
+        'סיום הצום מוצג בשלוש שיטות צאת הכוכבים; זמני תשעה באב מוצגים גם בערב הצום וגם ביום עצמו.',
+        'פתיחת תפריט הגדרות בנייד כבר לא מקפיצה את המקלדת.',
+        'כשצום או יום לאומי נדחה או הוקדם בשל שבת, פאנל היום מציין זאת.',
+        'החלפת שפה שומרת על היום שנבחר במקום לחזור להיום.',
+      ],
+      ru: [
+        'Панель дня теперь по умолчанию показывает только основные зманим — остальные зманим и мнения можно включить в настройках календаря.',
+        'Зман с одним мнением теперь помещается в одну строку.',
+        'Окончание поста показано по трём мнениям о выходе звёзд; времена Девятого ава видны и накануне, и в сам день поста.',
+        'Открытие меню настроек на мобильном больше не вызывает клавиатуру.',
+        'Если пост или национальный день перенесён из-за шаббата, панель дня сообщает об этом.',
+        'Смена языка сохраняет выбранный день, а не возвращает к сегодняшнему.',
+      ],
+    },
+  },
+  {
     version: '1.5',
     date: '2026-07-05',
     notes: {

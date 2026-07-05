@@ -148,7 +148,10 @@
     "specialShabbat": "Шаббат {name}",
     "molad": "Молад: {weekday}, {time} и {chalakim} халаким",
     "parasha": "Недельная глава: {name}",
-    "detailsAria": "{label} — подробнее"
+    "detailsAria": "{label} — подробнее",
+    "zmanimSettingsHint": "Больше зманим и мнений можно включить в настройках календаря.",
+    "observedPostponed": "В этом году отмечается позже обычного из-за шаббата.",
+    "observedAdvanced": "В этом году отмечается раньше обычного из-за шаббата."
   },
   "learning": {
     "title": "Ежедневное изучение",

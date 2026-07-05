@@ -1,7 +1,7 @@
 'use client';
 
 import { JewishCalendar } from 'kosher-zmanim';
-import { BookOpen, Flame, Moon, Sparkles, Utensils, UtensilsCrossed, Wheat } from 'lucide-react';
+import { BookOpen, CalendarClock, Flame, Moon, Sparkles, Utensils, UtensilsCrossed, Wheat } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { DateTime } from 'luxon';
 import type { LucideIcon } from 'lucide-react';
@@ -66,7 +66,9 @@ function dayEventsFor(
       candleLighting: byKey.candleLighting,
       alos: byKey.alosHashachar,
       sunset: byKey.sunset,
+      tzaisGeonim: byKey.tzaisGeonim,
       tzais: byKey.tzais,
+      tzais42: byKey.tzais42,
       havdalah: havdalahTime(havdalahOpinion, byKey),
     },
     location.inIsrael,
@@ -112,9 +114,30 @@ function buildDayTimes(
   }
 
   // Same-day fast events (minor fasts, Yom Kippur, Tisha B'Av).
-  const fasts = dayEventsFor(selectedDay, location, candleLightingOffset, havdalahOpinion).filter(
+  let fasts = dayEventsFor(selectedDay, location, candleLightingOffset, havdalahOpinion).filter(
     (e) => e.type === 'fastStart' || e.type === 'fastEnd',
   );
+
+  // Tisha B'Av spans two civil days (sunset on the eve → nightfall), so show
+  // BOTH its bookends on both days, mirroring the rest-day bookends above.
+  // Yom Kippur needs nothing here: as a rest day its onset/end already appear
+  // on both days as candle lighting / havdalah. (Minor fasts are dawn→nightfall
+  // within one day.)
+  const isTishaBav = (d: DateTime) => {
+    const jc = new JewishCalendar(d);
+    jc.setInIsrael(inIsrael);
+    return jc.getYomTovIndex() === JewishCalendar.TISHA_BEAV;
+  };
+  if (isTishaBav(selectedDay)) {
+    // The day itself: prepend the onset (yesterday's sunset) from the eve.
+    const eve = dayEventsFor(selectedDay.minus({ days: 1 }), location, candleLightingOffset, havdalahOpinion);
+    const start = eve.find((e) => e.type === 'fastStart');
+    if (start) fasts = [start, ...fasts];
+  } else if (isTishaBav(selectedDay.plus({ days: 1 }))) {
+    // The eve: append tomorrow's fast-end times after tonight's onset.
+    const day = dayEventsFor(selectedDay.plus({ days: 1 }), location, candleLightingOffset, havdalahOpinion);
+    fasts = [...fasts, ...day.filter((e) => e.type === 'fastEnd')];
+  }
 
   return [...bookends, ...fasts];
 }
@@ -196,6 +219,10 @@ export function ZmanimPanel() {
   // Candle lighting + havdalah for the rest period (both bookends on both days),
   // plus any fast times for the selected day.
   const events = buildDayTimes(selectedDay, location, candleLightingOffset, havdalahOpinion);
+  // The fast end arrives once per tzeit opinion — render those as one grouped
+  // block instead of repeating the "Fast ends" row three times.
+  const fastEndEvents = events.filter((e) => e.type === 'fastEnd');
+  const singleEvents = events.filter((e) => e.type !== 'fastEnd');
 
   // Candle lighting now lives in the events strip above, so keep it out of the
   // zmanim list to avoid showing the same time twice. User-hidden zmanim are
@@ -229,6 +256,14 @@ export function ZmanimPanel() {
             ))}
           </div>
         )}
+        {/* An observance kept off its nominal date (fast nidche, the Israeli
+            national days) — say so, so the "wrong"-looking date isn't a puzzle. */}
+        {info.observedShift && (
+          <p className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
+            <CalendarClock className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            {tPanel(info.observedShift === 'postponed' ? 'observedPostponed' : 'observedAdvanced')}
+          </p>
+        )}
         {info.molad && (
           <p className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
             <Moon className="size-3.5 shrink-0 text-blue-500 dark:text-blue-400" />
@@ -237,7 +272,7 @@ export function ZmanimPanel() {
         )}
         {events.length > 0 && (
           <div className="mt-1.5 flex flex-col gap-1.5">
-            {events.map((event, i) => {
+            {singleEvents.map((event, i) => {
               const { Icon, className } = EVENT_META[event.type];
               return (
                 <div key={`${event.type}-${i}`} className="flex items-center justify-between gap-3 text-sm">
@@ -259,13 +294,31 @@ export function ZmanimPanel() {
                 </div>
               );
             })}
+            {/* Fast end comes once per tzeit opinion — one labeled block with a
+                compact row per opinion, like a multi-shita zman in the list. */}
+            {fastEndEvents.length > 0 && (
+              <div>
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <EVENT_META.fastEnd.Icon className={cn('size-4 shrink-0', EVENT_META.fastEnd.className)} />
+                  {tEvents('fastEnd')}
+                </span>
+                <div className="mt-1 space-y-1 ps-6">
+                  {fastEndEvents.map((event) => (
+                    <div key={event.zmanKey} className="flex items-center justify-between gap-3">
+                      <span className="text-muted-foreground text-xs">{event.zmanKey ? tShita(event.zmanKey) : ''}</span>
+                      <time className="font-mono text-sm tabular-nums">{formatTime(event.time, locale)}</time>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardHeader>
       <Separator />
       <CardContent className="flex flex-col gap-4 px-5 py-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         <DailyLearning date={selectedDay} inIsrael={location.inIsrael} locale={locale} />
-        <ZmanimList groups={groups} locale={locale} />
+        <ZmanimList groups={groups} locale={locale} footnote={tPanel('zmanimSettingsHint')} />
       </CardContent>
     </Card>
   );

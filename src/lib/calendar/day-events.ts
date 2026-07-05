@@ -3,9 +3,18 @@ import type { DateTime } from 'luxon';
 
 export type DayEventType = 'candle' | 'havdalah' | 'fastStart' | 'fastEnd';
 
+/** The tzeit opinions a fast end is shown at, earliest to latest. */
+export const FAST_END_OPINIONS = ['tzaisGeonim', 'tzais', 'tzais42'] as const;
+export type FastEndOpinion = (typeof FAST_END_OPINIONS)[number];
+
 export interface DayEvent {
   type: DayEventType;
   time: DateTime | null;
+  /**
+   * The tzeit opinion this time uses — set on fastEnd events only, which are
+   * emitted once per FAST_END_OPINIONS entry. Translatable via zmanim.shitot.
+   */
+  zmanKey?: FastEndOpinion;
 }
 
 /** The zmanim a day's events can reference. */
@@ -13,8 +22,12 @@ export interface DayEventTimes {
   candleLighting: DateTime | null;
   alos: DateTime | null;
   sunset: DateTime | null;
-  /** Standard nightfall (8.5°) — used for fast ends. */
+  /** Nightfall of the Geonim (5.95°) — the earliest fast-end opinion. */
+  tzaisGeonim: DateTime | null;
+  /** Standard nightfall (8.5°). */
   tzais: DateTime | null;
+  /** Fixed 42 minutes after sunset — the latest fast-end opinion. */
+  tzais42: DateTime | null;
   /** Nightfall for havdalah, per the user's chosen opinion (may differ from `tzais`). */
   havdalah: DateTime | null;
 }
@@ -69,8 +82,12 @@ export function getDayEvents(date: DateTime, times: DayEventTimes, inIsrael = fa
       events.push({ type: 'fastStart', time: times.alos });
     }
     // Yom Kippur's end is already shown as havdalah; avoid a duplicate nightfall.
+    // The end is given at all three tzeit opinions — displays that only have
+    // room for one (the calendar grid) keep the earliest (Geonim 5.95°).
     if (!endsTonight) {
-      events.push({ type: 'fastEnd', time: times.tzais });
+      for (const zmanKey of FAST_END_OPINIONS) {
+        events.push({ type: 'fastEnd', time: times[zmanKey], zmanKey });
+      }
     }
   }
 
