@@ -224,7 +224,13 @@
     "calendarOpen": "Calendar settings",
     "toolsTitle": "Tools",
     "toolsOpen": "Tools",
-    "toolsComingSoon": "Coming soon."
+    "toolsComingSoon": "Coming soon.",
+    "installTitle": "App",
+    "installButton": "Install app",
+    "installHint": "Adds the app to your home screen or desktop; it opens in its own window like a regular app.",
+    "installDone": "The app is installed on this device.",
+    "installManualIos": "To install: tap the browser's Share button and choose “Add to Home Screen” (works in Safari and Chrome).",
+    "installManual": "Your browser doesn't offer one-tap install here — look for “Install app” or “Add to Home screen” in the browser menu. If the app is already installed, no prompt is shown."
   },
   "footer": {
     "disclaimer": "Zmanim times computed with <link>kosher-zmanim</link>, daily learning with <hebcal>Hebcal</hebcal>. For halachic decisions, consult your local rabbinic authority.",

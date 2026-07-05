@@ -76,11 +76,15 @@ export default async function LocaleLayout({
             layout (a locale switch remounts it) merely set innerHTML — inert
             per spec — so React never client-renders a script tag (it warns
             about those and wouldn't execute them; the theme and accessibility
-            providers re-apply the classes on mount anyway). */}
+            providers re-apply the classes on mount anyway).
+            The beforeinstallprompt stash must also live here: Chrome fires the
+            event as soon as installability is validated, which can beat the
+            React bundle — use-install-prompt picks the event up from
+            window.__zmanimBip at module load. */}
         <div
           hidden
           dangerouslySetInnerHTML={{
-            __html: `<script>${themeInitScript}(function(){try{var p=JSON.parse(localStorage.getItem('zmanim:a11y:v1')||'{}');var e=document.documentElement;if(p.fontScale&&p.fontScale!=='default')e.classList.add('text-scale-'+p.fontScale);if(p.reduceMotion)e.classList.add('reduce-motion');if(p.highContrast)e.classList.add('high-contrast');}catch(e){}})();</script>`,
+            __html: `<script>${themeInitScript}(function(){try{var p=JSON.parse(localStorage.getItem('zmanim:a11y:v1')||'{}');var e=document.documentElement;if(p.fontScale&&p.fontScale!=='default')e.classList.add('text-scale-'+p.fontScale);if(p.reduceMotion)e.classList.add('reduce-motion');if(p.highContrast)e.classList.add('high-contrast');}catch(e){}})();window.addEventListener('beforeinstallprompt',function(e){window.__zmanimBip=e},{once:true});</script>`,
           }}
         />
         <ThemeProvider>
