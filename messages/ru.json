@@ -147,7 +147,8 @@
     "shabbatMevarchim": "Шаббат Мевархим",
     "specialShabbat": "Шаббат {name}",
     "molad": "Молад: {weekday}, {time} и {chalakim} халаким",
-    "parasha": "Недельная глава: {name}"
+    "parasha": "Недельная глава: {name}",
+    "detailsAria": "{label} — подробнее"
   },
   "learning": {
     "title": "Ежедневное изучение",

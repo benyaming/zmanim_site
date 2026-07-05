@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { shas0 } from '@hebcal/learning/dafYomiBase';
 import { MishnaYomiIndex, mishnaYomiStart } from '@hebcal/learning/mishnaYomiBase';
 import { NachYomiIndex, nachYomiStart } from '@hebcal/learning/nachYomiBase';
@@ -178,6 +181,42 @@ describe('cross-validation against kosher-zmanim', () => {
         expect(item?.reading, date.toISODate()!).toBe(expected);
       }
     }
+  });
+});
+
+describe('GPL bundle guard', () => {
+  // Only these core-free @hebcal/learning subpaths may be imported anywhere in
+  // src/ — the package root and its *Event modules pull in the GPL-licensed
+  // @hebcal/core, which must never reach the client bundle (see CLAUDE.md).
+  const ALLOWED = new Set([
+    '@hebcal/learning/common',
+    '@hebcal/learning/dafYomiBase',
+    '@hebcal/learning/mishnaYomiBase',
+    '@hebcal/learning/nachYomiBase',
+    '@hebcal/learning/pirkeiAvotBase',
+    '@hebcal/learning/psalmsBase',
+    '@hebcal/learning/rambam1Base',
+    '@hebcal/learning/yerushalmiBase',
+    '@hebcal/learning/he.po',
+    '@hebcal/learning/shekalimDafYomiMap.json',
+    '@hebcal/learning/yerushalmiVilnaMap.json',
+  ]);
+
+  it('imports only core-free @hebcal subpaths across src/', () => {
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) walk(path);
+        else if (/\.(ts|tsx)$/.test(entry.name)) {
+          for (const match of readFileSync(path, 'utf8').matchAll(/from\s+['"](@hebcal\/[^'"]+)['"]/g)) {
+            if (!ALLOWED.has(match[1])) offenders.push(`${path}: ${match[1]}`);
+          }
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    expect(offenders).toEqual([]);
   });
 });
 

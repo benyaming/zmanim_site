@@ -147,7 +147,8 @@
     "shabbatMevarchim": "שבת מברכים",
     "specialShabbat": "שבת {name}",
     "molad": "המולד: {weekday}, {time} ו־{chalakim} חלקים",
-    "parasha": "פרשת {name}"
+    "parasha": "פרשת {name}",
+    "detailsAria": "{label} — פרטים"
   },
   "learning": {
     "title": "לימוד יומי",

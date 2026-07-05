@@ -99,7 +99,7 @@ export function CalendarSettings() {
   const hiddenCycles = new Set(hiddenLearning);
 
   return (
-    <SettingsDialogShell icon={Settings} label={t('calendarOpen')} title={t('calendarTitle')}>
+    <SettingsDialogShell icon={Settings} label={t('calendarOpen')} title={t('calendarTitle')} wide>
       <div className="space-y-2">
         <label htmlFor="candle-offset" className="text-sm font-medium">
           {t('candleOffset')}
@@ -186,7 +186,9 @@ export function CalendarSettings() {
             </Button>
           )}
         </div>
-        <div className="max-h-[40vh] space-y-3 overflow-y-auto rounded-lg border p-3">
+        {/* The dialog body is the single scroll context (see SettingsDialogShell),
+            so this list no longer scrolls on its own. */}
+        <div className="space-y-3 rounded-lg border p-3">
           {ZMAN_SECTIONS.map((section) => (
             <section key={section.category} className="space-y-1.5">
               <h4 className="text-muted-foreground/70 text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">

@@ -147,7 +147,8 @@
     "shabbatMevarchim": "Shabbat Mevarchim",
     "specialShabbat": "Shabbat {name}",
     "molad": "Molad: {weekday}, {time} and {chalakim} chalakim",
-    "parasha": "Parashat {name}"
+    "parasha": "Parashat {name}",
+    "detailsAria": "{label} — details"
   },
   "learning": {
     "title": "Daily learning",
