@@ -84,7 +84,7 @@ export default async function LocaleLayout({
         <div
           hidden
           dangerouslySetInnerHTML={{
-            __html: `<script>${themeInitScript}(function(){try{var p=JSON.parse(localStorage.getItem('zmanim:a11y:v1')||'{}');var e=document.documentElement;if(p.fontScale&&p.fontScale!=='default')e.classList.add('text-scale-'+p.fontScale);if(p.reduceMotion)e.classList.add('reduce-motion');if(p.highContrast)e.classList.add('high-contrast');}catch(e){}})();window.addEventListener('beforeinstallprompt',function(e){window.__zmanimBip=e});</script>`,
+            __html: `<script>${themeInitScript}(function(){try{var p=JSON.parse(localStorage.getItem('zmanim:a11y:v1')||'{}');var e=document.documentElement;if(p.fontScale&&p.fontScale!=='default')e.classList.add('text-scale-'+p.fontScale);if(p.reduceMotion)e.classList.add('reduce-motion');if(p.highContrast)e.classList.add('high-contrast');}catch(e){}})();window.addEventListener('beforeinstallprompt',function(e){window.__zmanimBip=e},{once:true});</script>`,
           }}
         />
         <ThemeProvider>

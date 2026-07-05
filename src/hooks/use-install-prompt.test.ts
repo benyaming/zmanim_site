@@ -42,6 +42,8 @@ describe('useInstallPrompt', () => {
       const { useInstallPrompt } = await freshModule();
       const { result } = renderHook(() => useInstallPrompt());
       expect(result.current).toBe('available');
+      // The one-shot event must not linger on the global after pickup.
+      expect((window as Window & { __zmanimBip?: Event }).__zmanimBip).toBeUndefined();
     } finally {
       delete (window as Window & { __zmanimBip?: Event }).__zmanimBip;
     }

@@ -31,7 +31,10 @@ const notify = () => {
 // suggestion (omnibox icon / mini-infobar) stays intact, and the stashed event
 // lets settings re-trigger the prompt for users who skipped it.
 if (typeof window !== 'undefined') {
-  deferredEvent = (window as Window & { __zmanimBip?: BeforeInstallPromptEvent }).__zmanimBip ?? null;
+  const stash = window as Window & { __zmanimBip?: BeforeInstallPromptEvent };
+  deferredEvent = stash.__zmanimBip ?? null;
+  // The event is one-shot — drop the global so nothing reuses it stale.
+  delete stash.__zmanimBip;
   window.addEventListener('beforeinstallprompt', (event) => {
     deferredEvent = event as BeforeInstallPromptEvent;
     notify();
