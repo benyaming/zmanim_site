@@ -35,6 +35,17 @@ describe('tableDayCount', () => {
   it('returns 0 for a reversed range', () => {
     expect(tableDayCount(DateTime.fromISO('2026-01-10'), DateTime.fromISO('2026-01-04'))).toBe(0);
   });
+
+  it('counts calendar days, not 24-hour periods, across DST transitions', () => {
+    // Israel springs forward on 2026-03-27, so the 27th's midnight-to-midnight
+    // span is 23 hours. Luxon's day-diff is calendar-aware, so the inclusive
+    // count must still be exact — 3 days, not floor(2.96) + 1 = 2.
+    const zone = 'Asia/Jerusalem';
+    expect(tableDayCount(DateTime.fromISO('2026-03-26', { zone }), DateTime.fromISO('2026-03-28', { zone }))).toBe(3);
+    // And across a fall-back (25-hour day): America/New_York, 2025-11-02.
+    const ny = 'America/New_York';
+    expect(tableDayCount(DateTime.fromISO('2025-11-01', { zone: ny }), DateTime.fromISO('2025-11-03', { zone: ny }))).toBe(3);
+  });
 });
 
 describe('buildZmanimTable', () => {
