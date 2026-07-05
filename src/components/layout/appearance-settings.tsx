@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye } from 'lucide-react';
+import { Palette } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type FontScale, useAccessibility } from '@/components/providers/accessibility-provider';
 import { type Theme, useTheme } from '@/components/providers/theme-provider';
@@ -24,7 +24,7 @@ export function AppearanceSettings() {
   const { fontScale, setFontScale, reduceMotion, setReduceMotion, highContrast, setHighContrast } = useAccessibility();
 
   return (
-    <SettingsDialogShell icon={Eye} label={t('appearanceOpen')} title={t('appearanceTitle')}>
+    <SettingsDialogShell icon={Palette} label={t('appearanceOpen')} title={t('appearanceTitle')}>
       <div className="space-y-2">
         <p className="text-sm font-medium">{t('theme')}</p>
         <ToggleGroup
