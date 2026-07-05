@@ -107,6 +107,16 @@ export function SiteFooter() {
                 {chunks}
               </a>
             ),
+            hebcal: (chunks) => (
+              <a
+                href="https://github.com/hebcal/hebcal-learning"
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-foreground underline underline-offset-2"
+              >
+                {chunks}
+              </a>
+            ),
           })}
         </span>
       </div>

@@ -147,7 +147,25 @@
     "shabbatMevarchim": "שבת מברכים",
     "specialShabbat": "שבת {name}",
     "molad": "המולד: {weekday}, {time} ו־{chalakim} חלקים",
-    "parasha": "פרשת {name}"
+    "parasha": "פרשת {name}",
+    "detailsAria": "{label} — פרטים"
+  },
+  "learning": {
+    "title": "לימוד יומי",
+    "dafYomi": "דף היומי",
+    "dafYomiInfo": "דף גמרא מהתלמוד הבבלי בכל יום; המחזור העולמי מסיים את הש״ס בכ־7.5 שנים.",
+    "yerushalmiYomi": "ירושלמי יומי",
+    "yerushalmiYomiInfo": "דף מהתלמוד הירושלמי בכל יום (דפוס וילנא); המחזור נמשך כ־4.25 שנים. ביום כיפור ובתשעה באב אין לומדים דף.",
+    "mishnaYomit": "משנה יומית",
+    "mishnaYomitInfo": "שתי משניות בכל יום — סיום כל המשנה בכשש שנים.",
+    "nachYomi": "נ״ך יומי",
+    "nachYomiInfo": "פרק אחד מנביאים או כתובים בכל יום — סיום הנ״ך ב־742 ימים.",
+    "tehillim": "תהלים יומי",
+    "tehillimInfo": "ספר תהלים מחולק לפי ימי החודש העברי — מסיימים את הספר מדי חודש.",
+    "rambam": "רמב״ם יומי",
+    "rambamInfo": "פרק אחד ממשנה תורה לרמב״ם בכל יום; המחזור מסיים את 14 הספרים בפחות משלוש שנים.",
+    "pirkeiAvot": "פרקי אבות",
+    "pirkeiAvotInfo": "פרק מפרקי אבות נלמד בשבתות אחר הצהריים בין פסח לראש השנה."
   },
   "settings": {
     "theme": "ערכת נושא",
@@ -169,6 +187,8 @@
     "off": "כבוי",
     "havdala": "הבדלה",
     "havdalaHint": "השיטה לזמן צאת השבת והחג.",
+    "learningDisplay": "לימוד יומי",
+    "learningDisplayHint": "אילו מסלולי לימוד יוצגו בלוח היומי.",
     "zmanimDisplay": "זמנים מוצגים",
     "zmanimDisplayHint": "אילו זמנים ושיטות יוצגו בלוח היומי.",
     "zmanimShowAll": "הצג הכול",
@@ -181,7 +201,7 @@
     "toolsComingSoon": "בקרוב."
   },
   "footer": {
-    "disclaimer": "הזמנים מחושבים באמצעות <link>kosher-zmanim</link>. להכרעות הלכתיות יש להתייעץ עם רב מוסמך.",
+    "disclaimer": "הזמנים מחושבים באמצעות <link>kosher-zmanim</link> והלימוד היומי באמצעות <hebcal>Hebcal</hebcal>. להכרעות הלכתיות יש להתייעץ עם רב מוסמך.",
     "madeBy": "מאת Benyamin Ginzburg",
     "source": "קוד"
   },

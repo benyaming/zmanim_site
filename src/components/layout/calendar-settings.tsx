@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { LEARNING_CYCLE_KEYS } from '@/lib/learning';
 import {
   CONFIGURABLE_ZMANIM,
   HAVDALAH_OPINIONS,
@@ -76,6 +77,7 @@ export function CalendarSettings() {
   const tName = useTranslations('zmanim.names');
   const tShita = useTranslations('zmanim.shitot');
   const tGroup = useTranslations('zmanim.groups');
+  const tLearning = useTranslations('learning');
   const {
     candleLightingOffset,
     setCandleLightingOffset,
@@ -84,6 +86,9 @@ export function CalendarSettings() {
     hiddenZmanim,
     setZmanVisible,
     showAllZmanim,
+    hiddenLearning,
+    setLearningVisible,
+    showAllLearning,
   } = useAppState();
   const opinionLabel = (opinion: HavdalahOpinion) => {
     const key = havdalahZmanKey(opinion);
@@ -91,9 +96,10 @@ export function CalendarSettings() {
   };
 
   const hidden = new Set(hiddenZmanim);
+  const hiddenCycles = new Set(hiddenLearning);
 
   return (
-    <SettingsDialogShell icon={Settings} label={t('calendarOpen')} title={t('calendarTitle')}>
+    <SettingsDialogShell icon={Settings} label={t('calendarOpen')} title={t('calendarTitle')} wide>
       <div className="space-y-2">
         <label htmlFor="candle-offset" className="text-sm font-medium">
           {t('candleOffset')}
@@ -144,6 +150,33 @@ export function CalendarSettings() {
 
       <Separator />
 
+      {/* Sits between the event times and the zmanim picker, mirroring the
+          day panel's order: masthead → daily learning → zmanim. */}
+      <div className="space-y-2">
+        <div className="flex min-h-8 items-center justify-between gap-2">
+          <span className="text-sm font-medium">{t('learningDisplay')}</span>
+          {hiddenLearning.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={showAllLearning}>
+              {t('zmanimShowAll')}
+            </Button>
+          )}
+        </div>
+        <div className="space-y-1.5 rounded-lg border p-3">
+          {LEARNING_CYCLE_KEYS.map((key) => (
+            <ZmanCheckboxRow
+              key={key}
+              id={`learning-${key}`}
+              label={tLearning(key)}
+              checked={!hiddenCycles.has(key)}
+              onChange={(visible) => setLearningVisible(key, visible)}
+            />
+          ))}
+        </div>
+        <p className="text-muted-foreground text-xs">{t('learningDisplayHint')}</p>
+      </div>
+
+      <Separator />
+
       <div className="space-y-2">
         <div className="flex min-h-8 items-center justify-between gap-2">
           <span className="text-sm font-medium">{t('zmanimDisplay')}</span>
@@ -153,7 +186,9 @@ export function CalendarSettings() {
             </Button>
           )}
         </div>
-        <div className="max-h-[40vh] space-y-3 overflow-y-auto rounded-lg border p-3">
+        {/* The dialog body is the single scroll context (see SettingsDialogShell),
+            so this list no longer scrolls on its own. */}
+        <div className="space-y-3 rounded-lg border p-3">
           {ZMAN_SECTIONS.map((section) => (
             <section key={section.category} className="space-y-1.5">
               <h4 className="text-muted-foreground/70 text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">

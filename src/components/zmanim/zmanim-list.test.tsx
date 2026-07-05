@@ -1,10 +1,21 @@
-import { render, screen } from '@testing-library/react';
+import { render as renderBare, screen } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
+import type { ReactNode } from 'react';
 
+import messages from '../../../messages/en.json';
 import type { ZmanGroup } from '@/lib/zmanim';
 
 import { ZmanimList } from './zmanim-list';
+
+// InfoHint reads its aria-label translation, so the tree needs intl context.
+const render = (ui: ReactNode) =>
+  renderBare(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      {ui}
+    </NextIntlClientProvider>,
+  );
 
 const groups: ZmanGroup[] = [
   {

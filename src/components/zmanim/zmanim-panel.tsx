@@ -27,6 +27,7 @@ import { formatMoladParts, formatTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { buildZmanimGroups, computeZmanim, havdalahTime, havdalahZmanKey, type HavdalahOpinion } from '@/lib/zmanim';
 
+import { DailyLearning } from './daily-learning';
 import { ZmanimList } from './zmanim-list';
 
 const EVENT_META: Record<DayEventType, { Icon: ComponentType<{ className?: string }>; className: string }> = {
@@ -211,10 +212,13 @@ export function ZmanimPanel() {
 
   return (
     <Card className="gap-0 py-0 lg:h-full">
-      <CardHeader className="gap-1 px-5 py-3">
-        <h3 className="text-lg font-semibold leading-tight">
+      {/* Masthead: the day's identity on a tinted band — date pair, chips,
+          molad and the headline times all live here; everything below is the
+          uniform ruled-section body. */}
+      <CardHeader className="bg-muted/30 gap-1 px-5 py-3">
+        <h3 className="flex flex-wrap items-baseline justify-between gap-x-3 text-lg font-semibold leading-tight">
           {selectedDay.setLocale(locale).toLocaleString({ weekday: 'long', month: 'long', day: 'numeric' })}
-          <span className="text-muted-foreground ms-2 text-sm font-normal">
+          <span className="text-muted-foreground text-sm font-medium">
             {info.hebrewDayOfMonth} {info.hebrewMonth}
           </span>
         </h3>
@@ -232,7 +236,7 @@ export function ZmanimPanel() {
           </p>
         )}
         {events.length > 0 && (
-          <div className="mt-1.5 flex flex-col gap-2 rounded-lg border bg-muted/30 px-3 py-2.5">
+          <div className="mt-1.5 flex flex-col gap-1.5">
             {events.map((event, i) => {
               const { Icon, className } = EVENT_META[event.type];
               return (
@@ -251,7 +255,7 @@ export function ZmanimPanel() {
                       </Badge>
                     )}
                   </span>
-                  <time className="font-mono tabular-nums">{formatTime(event.time, locale)}</time>
+                  <time className="font-mono font-medium tabular-nums">{formatTime(event.time, locale)}</time>
                 </div>
               );
             })}
@@ -259,7 +263,8 @@ export function ZmanimPanel() {
         )}
       </CardHeader>
       <Separator />
-      <CardContent className="flex flex-col gap-3 px-5 py-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+      <CardContent className="flex flex-col gap-4 px-5 py-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+        <DailyLearning date={selectedDay} inIsrael={location.inIsrael} locale={locale} />
         <ZmanimList groups={groups} locale={locale} />
       </CardContent>
     </Card>

@@ -147,7 +147,25 @@
     "shabbatMevarchim": "Shabbat Mevarchim",
     "specialShabbat": "Shabbat {name}",
     "molad": "Molad: {weekday}, {time} and {chalakim} chalakim",
-    "parasha": "Parashat {name}"
+    "parasha": "Parashat {name}",
+    "detailsAria": "{label} — details"
+  },
+  "learning": {
+    "title": "Daily learning",
+    "dafYomi": "Daf Yomi",
+    "dafYomiInfo": "One page (daf) of the Babylonian Talmud a day; the worldwide cycle completes the entire Talmud in about 7½ years.",
+    "yerushalmiYomi": "Yerushalmi Yomi",
+    "yerushalmiYomiInfo": "One page of the Jerusalem Talmud a day (Vilna edition); the cycle takes about 4¼ years. No page is learned on Yom Kippur or Tisha BeAv.",
+    "mishnaYomit": "Mishna Yomit",
+    "mishnaYomitInfo": "Two mishnayot a day, completing the entire Mishnah in about six years.",
+    "nachYomi": "Nach Yomi",
+    "nachYomiInfo": "One chapter of Nevi'im (Prophets) or Ketuvim (Writings) a day, completing Nach in 742 days.",
+    "tehillim": "Daily Tehillim",
+    "tehillimInfo": "Tehillim (Psalms) divided across the days of the Hebrew month — the whole book is finished every month.",
+    "rambam": "Daily Rambam",
+    "rambamInfo": "One chapter of the Rambam's Mishneh Torah a day; the cycle completes all 14 books in just under three years.",
+    "pirkeiAvot": "Pirkei Avot",
+    "pirkeiAvotInfo": "A chapter of Pirkei Avot is studied on Shabbat afternoons between Pesach and Rosh Hashanah."
   },
   "settings": {
     "theme": "Theme",
@@ -169,6 +187,8 @@
     "off": "Off",
     "havdala": "Havdala",
     "havdalaHint": "Opinion for when Shabbat and Yom Tov end.",
+    "learningDisplay": "Daily learning",
+    "learningDisplayHint": "Choose which learning cycles appear in the day panel.",
     "zmanimDisplay": "Displayed zmanim",
     "zmanimDisplayHint": "Choose which zmanim and opinions appear in the day panel.",
     "zmanimShowAll": "Show all",
@@ -181,7 +201,7 @@
     "toolsComingSoon": "Coming soon."
   },
   "footer": {
-    "disclaimer": "Zmanim times computed with <link>kosher-zmanim</link>. For halachic decisions, consult your local rabbinic authority.",
+    "disclaimer": "Zmanim times computed with <link>kosher-zmanim</link>, daily learning with <hebcal>Hebcal</hebcal>. For halachic decisions, consult your local rabbinic authority.",
     "madeBy": "Made by Benyamin Ginzburg",
     "source": "Source"
   },

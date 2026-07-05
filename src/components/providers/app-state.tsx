@@ -9,6 +9,7 @@ import { browserGeolocate } from '@/lib/geo/browser-location';
 import { reverseGeocode } from '@/lib/geo/geocoding';
 import { ipGeolocate } from '@/lib/geo/ip-location';
 import { normalizeIsraelAreaTimezone } from '@/lib/geo/timezone';
+import { sanitizeHiddenLearning } from '@/lib/learning';
 import { type AppLocation, DEFAULT_LOCATION, isDefaultLocation, isIsraelTimezone, makeLocation } from '@/lib/location';
 import { DEFAULT_HAVDALAH_OPINION, type HavdalahOpinion, isHavdalahOpinion, sanitizeHiddenZmanim } from '@/lib/zmanim';
 
@@ -42,6 +43,10 @@ interface AppStateValue {
   hiddenZmanim: string[];
   setZmanVisible: (key: string, visible: boolean) => void;
   showAllZmanim: () => void;
+  /** Learning-cycle keys the user chose to hide from the day panel (empty = show all). */
+  hiddenLearning: string[];
+  setLearningVisible: (key: string, visible: boolean) => void;
+  showAllLearning: () => void;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -54,6 +59,8 @@ interface PersistedPrefs {
   havdalahOpinion?: HavdalahOpinion;
   /** Hidden (not visible) keys, so zmanim added later default to shown. */
   hiddenZmanim?: string[];
+  /** Hidden learning cycles — same hide-list convention as hiddenZmanim. */
+  hiddenLearning?: string[];
 }
 
 function loadPrefs(): PersistedPrefs | null {
@@ -119,6 +126,13 @@ export function AppStateProvider({
       return prev.includes(key) ? prev : [...prev, key];
     });
   const showAllZmanim = () => setHiddenZmanim([]);
+  const [hiddenLearning, setHiddenLearning] = useState<string[]>([]);
+  const setLearningVisible = (key: string, visible: boolean) =>
+    setHiddenLearning((prev) => {
+      if (visible) return prev.includes(key) ? prev.filter((k) => k !== key) : prev;
+      return prev.includes(key) ? prev : [...prev, key];
+    });
+  const showAllLearning = () => setHiddenLearning([]);
 
   // Load saved preferences once after mount. Done in an effect (not the initial
   // render) so server and client first-render agree — avoids hydration drift.
@@ -136,6 +150,8 @@ export function AppStateProvider({
     // Unknown/stale keys are dropped, so a save from an old version self-heals.
     const savedHidden = sanitizeHiddenZmanim(prefs.hiddenZmanim);
     if (savedHidden.length > 0) setHiddenZmanim(savedHidden);
+    const savedHiddenLearning = sanitizeHiddenLearning(prefs.hiddenLearning);
+    if (savedHiddenLearning.length > 0) setHiddenLearning(savedHiddenLearning);
     // A location from the URL (deep link) takes precedence over the saved one.
     // Ignore a persisted *default* (eager-persisted, not a real choice) so it
     // doesn't lock out auto-detection. inIsrael is always derived from the
@@ -208,12 +224,12 @@ export function AppStateProvider({
     try {
       window.localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ location, candleLightingOffset, havdalahOpinion, hiddenZmanim }),
+        JSON.stringify({ location, candleLightingOffset, havdalahOpinion, hiddenZmanim, hiddenLearning }),
       );
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [location, candleLightingOffset, havdalahOpinion, hiddenZmanim]);
+  }, [location, candleLightingOffset, havdalahOpinion, hiddenZmanim, hiddenLearning]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
@@ -277,6 +293,9 @@ export function AppStateProvider({
     hiddenZmanim,
     setZmanVisible,
     showAllZmanim,
+    hiddenLearning,
+    setLearningVisible,
+    showAllLearning,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
