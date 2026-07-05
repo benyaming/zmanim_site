@@ -46,7 +46,9 @@ export function LocationPicker() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="max-w-[12rem] gap-1.5">
+        {/* `shrink min-w-0` overrides the button base's shrink-0 so a long city
+            name ellipsizes instead of overflowing the header on narrow screens. */}
+        <Button variant="outline" size="sm" className="min-w-0 shrink max-w-[12rem] gap-1.5">
           <MapPin className="size-4 shrink-0" />
           <span className="truncate">{location.label}</span>
         </Button>
