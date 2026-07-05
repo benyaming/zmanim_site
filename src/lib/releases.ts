@@ -18,6 +18,19 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.3',
+    date: '2026-07-05',
+    notes: {
+      en: [
+        'Clearer header icons: a gear for settings, a palette for appearance and a grid for tools, with tooltips on hover.',
+      ],
+      he: ['סמלים ברורים יותר בכותרת: גלגל שיניים להגדרות, פלטת צבעים למראה ורשת לכלים, עם תיאור בריחוף.'],
+      ru: [
+        'Более понятные значки в шапке: шестерёнка для настроек, палитра для оформления и сетка для инструментов, с подсказками при наведении.',
+      ],
+    },
+  },
+  {
     version: '1.2',
     date: '2026-07-05',
     notes: {

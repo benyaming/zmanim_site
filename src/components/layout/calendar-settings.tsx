@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarCog } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { CANDLE_OFFSET_MAX, CANDLE_OFFSET_MIN, useAppState } from '@/components/providers/app-state';
@@ -93,7 +93,7 @@ export function CalendarSettings() {
   const hidden = new Set(hiddenZmanim);
 
   return (
-    <SettingsDialogShell icon={CalendarCog} label={t('calendarOpen')} title={t('calendarTitle')}>
+    <SettingsDialogShell icon={Settings} label={t('calendarOpen')} title={t('calendarTitle')}>
       <div className="space-y-2">
         <label htmlFor="candle-offset" className="text-sm font-medium">
           {t('candleOffset')}

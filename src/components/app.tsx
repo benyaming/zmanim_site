@@ -56,10 +56,10 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
             right={
               <>
                 <LocationPicker />
-                <LanguageSwitcher />
-                <CalendarSettings />
                 <ToolsMenu />
+                <LanguageSwitcher />
                 <AppearanceSettings />
+                <CalendarSettings />
               </>
             }
           />
