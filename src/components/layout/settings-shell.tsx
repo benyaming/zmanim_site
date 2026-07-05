@@ -46,7 +46,9 @@ export function SettingsDialogShell({
         </Tooltip>
       </TooltipProvider>
       <DialogContent
-        className={cn('flex max-h-[85dvh] flex-col', wide ? 'sm:max-w-lg' : 'sm:max-w-sm')}
+        // Wide menus also stretch on desktop — content there lays out in
+        // columns instead of one narrow scrolling stack.
+        className={cn('flex max-h-[85dvh] flex-col', wide ? 'sm:max-w-lg lg:max-w-3xl' : 'sm:max-w-sm')}
         // Radix focuses the first focusable element on open; when that's a text
         // input, mobile browsers pop the keyboard over the menu. Focus the
         // dialog container instead (Radix gives it tabIndex=-1): focus still

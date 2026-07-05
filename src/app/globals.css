@@ -62,7 +62,11 @@
   --color-day-selected: var(--day-selected);
 }
 
-:root {
+/* `.export-light` pins the light tokens on an export/print subtree even while
+   the app runs in dark mode (export pages re-declare every themed var locally,
+   and use no `dark:` variants). */
+:root,
+.export-light {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
