@@ -18,6 +18,21 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.13',
+    date: '2026-07-06',
+    notes: {
+      en: [
+        'On touchscreens you can now swipe the calendar grid left or right to move to the next or previous month. The grid follows your finger, and a one-time hint introduces the gesture.',
+      ],
+      he: [
+        'במסכי מגע ניתן כעת להחליק את לוח החודש שמאלה או ימינה כדי לעבור לחודש הבא או הקודם. הלוח עוקב אחרי האצבע, ורמז חד־פעמי מציג את המחווה.',
+      ],
+      ru: [
+        'На сенсорных экранах теперь можно листать календарь свайпом влево или вправо, переходя к следующему или предыдущему месяцу. Сетка следует за пальцем, а одноразовая подсказка знакомит с жестом.',
+      ],
+    },
+  },
+  {
     version: '1.12',
     date: '2026-07-06',
     notes: {
