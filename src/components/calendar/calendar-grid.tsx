@@ -166,7 +166,13 @@ function getCachedDayRender(date: DateTime, cfg: DayRenderCfg): ReturnType<typeo
     cfg.lehumra,
   ].join('|');
   const hit = dayCache.get(key);
-  if (hit) return hit;
+  if (hit) {
+    // Refresh recency (Map iterates in insertion order), so eviction targets
+    // truly idle days rather than long-lived but still-visible ones.
+    dayCache.delete(key);
+    dayCache.set(key, hit);
+    return hit;
+  }
   const value = computeDayRender(date, cfg);
   if (dayCache.size >= DAY_CACHE_MAX) {
     // Evict the oldest chunk (Map preserves insertion order).
@@ -306,6 +312,11 @@ type PanelPosition = 'leading' | 'center' | 'trailing';
  * panel sits in normal flow and defines the height; the side panels are
  * absolutely positioned one full width to each logical side (plus a 1px seam
  * of the wrapper's bg-border), so dragging the strip reveals them like pages.
+ *
+ * Logical insets make RTL come out right by themselves: there the leading
+ * (previous-month) panel sits physically to the RIGHT, so the rightward swipe
+ * that `CalendarGrid` commits as "next" reveals the trailing/next panel from
+ * the left — reveal and commit agree, matching the flipped header chevrons.
  */
 function MonthPanel({
   monthDate,
