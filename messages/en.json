@@ -16,7 +16,7 @@
   },
   "location": {
     "choose": "Choose location",
-    "hint": "Search for a city or use your current location.",
+    "hint": "Search for a city or use your current location. Save the places you use often and give them your own names.",
     "useCurrent": "Use my current location",
     "searchPlaceholder": "Search city…",
     "noResults": "No cities found.",
@@ -24,7 +24,15 @@
     "selected": "Selected location",
     "notSupported": "Geolocation is not supported by your browser.",
     "failed": "Could not get your location.",
-    "defaultCity": "Jerusalem"
+    "defaultCity": "Jerusalem",
+    "savedTitle": "Saved locations",
+    "saveCurrent": "Save “{name}”",
+    "namePlaceholder": "e.g. Home",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "nameLabel": "Name"
   },
   "zmanim": {
     "groups": {

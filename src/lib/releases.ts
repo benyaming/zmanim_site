@@ -18,6 +18,21 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.10',
+    date: '2026-07-05',
+    notes: {
+      en: [
+        'Saved locations: bookmark the places you use often and switch between them from the location dialog. Each saved place keeps its original city name, its detected elevation, and an optional custom name ("Home", "Parents") shown in the header — entries can be renamed or removed at any time.',
+      ],
+      he: [
+        'מיקומים שמורים: ניתן לשמור את המקומות שבהם אתם משתמשים לעיתים קרובות ולעבור ביניהם מחלון בחירת המיקום. כל מקום שמור כולל את שם העיר המקורי, את הגובה שזוהה עבורו ושם מותאם אישית (״בית״, ״הורים״) המוצג בכותרת — ניתן לשנות את השם או למחוק רשומות בכל עת.',
+      ],
+      ru: [
+        'Сохранённые места: добавляйте в закладки места, которыми пользуетесь чаще всего, и переключайтесь между ними в окне выбора местоположения. У каждого сохранённого места хранятся исходное название города, определённая для него высота и необязательное своё название («Дом», «Родители»), отображаемое в шапке — записи можно переименовать или удалить в любой момент.',
+      ],
+    },
+  },
+  {
     version: '1.9',
     date: '2026-07-05',
     notes: {

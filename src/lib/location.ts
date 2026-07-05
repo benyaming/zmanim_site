@@ -12,6 +12,12 @@ export interface AppLocation {
    * the label's language is unknown (deep-link labels, older saved prefs).
    */
   labelLocale?: string;
+  /**
+   * User-given display name (from a saved location, e.g. "Home"). Shown in
+   * place of `label` when present. Deliberately untouched by the locale
+   * relabel effect, which only re-resolves the geocoded `label`.
+   */
+  customLabel?: string;
   /** Whether to use the Israel luach (1-day Yom Tov, Israel parsha schedule). */
   inIsrael: boolean;
   /**
