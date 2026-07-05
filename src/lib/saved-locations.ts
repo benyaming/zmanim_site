@@ -13,6 +13,17 @@ export interface SavedLocation {
   location: AppLocation;
 }
 
+/**
+ * Generate an id for a new saved entry. `crypto.randomUUID` needs a secure
+ * context (it's undefined over plain-HTTP LAN access, e.g. the dev server
+ * opened from a phone) and is missing in older Safari — fall back to a
+ * timestamp + random suffix, which is plenty for a per-device bookmark list.
+ */
+export function newSavedLocationId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 /** The display name of a saved entry: the custom name, or the geocoded label. */
 export function savedLocationDisplayName(entry: SavedLocation): string {
   return entry.name.trim() || entry.location.label;

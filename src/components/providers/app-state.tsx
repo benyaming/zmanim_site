@@ -13,6 +13,7 @@ import { normalizeIsraelAreaTimezone } from '@/lib/geo/timezone';
 import { sanitizeHiddenLearning } from '@/lib/learning';
 import { type AppLocation, DEFAULT_LOCATION, isDefaultLocation, isIsraelTimezone, makeLocation } from '@/lib/location';
 import {
+  newSavedLocationId,
   resolveSavedLocation,
   sanitizeSavedLocations,
   type SavedLocation,
@@ -159,7 +160,7 @@ export function AppStateProvider({
     const trimmed = name.trim();
     // The snapshot keeps the geocoded label as the entry's canonical name;
     // the custom name lives in `name` only.
-    const entry: SavedLocation = { id: crypto.randomUUID(), name: trimmed, location: { ...loc, customLabel: undefined } };
+    const entry: SavedLocation = { id: newSavedLocationId(), name: trimmed, location: { ...loc, customLabel: undefined } };
     setSavedLocations((prev) => (prev.some((e) => savedLocationMatches(e, loc)) ? prev : [...prev, entry]));
     // If the bookmarked place is the active location, show its new name in the
     // header right away. Not a location change — don't touch the lock.

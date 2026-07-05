@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { makeLocation } from './location';
 import {
+  newSavedLocationId,
   resolveSavedLocation,
   sanitizeSavedLocations,
   type SavedLocation,
@@ -15,6 +16,25 @@ const entry = (over: Partial<SavedLocation> = {}): SavedLocation => ({
   name: 'Home',
   location: brooklyn,
   ...over,
+});
+
+describe('newSavedLocationId', () => {
+  it('generates unique ids', () => {
+    expect(newSavedLocationId()).not.toBe(newSavedLocationId());
+  });
+
+  it('falls back when crypto.randomUUID is unavailable (insecure context, old Safari)', () => {
+    const original = crypto.randomUUID;
+    Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true });
+    try {
+      const a = newSavedLocationId();
+      const b = newSavedLocationId();
+      expect(a).toBeTruthy();
+      expect(a).not.toBe(b);
+    } finally {
+      Object.defineProperty(crypto, 'randomUUID', { value: original, configurable: true });
+    }
+  });
 });
 
 describe('savedLocationDisplayName', () => {
