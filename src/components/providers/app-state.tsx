@@ -13,6 +13,12 @@ import { normalizeIsraelAreaTimezone } from '@/lib/geo/timezone';
 import { sanitizeHiddenLearning } from '@/lib/learning';
 import { type AppLocation, DEFAULT_LOCATION, isDefaultLocation, isIsraelTimezone, makeLocation } from '@/lib/location';
 import {
+  resolveSavedLocation,
+  sanitizeSavedLocations,
+  type SavedLocation,
+  savedLocationMatches,
+} from '@/lib/saved-locations';
+import {
   DEFAULT_HAVDALAH_OPINION,
   DEFAULT_HIDDEN_ZMANIM,
   type HavdalahOpinion,
@@ -23,6 +29,7 @@ import {
 
 export { DEFAULT_LOCATION, makeLocation };
 export type { AppLocation };
+export type { SavedLocation };
 
 export const DEFAULT_CANDLE_OFFSET = 18;
 /** Candle lighting is always *before* sunset, so the offset must be ≥ 1 minute. */
@@ -32,6 +39,15 @@ export const CANDLE_OFFSET_MAX = 120;
 interface AppStateValue {
   location: AppLocation;
   setLocation: (loc: AppLocation) => void;
+  /** User-bookmarked locations, managed from the location dialog. */
+  savedLocations: SavedLocation[];
+  /** Bookmark a location (its `customLabel`, if any, is ignored — `name` rules). */
+  addSavedLocation: (name: string, loc: AppLocation) => void;
+  /** Rename a saved entry. */
+  updateSavedLocation: (id: string, name: string) => void;
+  removeSavedLocation: (id: string) => void;
+  /** Make a saved entry the active location. */
+  selectSavedLocation: (id: string) => void;
   /** The month currently being viewed (anchored on the 15th). */
   monthDate: DateTime;
   setMonthDate: (d: DateTime) => void;
@@ -69,6 +85,7 @@ const STORAGE_KEY = 'zmanim:prefs:v1';
 
 interface PersistedPrefs {
   location?: AppLocation;
+  savedLocations?: SavedLocation[];
   candleLightingOffset?: number;
   /** Opt-in elevation-adjusted zmanim; absent/false = standard sea-level times. */
   useElevation?: boolean;
@@ -135,6 +152,52 @@ export function AppStateProvider({
   const setLocation = (loc: AppLocation) => {
     locationLocked.current = true;
     setLocationState(loc);
+  };
+
+  const [savedLocations, setSavedLocations] = useState<SavedLocation[]>([]);
+  const addSavedLocation = (name: string, loc: AppLocation) => {
+    const trimmed = name.trim();
+    // The snapshot keeps the geocoded label as the entry's canonical name;
+    // the custom name lives in `name` only.
+    const entry: SavedLocation = { id: crypto.randomUUID(), name: trimmed, location: { ...loc, customLabel: undefined } };
+    setSavedLocations((prev) => (prev.some((e) => savedLocationMatches(e, loc)) ? prev : [...prev, entry]));
+    // If the bookmarked place is the active location, show its new name in the
+    // header right away. Not a location change — don't touch the lock.
+    if (trimmed) {
+      setLocationState((prev) =>
+        prev.lat === loc.lat && prev.lng === loc.lng ? { ...prev, customLabel: trimmed } : prev,
+      );
+    }
+  };
+  const updateSavedLocation = (id: string, name: string) => {
+    const trimmed = name.trim();
+    const entry = savedLocations.find((e) => e.id === id);
+    if (!entry) return;
+    setSavedLocations((prev) => prev.map((e) => (e.id === id ? { ...e, name: trimmed } : e)));
+    // Keep the active location's header name in step when it's the entry
+    // being renamed, so the change shows without re-selecting it.
+    setLocationState((prev) =>
+      prev.lat === entry.location.lat && prev.lng === entry.location.lng
+        ? { ...prev, customLabel: trimmed || undefined }
+        : prev,
+    );
+  };
+  const removeSavedLocation = (id: string) => {
+    const entry = savedLocations.find((e) => e.id === id);
+    setSavedLocations((prev) => prev.filter((e) => e.id !== id));
+    // Un-bookmarking the active location drops its custom name (the place
+    // itself stays selected).
+    if (entry) {
+      setLocationState((prev) =>
+        prev.lat === entry.location.lat && prev.lng === entry.location.lng && prev.customLabel
+          ? { ...prev, customLabel: undefined }
+          : prev,
+      );
+    }
+  };
+  const selectSavedLocation = (id: string) => {
+    const entry = savedLocations.find((e) => e.id === id);
+    if (entry) setLocation(resolveSavedLocation(entry));
   };
   const [monthDate, setMonthDate] = useState<DateTime>(monthAnchor(today, 'gregorian'));
   const [mode, setModeState] = useState<CalendarMode>('gregorian');
@@ -207,6 +270,8 @@ export function AppStateProvider({
     }
     const savedHiddenLearning = sanitizeHiddenLearning(prefs.hiddenLearning);
     if (savedHiddenLearning.length > 0) setHiddenLearning(savedHiddenLearning);
+    const savedList = sanitizeSavedLocations(prefs.savedLocations);
+    if (savedList.length > 0) setSavedLocations(savedList);
     // A location from the URL (deep link) takes precedence over the saved one.
     // Ignore a persisted *default* (eager-persisted, not a real choice) so it
     // doesn't lock out auto-detection. inIsrael is always derived from the
@@ -301,6 +366,7 @@ export function AppStateProvider({
         STORAGE_KEY,
         JSON.stringify({
           location,
+          savedLocations,
           candleLightingOffset,
           useElevation,
           havdalahOpinion,
@@ -314,7 +380,7 @@ export function AppStateProvider({
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [location, candleLightingOffset, useElevation, havdalahOpinion, lehumra, hiddenZmanim, zmanimCustomized, hiddenLearning]);
+  }, [location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, hiddenZmanim, zmanimCustomized, hiddenLearning]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
@@ -375,6 +441,11 @@ export function AppStateProvider({
   const value: AppStateValue = {
     location,
     setLocation,
+    savedLocations,
+    addSavedLocation,
+    updateSavedLocation,
+    removeSavedLocation,
+    selectSavedLocation,
     monthDate,
     setMonthDate,
     mode,
