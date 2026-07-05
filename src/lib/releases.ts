@@ -18,6 +18,15 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.2',
+    date: '2026-07-05',
+    notes: {
+      en: ['Mobile: long location names no longer overflow the header — they are trimmed with an ellipsis.'],
+      he: ['נייד: שמות מיקום ארוכים כבר לא גולשים מהכותרת — הם מקוצרים עם שלוש נקודות.'],
+      ru: ['Мобильная версия: длинные названия городов больше не растягивают шапку — они обрезаются многоточием.'],
+    },
+  },
+  {
     version: '1.1',
     date: '2026-07-03',
     notes: {
