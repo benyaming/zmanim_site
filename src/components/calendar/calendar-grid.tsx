@@ -27,7 +27,7 @@ const ESTIMATED_NEED_REM: Record<CellDensity, number> = { full: 5.4, medium: 3.7
 const TIER_ORDER: CellDensity[] = ['full', 'medium', 'compact'];
 const MIN_SCALE = 0.72; // don't shrink text past this before dropping a tier
 // Safety slack against sub-pixel rounding of the `1fr` row tracks and the
-// applied zoom — without it an exact-fit cell can clip its last line by a
+// applied scale — without it an exact-fit cell can clip its last line by a
 // hairline.
 const FIT_SLACK_PX = 1;
 
@@ -41,12 +41,13 @@ interface CellFit {
  * how much to shrink it so it fits without clipping:
  *  · Width picks the base tier (compact → medium → full) — horizontal room.
  *  · In the fixed-viewport (lg+) layout the rows are a height-constrained `1fr`,
- *    so the content is scaled down (via `zoom`) to fit the tallest cell's real
+ *    so the content is scaled down (via a width-compensated transform — see
+ *    `fitStyle` in {@link CalendarDay}) to fit the tallest cell's real
  *    content. Only if it would have to shrink past {@link MIN_SCALE} does the
  *    tier step down.
  * Below lg the grid is content-sized, so height never constrains (scale stays 1).
  *
- * The content height is measured with zoom/width reset to their natural values,
+ * The content height is measured with the width reset to its natural value,
  * so the measurement is independent of the currently applied scale — applying a
  * new fit can't change the next measurement, and there's no oscillation. Tiers
  * that haven't been rendered yet use {@link ESTIMATED_NEED_REM}; choosing one
@@ -92,19 +93,21 @@ function useCellFit(gridRef: RefObject<HTMLDivElement | null>, fontScale: string
       }
 
       // Natural height of the tallest cell's content for the tier currently
-      // rendered. zoom is reset during the read so the result doesn't depend
-      // on the currently applied scale. (Wrapping at natural width is never
-      // looser than at the zoomed width, so this can only overestimate —
-      // content never clips.) The cache is invalidated on every input that
-      // could change the result (content, font scale, cell width, tier), so a
-      // hit — e.g. a height-only resize — skips the whole write/read pass.
+      // rendered. The fit's inflated width is reset during the read so the
+      // result doesn't depend on the currently applied scale (the transform
+      // itself never affects offsetHeight). Wrapping at the natural width is
+      // never looser than at the inflated width, so this can only
+      // overestimate — content never clips. The cache is invalidated on every
+      // input that could change the result (content, font scale, cell width,
+      // tier), so a hit — e.g. a height-only resize — skips the whole
+      // write/read pass.
       if (cache.need[rendered] === undefined) {
         const wrappers = Array.from(el.querySelectorAll<HTMLElement>('[data-day-content]'));
-        const saved = wrappers.map((n) => n.style.getPropertyValue('zoom'));
-        for (const n of wrappers) n.style.setProperty('zoom', '1');
+        const saved = wrappers.map((n) => n.style.getPropertyValue('width'));
+        for (const n of wrappers) n.style.removeProperty('width');
         let needPx = 0;
         for (const n of wrappers) needPx = Math.max(needPx, n.offsetHeight);
-        wrappers.forEach((n, i) => n.style.setProperty('zoom', saved[i]));
+        wrappers.forEach((n, i) => saved[i] && n.style.setProperty('width', saved[i]));
         cache.need[rendered] = needPx / rem;
       }
 

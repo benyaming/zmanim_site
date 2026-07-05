@@ -88,15 +88,20 @@ export function CalendarDay({
   // "Vaeschanan · Shabbat Nachamu" — the special-Shabbat name rides the parsha line.
   const parshaLine = [info.parsha, specialShabbosLabel].filter(Boolean).join(' · ') || null;
 
-  // Shrink the content to fit a short row instead of clipping it. `zoom` scales
-  // the whole subtree (text, icons, gaps) and — unlike `transform` — affects
-  // layout, so the cell's `overflow-hidden` respects the smaller size. With
-  // standardized `zoom` the element's own percentage width still resolves in
-  // the parent's (unzoomed) space, so the default 100% width already fills the
-  // cell and the children simply get 1/scale more room inside — do NOT
-  // pre-inflate the width, or the wrapper overflows the cell and its right
-  // edge gets clipped.
-  const fitStyle: CSSProperties | undefined = scale < 1 ? { zoom: scale } : undefined;
+  // Shrink the content to fit a short row instead of clipping it: pre-inflate
+  // the width by 1/scale, then transform-scale the subtree back down, so the
+  // scaled result exactly fills the cell and text wraps as if the cell were
+  // 1/scale larger. `zoom` would be the natural tool, but iOS WebKit resolves
+  // rem lengths inside a zoomed subtree against an inversely-zoomed root font
+  // size (WebKit bug 265869), and every size in a cell is rem-based (they must
+  // track the accessibility text scale) — so on iPads zoom was a net no-op and
+  // tall cells clipped. transform math is identical on every engine; the
+  // scaled-down visual result stays inside the cell, and the (unscaled) layout
+  // overflow is cut by the cell's `overflow-hidden`. The origin must be the
+  // top inline-start corner (`origin-top-left rtl:origin-top-right` on the
+  // wrapper) so the visual box hugs the cell's start edge in both directions.
+  const fitStyle: CSSProperties | undefined =
+    scale < 1 ? { width: `${100 / scale}%`, transform: `scale(${scale})` } : undefined;
 
   return (
     <button
@@ -122,7 +127,7 @@ export function CalendarDay({
         isSelected && 'ring-day-selected ring-2 ring-inset',
       )}
     >
-      <div data-day-content className="flex flex-col gap-0.5" style={fitStyle}>
+      <div data-day-content className="flex origin-top-left flex-col gap-0.5 rtl:origin-top-right" style={fitStyle}>
         <div className="flex items-baseline justify-between gap-1">
         <span
           className={cn(
