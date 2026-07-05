@@ -1,7 +1,7 @@
 'use client';
 
 import { JewishCalendar } from 'kosher-zmanim';
-import { BookOpen, CalendarClock, Flame, Moon, Sparkles, Utensils, UtensilsCrossed, Wheat } from 'lucide-react';
+import { BookOpen, CalendarClock, Clock, Flame, Moon, Sparkles, Utensils, UtensilsCrossed, Wheat } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { DateTime } from 'luxon';
 import type { LucideIcon } from 'lucide-react';
@@ -25,9 +25,17 @@ import {
 } from '@/lib/calendar';
 import { formatMoladParts, formatTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { buildZmanimGroups, computeZmanim, havdalahTime, havdalahZmanKey, type HavdalahOpinion } from '@/lib/zmanim';
+import {
+  applyLehumraToEvents,
+  buildZmanimGroups,
+  computeZmanim,
+  havdalahTime,
+  havdalahZmanKey,
+  type HavdalahOpinion,
+} from '@/lib/zmanim';
 
 import { DailyLearning } from './daily-learning';
+import { InfoHint } from './info-hint';
 import { ZmanimList } from './zmanim-list';
 
 const EVENT_META: Record<DayEventType, { Icon: ComponentType<{ className?: string }>; className: string }> = {
@@ -110,10 +118,20 @@ function buildDayTimes(
   if (firstRest && lastRest) {
     const erev = firstRest.minus({ days: 1 });
     const candle = dayEventsFor(erev, location, candleLightingOffset, havdalahOpinion, useElevation).find((e) => e.type === 'candle');
+    if (candle) bookends.push(candle);
+    // Lightings INSIDE a multi-day block — one per night a further rest day
+    // begins: the 2nd Yom Tov night (after nightfall), Yom Tov on Motzei
+    // Shabbat (after nightfall), or Shabbat after a Friday Yom Tov (regular
+    // pre-sunset time). Chronological between the erev candle and havdalah.
+    for (let day = firstRest; day.toMillis() < lastRest.toMillis(); day = day.plus({ days: 1 })) {
+      const nightCandle = dayEventsFor(day, location, candleLightingOffset, havdalahOpinion, useElevation).find(
+        (e) => e.type === 'candle',
+      );
+      if (nightCandle) bookends.push(nightCandle);
+    }
     const havdalah = dayEventsFor(lastRest, location, candleLightingOffset, havdalahOpinion, useElevation).find(
       (e) => e.type === 'havdalah',
     );
-    if (candle) bookends.push(candle);
     if (havdalah) bookends.push(havdalah);
   }
 
@@ -204,7 +222,8 @@ function buildDayChips(info: DayInfo, locale: string, t: { cat: Translator; pane
 }
 
 export function ZmanimPanel() {
-  const { selectedDay, location, candleLightingOffset, havdalahOpinion, hiddenZmanim, useElevation } = useAppState();
+  const { selectedDay, location, candleLightingOffset, havdalahOpinion, hiddenZmanim, useElevation, lehumra } =
+    useAppState();
   const zmanim = useZmanim();
   const locale = useLocale();
   const tName = useTranslations('zmanim.names');
@@ -221,8 +240,11 @@ export function ZmanimPanel() {
   const chips = buildDayChips(info, locale, { cat: tCat, panel: tPanel });
 
   // Candle lighting + havdalah for the rest period (both bookends on both days),
-  // plus any fast times for the selected day.
-  const events = buildDayTimes(selectedDay, location, candleLightingOffset, havdalahOpinion, useElevation);
+  // plus any fast times for the selected day. Lehumra rounds per event type
+  // (fast start DOWN although its clock time is alot, which rounds up as a
+  // zman row), so it applies here rather than inside computeZmanim.
+  const rawEvents = buildDayTimes(selectedDay, location, candleLightingOffset, havdalahOpinion, useElevation);
+  const events = lehumra ? applyLehumraToEvents(rawEvents) : rawEvents;
   // The fast end arrives once per tzeit opinion — render those as one grouped
   // block instead of repeating the "Fast ends" row three times.
   const fastEndEvents = events.filter((e) => e.type === 'fastEnd');
@@ -253,11 +275,21 @@ export function ZmanimPanel() {
             {info.hebrewDayOfMonth} {info.hebrewMonth}
           </span>
         </h3>
-        {chips.length > 0 && (
+        {(chips.length > 0 || lehumra) && (
           <div className="mt-0.5 flex flex-wrap gap-1.5">
             {chips.map(({ key, ...chip }) => (
               <DayChip key={key} {...chip} />
             ))}
+            {/* Mode indicator, not a day fact — muted outline so it reads as
+                state, unlike the tinted holiday chips. The info popover holds
+                the full per-zman rounding rules. */}
+            {lehumra && (
+              <span className="text-muted-foreground inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium">
+                <Clock className="size-3 shrink-0" />
+                {tPanel('lehumraChip')}
+                <InfoHint detail={tPanel('lehumraDetail')} label={tPanel('lehumraChip')} />
+              </span>
+            )}
           </div>
         )}
         {/* An observance kept off its nominal date (fast nidche, the Israeli
@@ -285,7 +317,9 @@ export function ZmanimPanel() {
                     {tEvents(event.type)}
                     {event.type === 'candle' && (
                       <Badge variant="secondary" className="font-normal tabular-nums">
-                        {tEvents('candleOffset', { minutes: candleLightingOffset })}
+                        {event.afterNightfall
+                          ? tEvents('candleAfterNightfall')
+                          : tEvents('candleOffset', { minutes: candleLightingOffset })}
                       </Badge>
                     )}
                     {event.type === 'havdalah' && (
@@ -322,7 +356,21 @@ export function ZmanimPanel() {
       <Separator />
       <CardContent className="flex flex-col gap-4 px-5 py-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         <DailyLearning date={selectedDay} inIsrael={location.inIsrael} locale={locale} />
-        <ZmanimList groups={groups} locale={locale} footnote={tPanel('zmanimSettingsHint')} />
+        <ZmanimList
+          groups={groups}
+          locale={locale}
+          footnote={
+            <>
+              {lehumra && (
+                <p className="flex items-center gap-1">
+                  <span>{tPanel('lehumraNote')}</span>
+                  <InfoHint detail={tPanel('lehumraDetail')} label={tPanel('lehumraChip')} />
+                </p>
+              )}
+              <p>{tPanel('zmanimSettingsHint')}</p>
+            </>
+          }
+        />
       </CardContent>
     </Card>
   );

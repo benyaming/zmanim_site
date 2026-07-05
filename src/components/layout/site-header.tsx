@@ -13,7 +13,9 @@ export function SiteHeader({ right }: { right?: ReactNode }) {
       <div className="mx-auto flex h-14 w-full max-w-[2200px] items-center justify-between gap-2 px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <Sunrise className="text-primary size-6" />
-          <span className="text-lg font-semibold tracking-tight">{t('brand')}</span>
+          {/* On very narrow screens (older ~360px phones) the wordmark starves
+              the location pill and menu buttons — keep just the sun glyph. */}
+          <span className="hidden text-lg font-semibold tracking-tight min-[25rem]:inline">{t('brand')}</span>
         </Link>
         {right && <div className="flex min-w-0 items-center gap-2">{right}</div>}
       </div>

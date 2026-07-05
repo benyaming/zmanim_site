@@ -15,6 +15,13 @@ export interface DayEvent {
    * emitted once per FAST_END_OPINIONS entry. Translatable via zmanim.shitot.
    */
   zmanKey?: FastEndOpinion;
+  /**
+   * Candle lighting that must wait for the current rest day to end (the 2nd
+   * Yom Tov night, or Yom Tov beginning on Motzei Shabbat): nightfall per the
+   * chosen havdalah opinion, lit from an existing flame. "Not before" — so
+   * lehumra rounds it UP, unlike a regular pre-sunset lighting.
+   */
+  afterNightfall?: boolean;
 }
 
 /** The zmanim a day's events can reference. */
@@ -28,7 +35,11 @@ export interface DayEventTimes {
   tzais: DateTime | null;
   /** Fixed 42 minutes after sunset — the latest fast-end opinion. */
   tzais42: DateTime | null;
-  /** Nightfall for havdalah, per the user's chosen opinion (may differ from `tzais`). */
+  /**
+   * Nightfall per the user's chosen havdalah opinion (may differ from `tzais`).
+   * Also the second-night candle-lighting time — lighting for a rest day that
+   * follows another rest day waits for the first one to end.
+   */
   havdalah: DateTime | null;
 }
 
@@ -36,7 +47,9 @@ export interface DayEventTimes {
  * Compute the candle-lighting / havdalah / fast events to surface on a calendar
  * day. Pure and deterministic so it can be unit-tested.
  *
- * - Candle lighting: Erev Shabbat (Friday) or Erev Yom Tov.
+ * - Candle lighting: every night a rest day begins — from a mundane eve at
+ *   sunset − offset; from a rest day (2nd Yom Tov night, Yom Tov on Motzei
+ *   Shabbat) at nightfall, from an existing flame.
  * - Havdalah: the night Shabbat or Yom Tov ends (when the next day is mundane).
  * - Fast begins/ends: minor fasts run dawn→nightfall; Yom Kippur & Tisha B'Av
  *   start the previous evening (shown as candle lighting / sunset on the eve)
@@ -49,10 +62,10 @@ export function getDayEvents(date: DateTime, times: DayEventTimes, inIsrael = fa
   const jcTomorrow = new JewishCalendar(tomorrow);
   jcTomorrow.setInIsrael(inIsrael);
 
-  const isFriday = date.weekday === 5;
   const isSaturday = date.weekday === 6;
   // "Rest day" = Shabbat or a work-prohibited Yom Tov. Use isYomTovAssurBemelacha
   // (NOT the broad isYomTov, which also reports Purim/Chanukah).
+  const todayIsRest = isSaturday || jc.isYomTovAssurBemelacha();
   const tomorrowIsRest = tomorrow.weekday === 6 || jcTomorrow.isYomTovAssurBemelacha();
   const idx = jc.getYomTovIndex();
   const YOM_KIPPUR = JewishCalendar.YOM_KIPPUR;
@@ -60,9 +73,19 @@ export function getDayEvents(date: DateTime, times: DayEventTimes, inIsrael = fa
 
   const events: DayEvent[] = [];
 
-  // Candle lighting before Shabbat / Yom Tov begins tonight.
-  if (isFriday || jc.isErevYomTov()) {
-    events.push({ type: 'candle', time: times.candleLighting });
+  // Candle lighting the night a rest day begins. From a mundane eve it's the
+  // classic sunset − offset. When today is itself a rest day (2nd Yom Tov
+  // night, or Yom Tov starting on Motzei Shabbat) lighting waits for today to
+  // end — nightfall per the chosen havdalah opinion, from an existing flame —
+  // EXCEPT when the coming rest day is Shabbat (Yom Tov on Friday): Shabbat
+  // candles must precede sunset, so the pre-sunset time applies even then.
+  // Mirrors zmanim_api's yom tov engine (tzais(havdala_params) vs candle_lighting()).
+  if (tomorrowIsRest) {
+    if (todayIsRest && tomorrow.weekday !== 6) {
+      events.push({ type: 'candle', time: times.havdalah, afterNightfall: true });
+    } else {
+      events.push({ type: 'candle', time: times.candleLighting });
+    }
   }
 
   // Tisha B'Av has no candle lighting, so surface its onset (sunset) on the eve.
@@ -71,7 +94,7 @@ export function getDayEvents(date: DateTime, times: DayEventTimes, inIsrael = fa
   }
 
   // Havdalah on the night Shabbat / Yom Tov ends — at the chosen tzeit opinion.
-  const endsTonight = (isSaturday || jc.isYomTovAssurBemelacha()) && !tomorrowIsRest;
+  const endsTonight = todayIsRest && !tomorrowIsRest;
   if (endsTonight) {
     events.push({ type: 'havdalah', time: times.havdalah });
   }

@@ -18,6 +18,33 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.8',
+    date: '2026-07-05',
+    notes: {
+      en: [
+        'New optional "Stringent rounding (lehumra)" mode in the calendar settings: displayed times are rounded to a whole minute on the safe side — deadlines (sof zman Shema, sunset, candle lighting, fast start…) down, starting times (netz, tzeit ha-kochavim, havdala, fast end…) up. Off by default; when on, the day panel shows a small "lehumra" chip and a note under the zmanim.',
+        'Candle lighting is now shown for the 2nd night of Yom Tov and for Yom Tov starting on Motzei Shabbat — at nightfall (per your havdala opinion), from an existing flame; for Shabbat after a Friday Yom Tov it stays before sunset. The day panel lists every lighting of the holiday block.',
+        'With elevation enabled, the height shown in the header no longer crowds the location name: on narrow screens it drops to its own line under the name, so city names are not cut short.',
+        'On mobile the footer now stays visible while scrolling, like the header.',
+        'On very narrow screens (older ~360px phones) the header shows only the sun glyph, leaving room for the location and menu buttons.',
+      ],
+      he: [
+        'מצב חדש (אופציונלי) "עיגול זמנים לחומרא" בהגדרות הלוח: הזמנים המוצגים מעוגלים לדקה שלמה לצד המחמיר — זמני סוף (סוף זמן קריאת שמע, שקיעה, הדלקת נרות, תחילת צום…) כלפי מטה, וזמני התחלה (נץ, צאת הכוכבים, הבדלה, סיום צום…) כלפי מעלה. כבוי כברירת מחדל; כשהוא פעיל, פאנל היום מציג תג "לחומרא" קטן והערה מתחת לזמנים.',
+        'הדלקת נרות מוצגת כעת גם לליל יום טוב שני וליום טוב שחל במוצאי שבת — בצאת הכוכבים (לפי שיטת ההבדלה שבחרתם), מאש קיימת; לשבת שאחרי יום טוב שחל ביום שישי ההדלקה נשארת לפני השקיעה. פאנל היום מציג את כל ההדלקות של רצף החג.',
+        'כשההתחשבות בגובה פעילה, הגובה בכותרת כבר אינו דוחק את שם המקום: במסכים צרים הוא יורד לשורה נפרדת מתחת לשם, כך ששמות ערים אינם נקטעים.',
+        'בנייד הכותרת התחתונה נשארת כעת גלויה בזמן גלילה, כמו הכותרת העליונה.',
+        'במסכים צרים מאוד (מכשירים ישנים ברוחב ~360px) הכותרת מציגה רק את סמל השמש, ומפנה מקום למיקום ולתפריטים.',
+      ],
+      ru: [
+        'Новый необязательный режим «Строгое округление (лехумра)» в настройках календаря: показанные времена округляются до целой минуты в строгую сторону — конечные времена (соф зман крият Шма, закат, зажигание свечей, начало поста…) вниз, начальные (анец, цет а-кохавим, авдала, конец поста…) вверх. По умолчанию выключен; когда включён, в панели дня видны небольшая метка «лехумра» и пояснение под зманим.',
+        'Зажигание свечей теперь показано и для второй ночи Йом Това, и для Йом Това, начинающегося на исходе Шаббата — после выхода звёзд (по выбранному мнению для авдалы), от существующего огня; для Шаббата после пятничного Йом Това зажигание остаётся до заката. Панель дня показывает все зажигания праздничного блока.',
+        'При включённом учёте высоты она больше не теснит название места в шапке: на узких экранах высота переносится на отдельную строку под названием, и названия городов не обрезаются.',
+        'На мобильных нижняя панель теперь остаётся видимой при прокрутке, как и шапка.',
+        'На очень узких экранах (старые телефоны ~360px) в шапке остаётся только значок солнца — освобождая место для локации и меню.',
+      ],
+    },
+  },
+  {
     version: '1.7',
     date: '2026-07-05',
     notes: {

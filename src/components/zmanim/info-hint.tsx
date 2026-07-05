@@ -23,7 +23,9 @@ export function InfoHint({ detail, label }: { detail: string; label: string }) {
           <Info className="size-3" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-64 p-3 text-xs leading-snug">
+      {/* pre-line lets multi-paragraph details (e.g. the lehumra explanation)
+          keep their line breaks; single-line details are unaffected. */}
+      <PopoverContent align="start" className="w-64 p-3 text-xs leading-snug whitespace-pre-line">
         {detail}
       </PopoverContent>
     </Popover>

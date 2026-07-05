@@ -140,7 +140,8 @@
     "havdalah": "Havdala",
     "fastStart": "Fast begins",
     "fastEnd": "Fast ends",
-    "candleOffset": "{minutes} min before sunset"
+    "candleOffset": "{minutes} min before sunset",
+    "candleAfterNightfall": "not before nightfall"
   },
   "panel": {
     "omer": "Day {day} of the Omer",
@@ -150,6 +151,9 @@
     "parasha": "Parashat {name}",
     "detailsAria": "{label} — details",
     "zmanimSettingsHint": "More zmanim and opinions can be shown via the calendar settings.",
+    "lehumraChip": "lehumra",
+    "lehumraNote": "Times are rounded to the stringent whole minute (lehumra).",
+    "lehumraDetail": "Every displayed time is rounded to a whole minute in the stricter direction — by less than a minute, and only in the display; the underlying calculation stays exact.\nRounded DOWN (deadlines — no later than): sof zman Shema and Tefila, the chametz deadlines, shkia, candle lighting before Shabbat and Yom Tov, and the start of a fast.\nRounded UP (onsets — no earlier than): alot ha-shachar, misheyakir, hanetz, chatzot, mincha gedola and ketana, plag ha-mincha, tzeit ha-kochavim, havdala, the end of a fast, and candle lighting after nightfall (2nd Yom Tov night, Motzei Shabbat).",
     "observedPostponed": "Observed later this year because of Shabbat.",
     "observedAdvanced": "Observed earlier this year because of Shabbat."
   },
@@ -193,6 +197,7 @@
     "off": "Off",
     "havdala": "Havdala",
     "havdalaHint": "Opinion for when Shabbat and Yom Tov end.",
+    "lehumra": "Stringent rounding (lehumra)",
     "learningDisplay": "Daily learning",
     "learningDisplayHint": "Choose which learning cycles appear in the day panel.",
     "zmanimDisplay": "Displayed zmanim",
