@@ -213,3 +213,44 @@ html.high-contrast.dark {
   --muted-foreground: oklch(0.86 0 0);
   --border: oklch(0.62 0 0);
 }
+/* ── Calendar swipe hint ─────────────────────────────────────────────── */
+/* One-time touch onboarding (see CalendarGrid): the calendar nudges sideways
+   while a caption pill fades in and out. The nudge is symmetric so it reads
+   the same in RTL. html.reduce-motion collapses both, as intended. Declared
+   in @theme (not as plain top-level @keyframes, which the Tailwind v4 build
+   does not pass through) so `animate-swipe-hint*` utilities emit them. */
+@theme {
+  --animate-swipe-hint: swipe-hint 1.6s ease-in-out 1s;
+  --animate-swipe-hint-fade: swipe-hint-fade 3s ease-in-out 1s forwards;
+
+  @keyframes swipe-hint {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-14px);
+    }
+    45% {
+      transform: translateX(0);
+    }
+    62% {
+      transform: translateX(10px);
+    }
+    85% {
+      transform: translateX(0);
+    }
+  }
+  @keyframes swipe-hint-fade {
+    0% {
+      opacity: 0;
+    }
+    12%,
+    82% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+}
