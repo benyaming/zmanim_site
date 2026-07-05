@@ -45,6 +45,10 @@
       "sofZmanShmaGRA": "סוף זמן קריאת שמע",
       "sofZmanTfilaMGA": "סוף זמן תפילה",
       "sofZmanTfilaGRA": "סוף זמן תפילה",
+      "sofZmanAchilasChametzMGA": "סוף זמן אכילת חמץ",
+      "sofZmanAchilasChametzGRA": "סוף זמן אכילת חמץ",
+      "sofZmanBiurChametzMGA": "סוף זמן ביעור חמץ",
+      "sofZmanBiurChametzGRA": "סוף זמן ביעור חמץ",
       "chatzos": "חצות",
       "minchaGedola": "מנחה גדולה",
       "minchaKetana": "מנחה קטנה",
@@ -68,6 +72,10 @@
       "sofZmanShmaGRA": "גר\"א",
       "sofZmanTfilaMGA": "מגן אברהם",
       "sofZmanTfilaGRA": "גר\"א",
+      "sofZmanAchilasChametzMGA": "מגן אברהם",
+      "sofZmanAchilasChametzGRA": "גר\"א",
+      "sofZmanBiurChametzMGA": "מגן אברהם",
+      "sofZmanBiurChametzGRA": "גר\"א",
       "chatzos": "",
       "minchaGedola": "",
       "minchaKetana": "",
@@ -91,6 +99,10 @@
       "sofZmanShmaGRA": "סוף השעה הזמנית השלישית לדעת הגר\"א — היום נמדד מהנץ עד השקיעה.",
       "sofZmanTfilaMGA": "סוף השעה הזמנית הרביעית לדעת המגן אברהם — היום מעלות (72 דק') עד צאת (72 דק').",
       "sofZmanTfilaGRA": "סוף השעה הזמנית הרביעית לדעת הגר\"א — היום מהנץ עד השקיעה.",
+      "sofZmanAchilasChametzMGA": "סוף זמן אכילת חמץ — סוף השעה הזמנית הרביעית לדעת המגן אברהם (היום נמדד מעלות השחר, 72 דק' לפני הנץ, עד צאת הכוכבים, 72 דק' אחר השקיעה).",
+      "sofZmanAchilasChametzGRA": "סוף זמן אכילת חמץ — סוף השעה הזמנית הרביעית לדעת הגר\"א (היום מהנץ עד השקיעה).",
+      "sofZmanBiurChametzMGA": "סוף זמן ביעור חמץ — סוף השעה הזמנית החמישית לדעת המגן אברהם (היום נמדד מעלות השחר, 72 דק', עד צאת הכוכבים, 72 דק').",
+      "sofZmanBiurChametzGRA": "סוף זמן ביעור חמץ — סוף השעה הזמנית החמישית לדעת הגר\"א (היום מהנץ עד השקיעה).",
       "chatzos": "חצות היום — אמצע היום, בין הנץ לשקיעה.",
       "minchaGedola": "הזמן המוקדם לתפילת מנחה — 6½ שעות זמניות מתחילת היום (חצי שעה אחר חצות).",
       "minchaKetana": "הזמן המועדף למנחה — 9½ שעות זמניות מתחילת היום.",
@@ -108,6 +120,8 @@
       "misheyakir": "הזמן המוקדם להנחת טלית ותפילין — כשיש אור מספיק להכיר את חברו.",
       "sofZmanShma": "סוף הזמן לקריאת שמע של שחרית — סוף השעה הזמנית השלישית.",
       "sofZmanTfila": "סוף הזמן לתפילת שחרית — סוף השעה הזמנית הרביעית.",
+      "achilasChametz": "ערב פסח: סוף הזמן לאכילת חמץ — סוף השעה הזמנית הרביעית.",
+      "biurChametz": "ערב פסח: סוף הזמן לביעור חמץ — סוף השעה הזמנית החמישית.",
       "tzais": "צאת הכוכבים — נראים שלושה כוכבים ומתחיל היום ההלכתי החדש."
     }
   },
@@ -131,6 +145,8 @@
   "panel": {
     "omer": "יום {day} לעומר",
     "shabbatMevarchim": "שבת מברכים",
+    "specialShabbat": "שבת {name}",
+    "molad": "המולד: {weekday}, {time} ו־{chalakim} חלקים",
     "parasha": "פרשת {name}"
   },
   "settings": {

@@ -26,6 +26,14 @@ export const ZMANIM: readonly ZmanDefinition[] = [
   { key: 'sofZmanTfilaMGA', base: 'sofZmanTfila', method: 'getSofZmanTfilaMGA', category: 'morning', order: 60 },
   { key: 'sofZmanTfilaGRA', base: 'sofZmanTfila', method: 'getSofZmanTfilaGRA', category: 'morning', order: 70 },
 
+  // Erev Pesach chametz deadlines — end of the 4th proportional hour (eating)
+  // and the 5th (burning), each by MGA (day = alos 72 → tzais 72) and GRA
+  // (sunrise → sunset). Computed every day but only surfaced on 14 Nissan.
+  { key: 'sofZmanAchilasChametzMGA', base: 'achilasChametz', method: 'getSofZmanAchilasChametzMGA72Minutes', category: 'morning', order: 72, erevPesachOnly: true },
+  { key: 'sofZmanAchilasChametzGRA', base: 'achilasChametz', method: 'getSofZmanAchilasChametzGRA', category: 'morning', order: 74, erevPesachOnly: true },
+  { key: 'sofZmanBiurChametzMGA', base: 'biurChametz', method: 'getSofZmanBiurChametzMGA72Minutes', category: 'morning', order: 76, erevPesachOnly: true },
+  { key: 'sofZmanBiurChametzGRA', base: 'biurChametz', method: 'getSofZmanBiurChametzGRA', category: 'morning', order: 78, erevPesachOnly: true },
+
   // ── Midday ────────────────────────────────────────────────────────────
   { key: 'chatzos', base: 'chatzos', method: 'getChatzos', category: 'midday', order: 80 },
 

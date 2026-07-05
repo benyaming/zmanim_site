@@ -18,6 +18,30 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.4',
+    date: '2026-07-05',
+    notes: {
+      en: [
+        'Special Shabbatot — Shabbat Hagadol, Shuva, Shekalim, Zachor, Parah, Hachodesh, Shira, Chazon, Nachamu — are named in the day panel and next to the weekly parasha in the calendar.',
+        'The molad of the new month is shown in the day panel on Rosh Chodesh and Shabbat Mevarchim, and the calendar now marks Shabbat Mevarchim.',
+        'Israeli national days added: Yom HaShoah, Yom HaZikaron, Yom HaAtzmaut and Yom Yerushalayim.',
+        'Erev Pesach: the day panel now shows the chametz deadlines — latest eating and burning times (Vilna Gaon & Magen Avraham).',
+      ],
+      he: [
+        'שבתות מיוחדות — שבת הגדול, שובה, שקלים, זכור, פרה, החודש, שירה, חזון ונחמו — מוצגות בפאנל היומי ולצד הפרשה בלוח.',
+        'המולד של החודש הנכנס מוצג בפאנל היומי בראש חודש ובשבת מברכים, והלוח מסמן כעת שבת מברכים.',
+        'נוספו ימי המדינה: יום השואה, יום הזיכרון, יום העצמאות ויום ירושלים.',
+        'ערב פסח: הפאנל היומי מציג את זמני החמץ — סוף זמן אכילת חמץ וביעור חמץ (גר"א ומגן אברהם).',
+      ],
+      ru: [
+        'Особые субботы — Шаббат а-Гадоль, Шува, Шкалим, Захор, Пара, а-Ходеш, Шира, Хазон и Нахаму — подписаны в панели дня и рядом с недельной главой в календаре.',
+        'Молад нового месяца показывается в панели дня в Рош Ходеш и Шаббат Мевархим, а календарь теперь отмечает Шаббат Мевархим.',
+        'Добавлены израильские памятные дни: День Катастрофы, День памяти, День независимости и День Иерусалима.',
+        'Канун Песаха: в панели дня показываются времена хамца — конец еды и сожжения хамца (Виленский Гаон и Маген Авраам).',
+      ],
+    },
+  },
+  {
     version: '1.3',
     date: '2026-07-05',
     notes: {

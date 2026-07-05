@@ -31,6 +31,16 @@ const ORDER: Pair[] = [
   { before: 'sofZmanShmaGRA', after: 'sofZmanTfilaGRA', strict: true },
   { before: 'sofZmanTfilaMGA', after: 'sofZmanTfilaGRA', strict: false },
   { before: 'sofZmanTfilaGRA', after: 'chatzos', strict: false },
+  // Chametz deadlines: eating (4th hour) before burning (5th hour), MGA before
+  // GRA within each, and achilas equals sof zman tfila per opinion by definition.
+  { before: 'sofZmanTfilaMGA', after: 'sofZmanAchilasChametzMGA', strict: false },
+  { before: 'sofZmanAchilasChametzMGA', after: 'sofZmanTfilaMGA', strict: false },
+  { before: 'sofZmanTfilaGRA', after: 'sofZmanAchilasChametzGRA', strict: false },
+  { before: 'sofZmanAchilasChametzGRA', after: 'sofZmanTfilaGRA', strict: false },
+  { before: 'sofZmanAchilasChametzMGA', after: 'sofZmanAchilasChametzGRA', strict: true },
+  { before: 'sofZmanAchilasChametzGRA', after: 'sofZmanBiurChametzGRA', strict: true },
+  { before: 'sofZmanBiurChametzMGA', after: 'sofZmanBiurChametzGRA', strict: true },
+  { before: 'sofZmanBiurChametzGRA', after: 'chatzos', strict: true },
   { before: 'chatzos', after: 'minchaGedola', strict: true },
   { before: 'minchaGedola', after: 'minchaKetana', strict: true },
   { before: 'minchaKetana', after: 'plagHamincha', strict: true },
