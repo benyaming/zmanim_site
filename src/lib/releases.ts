@@ -18,6 +18,21 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.12',
+    date: '2026-07-06',
+    notes: {
+      en: [
+        'Fixed calendar day cells clipping their times and holiday labels on iPhone/iPad: the shrink-to-fit scaling now sidesteps a WebKit bug that made it a no-op on iOS.',
+      ],
+      he: [
+        'תוקן חיתוך של זמנים ותוויות חגים בתאי הלוח באייפון/אייפד: התאמת הגודל האוטומטית עוקפת כעת באג ב-WebKit שגרם לה לא לפעול ב-iOS.',
+      ],
+      ru: [
+        'Исправлено обрезание времён и названий праздников в ячейках календаря на iPhone/iPad: автоматическое уменьшение содержимого теперь обходит ошибку WebKit, из-за которой оно не работало на iOS.',
+      ],
+    },
+  },
+  {
     version: '1.11',
     date: '2026-07-05',
     notes: {
