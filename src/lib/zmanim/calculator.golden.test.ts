@@ -34,6 +34,12 @@ const CASES: GoldenCase[] = [
       sofZmanShmaGRA: '08:44:33',
       sofZmanTfilaMGA: '09:21:15',
       sofZmanTfilaGRA: '09:45:15',
+      // Chametz deadlines (Erev Pesach): achilas = end of the 4th hour (same
+      // instant as sof zman tfila per opinion), biur = end of the 5th.
+      sofZmanAchilasChametzMGA: '09:21:15',
+      sofZmanAchilasChametzGRA: '09:45:15',
+      sofZmanBiurChametzMGA: '10:33:56',
+      sofZmanBiurChametzGRA: '10:45:56',
       chatzos: '11:46:31',
       minchaGedola: '12:16:58',
       minchaKetana: '15:19:01',

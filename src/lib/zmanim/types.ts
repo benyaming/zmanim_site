@@ -37,6 +37,8 @@ export interface ZmanDefinition {
   order: number;
   /** Only meaningful on Erev Shabbat / Erev Yom Tov (e.g. candle lighting). */
   erevOnly?: boolean;
+  /** Only meaningful on Erev Pesach (14 Nissan) — the chametz deadlines. */
+  erevPesachOnly?: boolean;
 }
 
 /** A computed zman: the definition plus its resolved time (null if undefined that day). */

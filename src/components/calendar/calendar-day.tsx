@@ -81,6 +81,13 @@ export function CalendarDay({
   const showLabels = density !== 'compact'; // medium + full
   const showExtras = density === 'full'; // omer + parsha
 
+  // Shabbat qualifiers — plain muted text after the parsha (never chips above
+  // the times), so the times stay vertically aligned across the week's cells.
+  const specialShabbosLabel = info.specialShabbos ? tPanel('specialShabbat', { name: info.specialShabbos }) : null;
+  const mevarchimLabel = info.isShabbosMevorchim ? tPanel('shabbatMevarchim') : null;
+  // "Vaeschanan · Shabbat Nachamu" — the special-Shabbat name rides the parsha line.
+  const parshaLine = [info.parsha, specialShabbosLabel].filter(Boolean).join(' · ') || null;
+
   // Shrink the content to fit a short row instead of clipping it. `zoom` scales
   // the whole subtree (text, icons, gaps) and — unlike `transform` — affects
   // layout, so the cell's `overflow-hidden` respects the smaller size. With
@@ -137,7 +144,7 @@ export function CalendarDay({
       )}
 
       {/* Compact: a dot per significant-day marker. */}
-      {chips.length > 0 && !showLabels && (
+      {(chips.length > 0 || specialShabbosLabel || mevarchimLabel) && !showLabels && (
         <div className="flex gap-0.5" aria-hidden>
           {chips.map((chip) => (
             <span
@@ -146,6 +153,12 @@ export function CalendarDay({
               title={chip.label}
             />
           ))}
+          {specialShabbosLabel && (
+            <span className={cn('size-1.5 shrink-0 rounded-full', DAY_TONE.shabbat.dot)} title={specialShabbosLabel} />
+          )}
+          {mevarchimLabel && (
+            <span className={cn('size-1.5 shrink-0 rounded-full', DAY_TONE.mevorchim.dot)} title={mevarchimLabel} />
+          )}
         </div>
       )}
 
@@ -198,14 +211,25 @@ export function CalendarDay({
         </span>
       )}
 
-      {/* Full only: the weekly parsha. */}
-      {info.parsha && showExtras && (
+      {/* Full only: the weekly parsha, with the special-Shabbat name after it. */}
+      {parshaLine && showExtras && (
         <span
           className="text-muted-foreground flex items-start gap-1 text-[0.6875rem] leading-tight"
-          title={info.parsha}
+          title={parshaLine}
         >
           <BookOpen className="mt-px size-3 shrink-0" />
-          <span className="line-clamp-2 min-w-0">{info.parsha}</span>
+          <span className="line-clamp-2 min-w-0">{parshaLine}</span>
+        </span>
+      )}
+
+      {/* Full only: Shabbat Mevarchim. */}
+      {mevarchimLabel && showExtras && (
+        <span
+          className="text-muted-foreground flex items-start gap-1 text-[0.6875rem] leading-tight"
+          title={mevarchimLabel}
+        >
+          <Sparkles className="mt-px size-3 shrink-0" />
+          <span className="line-clamp-2 min-w-0">{mevarchimLabel}</span>
         </span>
       )}
       </div>

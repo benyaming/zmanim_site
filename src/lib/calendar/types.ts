@@ -1,5 +1,7 @@
 import type { DateTime } from 'luxon';
 
+import type { MoladInfo } from './molad';
+
 export type CalendarMode = 'gregorian' | 'hebrew';
 
 /** Day classification used for calendar-cell coloring (highest precedence wins). */
@@ -40,10 +42,14 @@ export interface DayInfo {
   parsha: string | null;
   /** This week's parsha (the upcoming Shabbos's), readable on any weekday, or null. */
   weekParsha: string | null;
+  /** Formatted special-Shabbos name (Shekalim…Hagadol, Chazon, …), or null. */
+  specialShabbos: string | null;
   /** Day of the Omer (1-49), or -1 outside the counting period. */
   omer: number;
   /** True on Shabbos Mevorchim (the Shabbos before Rosh Chodesh). */
   isShabbosMevorchim: boolean;
+  /** Molad of the incoming month — set on Rosh Chodesh & Shabbos Mevorchim, else null. */
+  molad: MoladInfo | null;
   /** Hebrew day-of-month number (1-30). */
   hebrewDayOfMonth: number;
   /** Formatted Hebrew month name. */

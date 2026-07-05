@@ -4,10 +4,11 @@ import { ZMANIM } from './definitions';
 import { CONFIGURABLE_ZMANIM, sanitizeHiddenZmanim } from './visibility';
 
 describe('CONFIGURABLE_ZMANIM', () => {
-  it('is every zman except candle lighting', () => {
+  it('is every zman except candle lighting and the Erev Pesach-only ones', () => {
     const keys = CONFIGURABLE_ZMANIM.map((z) => z.key);
     expect(keys).not.toContain('candleLighting');
-    expect(keys).toEqual(ZMANIM.filter((z) => z.key !== 'candleLighting').map((z) => z.key));
+    expect(keys).not.toContain('sofZmanAchilasChametzGRA');
+    expect(keys).toEqual(ZMANIM.filter((z) => z.key !== 'candleLighting' && !z.erevPesachOnly).map((z) => z.key));
   });
 });
 

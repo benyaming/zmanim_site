@@ -14,8 +14,16 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useZmanim } from '@/hooks/use-zmanim';
-import { getDayEvents, getDayInfo, localizedHolidayLabel, type DayEvent, type DayEventType, type DayInfo } from '@/lib/calendar';
-import { formatTime } from '@/lib/format';
+import {
+  getDayEvents,
+  getDayInfo,
+  isErevPesach,
+  localizedHolidayLabel,
+  type DayEvent,
+  type DayEventType,
+  type DayInfo,
+} from '@/lib/calendar';
+import { formatMoladParts, formatTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { buildZmanimGroups, computeZmanim, havdalahTime, havdalahZmanKey, type HavdalahOpinion } from '@/lib/zmanim';
 
@@ -150,7 +158,13 @@ function buildDayChips(info: DayInfo, locale: string, t: { cat: Translator; pane
     chips.push({ key: 'festival', label: festival, tone: significantTone(info.category, 0) });
   }
 
-  if (info.isShabbos) chips.push({ key: 'shabbos', label: t.cat('shabbos'), tone: 'shabbat' });
+  // A special Shabbat ("Shabbat Hagadol", "Shabbat Shuva", …) replaces the
+  // plain "Shabbat" chip rather than doubling it.
+  if (info.specialShabbos) {
+    chips.push({ key: 'shabbos', label: t.panel('specialShabbat', { name: info.specialShabbos }), tone: 'shabbat' });
+  } else if (info.isShabbos) {
+    chips.push({ key: 'shabbos', label: t.cat('shabbos'), tone: 'shabbat' });
+  }
   if (info.isRoshChodesh) chips.push({ key: 'roshChodesh', label: t.cat('roshChodesh'), tone: 'roshChodesh', Icon: Moon });
   if (info.isShabbosMevorchim)
     chips.push({ key: 'mevorchim', label: t.panel('shabbatMevarchim'), tone: 'mevorchim', Icon: Sparkles });
@@ -185,9 +199,13 @@ export function ZmanimPanel() {
   // Candle lighting now lives in the events strip above, so keep it out of the
   // zmanim list to avoid showing the same time twice. User-hidden zmanim are
   // filtered here (display only) — events above still use the full computation.
+  // The chametz deadlines only surface on Erev Pesach itself.
   const hidden = new Set(hiddenZmanim);
+  const erevPesach = isErevPesach(selectedDay);
   const groups = buildZmanimGroups(
-    zmanim.filter((z) => z.key !== 'candleLighting' && !hidden.has(z.key)),
+    zmanim.filter(
+      (z) => z.key !== 'candleLighting' && !hidden.has(z.key) && (!z.erevPesachOnly || erevPesach),
+    ),
     { name: tName, shita: tShita, detail: tDetail, baseDescription: tBaseDesc, group: tGroup },
   );
 
@@ -206,6 +224,12 @@ export function ZmanimPanel() {
               <DayChip key={key} {...chip} />
             ))}
           </div>
+        )}
+        {info.molad && (
+          <p className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
+            <Moon className="size-3.5 shrink-0 text-blue-500 dark:text-blue-400" />
+            {tPanel('molad', { ...formatMoladParts(info.molad, locale), chalakim: info.molad.chalakim })}
+          </p>
         )}
         {events.length > 0 && (
           <div className="mt-1.5 flex flex-col gap-2 rounded-lg border bg-muted/30 px-3 py-2.5">

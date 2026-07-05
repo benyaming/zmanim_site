@@ -41,6 +41,10 @@ describe('ZMANIM definitions integrity', () => {
       sofZmanShmaGRA: 'getSofZmanShmaGRA',
       sofZmanTfilaMGA: 'getSofZmanTfilaMGA',
       sofZmanTfilaGRA: 'getSofZmanTfilaGRA',
+      sofZmanAchilasChametzMGA: 'getSofZmanAchilasChametzMGA72Minutes',
+      sofZmanAchilasChametzGRA: 'getSofZmanAchilasChametzGRA',
+      sofZmanBiurChametzMGA: 'getSofZmanBiurChametzMGA72Minutes',
+      sofZmanBiurChametzGRA: 'getSofZmanBiurChametzGRA',
       chatzos: 'getChatzos',
       minchaGedola: 'getMinchaGedola',
       minchaKetana: 'getMinchaKetana',
@@ -65,5 +69,15 @@ describe('ZMANIM definitions integrity', () => {
   it('marks candle lighting as the only erev-only zman', () => {
     const erevOnly = ZMANIM.filter((z) => z.erevOnly).map((z) => z.key);
     expect(erevOnly).toEqual(['candleLighting']);
+  });
+
+  it('marks exactly the chametz deadlines as Erev Pesach-only', () => {
+    const erevPesachOnly = ZMANIM.filter((z) => z.erevPesachOnly).map((z) => z.key);
+    expect(erevPesachOnly).toEqual([
+      'sofZmanAchilasChametzMGA',
+      'sofZmanAchilasChametzGRA',
+      'sofZmanBiurChametzMGA',
+      'sofZmanBiurChametzGRA',
+    ]);
   });
 });

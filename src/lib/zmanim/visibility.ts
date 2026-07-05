@@ -4,9 +4,13 @@ import type { ZmanDefinition } from './types';
 /**
  * The zmanim a user can show/hide in the day panel. Candle lighting is excluded:
  * it renders in the events strip (not the zmanim list) and is governed by its
- * own offset setting, so hiding it here would have no visible effect.
+ * own offset setting, so hiding it here would have no visible effect. The Erev
+ * Pesach chametz deadlines are excluded too — they appear one day a year, so a
+ * year-round visibility toggle would be noise.
  */
-export const CONFIGURABLE_ZMANIM: readonly ZmanDefinition[] = ZMANIM.filter((z) => z.key !== 'candleLighting');
+export const CONFIGURABLE_ZMANIM: readonly ZmanDefinition[] = ZMANIM.filter(
+  (z) => z.key !== 'candleLighting' && !z.erevPesachOnly,
+);
 
 const CONFIGURABLE_KEYS = new Set(CONFIGURABLE_ZMANIM.map((z) => z.key));
 

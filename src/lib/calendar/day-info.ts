@@ -1,6 +1,7 @@
 import { HebrewDateFormatter, JewishCalendar } from 'kosher-zmanim';
 import type { DateTime } from 'luxon';
 
+import { getMolad } from './molad';
 import { RU_MONTHS, RU_MONTHS_GENITIVE } from './months-ru';
 import { RU_PARSHIYOS } from './parshiyos-ru';
 import type { DayCategory, DayInfo } from './types';
@@ -85,26 +86,42 @@ function getWeekParsha(date: DateTime, fmt: HebrewDateFormatter, inIsrael: boole
   return fmt.formatParsha(jc) || null;
 }
 
+/** Is the day Erev Pesach (14 Nissan) — when the chametz deadlines apply? */
+export function isErevPesach(date: DateTime): boolean {
+  return new JewishCalendar(date).getYomTovIndex() === JewishCalendar.EREV_PESACH;
+}
+
 export function getDayInfo(date: DateTime, formatter?: HebrewDateFormatter, locale = 'en', inIsrael = false): DayInfo {
   const fmt = formatter ?? createHebrewFormatter(locale);
   const jc = new JewishCalendar(date);
   jc.setInIsrael(inIsrael); // Israel vs. diaspora luach (parsha schedule, 1- vs 2-day Yom Tov)
+  // Israeli national days (Yom HaShoah, HaZikaron, HaAtzmaut, Yerushalayim) —
+  // shown everywhere, like mainstream luchos (Hebcal & co.) do.
+  jc.setUseModernHolidays(true);
   const isShabbos = date.weekday === 6; // Luxon: Saturday === 6
 
   const yomTov = fmt.formatYomTov(jc);
   const parsha = fmt.formatParsha(jc);
+  const specialShabbos = fmt.formatSpecialParsha(jc); // Shekalim…Hachodesh, Shuva, Shira, Hagadol, Chazon, Nachamu
+  const isRoshChodesh = jc.isRoshChodesh();
+  const isShabbosMevorchim = jc.isShabbosMevorchim();
 
   return {
     category: classify(jc, isShabbos),
     label: yomTov || null,
     yomTovIndex: jc.getYomTovIndex(),
     dayOfChanukah: jc.isChanukah() ? jc.getDayOfChanukah() : 0,
-    isRoshChodesh: jc.isRoshChodesh(),
+    isRoshChodesh,
     isShabbos,
     parsha: parsha || null,
     weekParsha: getWeekParsha(date, fmt, inIsrael),
+    specialShabbos: specialShabbos || null,
     omer: jc.getDayOfOmer(),
-    isShabbosMevorchim: jc.isShabbosMevorchim(),
+    isShabbosMevorchim,
+    // The molad is announced on Shabbat Mevorchim and belongs with the Rosh
+    // Chodesh info; on a 30th (first RC day) getMolad already reads the
+    // incoming month.
+    molad: isRoshChodesh || isShabbosMevorchim ? getMolad(date) : null,
     hebrewDayOfMonth: jc.getJewishDayOfMonth(),
     hebrewMonth: hebrewMonthLabel(jc, fmt, locale),
   };

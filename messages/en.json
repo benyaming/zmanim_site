@@ -45,6 +45,10 @@
       "sofZmanShmaGRA": "Sof zman Shema",
       "sofZmanTfilaMGA": "Sof zman Tefila",
       "sofZmanTfilaGRA": "Sof zman Tefila",
+      "sofZmanAchilasChametzMGA": "Sof zman achilat chametz",
+      "sofZmanAchilasChametzGRA": "Sof zman achilat chametz",
+      "sofZmanBiurChametzMGA": "Sof zman biur chametz",
+      "sofZmanBiurChametzGRA": "Sof zman biur chametz",
       "chatzos": "Chatzot",
       "minchaGedola": "Mincha Gedola",
       "minchaKetana": "Mincha Ketana",
@@ -68,6 +72,10 @@
       "sofZmanShmaGRA": "Vilna Gaon",
       "sofZmanTfilaMGA": "Magen Avraham",
       "sofZmanTfilaGRA": "Vilna Gaon",
+      "sofZmanAchilasChametzMGA": "Magen Avraham",
+      "sofZmanAchilasChametzGRA": "Vilna Gaon",
+      "sofZmanBiurChametzMGA": "Magen Avraham",
+      "sofZmanBiurChametzGRA": "Vilna Gaon",
       "chatzos": "",
       "minchaGedola": "",
       "minchaKetana": "",
@@ -91,6 +99,10 @@
       "sofZmanShmaGRA": "End of the 3rd proportional hour by the Vilna Gaon (GRA) — the day measured from sunrise to sunset.",
       "sofZmanTfilaMGA": "End of the 4th proportional hour by the Magen Avraham — day measured from dawn (72 min) to nightfall (72 min).",
       "sofZmanTfilaGRA": "End of the 4th proportional hour by the Vilna Gaon (GRA) — day measured from sunrise to sunset.",
+      "sofZmanAchilasChametzMGA": "Latest time to eat chametz — end of the 4th proportional hour by the Magen Avraham (day measured from dawn, 72 min before sunrise, to nightfall, 72 min after sunset).",
+      "sofZmanAchilasChametzGRA": "Latest time to eat chametz — end of the 4th proportional hour by the Vilna Gaon (GRA; day measured from sunrise to sunset).",
+      "sofZmanBiurChametzMGA": "Latest time to burn the chametz — end of the 5th proportional hour by the Magen Avraham (day measured from dawn, 72 min, to nightfall, 72 min).",
+      "sofZmanBiurChametzGRA": "Latest time to burn the chametz — end of the 5th proportional hour by the Vilna Gaon (GRA; day measured from sunrise to sunset).",
       "chatzos": "Solar noon — the midpoint of the day, halfway between sunrise and sunset.",
       "minchaGedola": "Earliest time to pray Mincha — 6½ proportional hours into the day (a half-hour after midday).",
       "minchaKetana": "Preferred time to pray Mincha — 9½ proportional hours into the day.",
@@ -108,6 +120,8 @@
       "misheyakir": "Earliest time to don tallit and tefillin — when there is enough light to recognize an acquaintance.",
       "sofZmanShma": "Latest time to recite the morning Shema — the end of the third proportional hour.",
       "sofZmanTfila": "Latest time for the morning Amidah (Shacharit) — the end of the fourth proportional hour.",
+      "achilasChametz": "Erev Pesach: the latest time to eat chametz — the end of the fourth proportional hour.",
+      "biurChametz": "Erev Pesach: the latest time to burn / dispose of the chametz — the end of the fifth proportional hour.",
       "tzais": "Nightfall — three stars are visible and the new halachic day begins."
     }
   },
@@ -131,6 +145,8 @@
   "panel": {
     "omer": "Day {day} of the Omer",
     "shabbatMevarchim": "Shabbat Mevarchim",
+    "specialShabbat": "Shabbat {name}",
+    "molad": "Molad: {weekday}, {time} and {chalakim} chalakim",
     "parasha": "Parashat {name}"
   },
   "settings": {
