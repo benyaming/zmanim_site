@@ -9,6 +9,8 @@ export interface ZmanRow {
   /** Detailed clarification for this opinion — shown on hover, not inline. */
   detail: string;
   time: DateTime | null;
+  /** Set (possibly null) only for duration zmanim — rendered as h:mm:ss instead of a clock time. */
+  durationMillis?: number | null;
 }
 
 /** A base zman and its one-or-more shitot (e.g. "Misheyakir" → 11.5° / 11° / 10.2°). */
@@ -52,7 +54,13 @@ export function buildZmanimGroups(zmanim: ComputedZman[], t: ZmanTranslators): Z
     byCategory.set(z.category, bases);
 
     const group = bases.get(z.base) ?? { base: z.base, name: t.name(z.key), description: '', rows: [] };
-    group.rows.push({ key: z.key, shita: t.shita(z.key), detail: t.detail(z.key), time: z.time });
+    group.rows.push({
+      key: z.key,
+      shita: t.shita(z.key),
+      detail: t.detail(z.key),
+      time: z.time,
+      ...(z.duration ? { durationMillis: z.durationMillis ?? null } : {}),
+    });
     bases.set(z.base, group);
   }
 

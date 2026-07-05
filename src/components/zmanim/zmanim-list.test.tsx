@@ -35,6 +35,15 @@ const groups: ZmanGroup[] = [
         rows: [{ key: 'tzais', shita: '3 stars · 8.5°', detail: 'Sun 8.5° below the horizon.', time: DateTime.fromISO('2024-03-20T18:40:00', { zone: 'Asia/Jerusalem' }) }],
       },
       {
+        base: 'shaahZmanis',
+        name: 'Astronomical hour',
+        description: 'The length of one halachic hour.',
+        rows: [
+          { key: 'shaahZmanisMGA', shita: 'Magen Avraham (dur)', detail: '', time: null, durationMillis: 4_530_000 },
+          { key: 'shaahZmanisGRA', shita: 'Vilna Gaon (dur)', detail: '', time: null, durationMillis: null },
+        ],
+      },
+      {
         base: 'sofZmanShma',
         name: 'Latest Shema',
         description: 'Latest time to recite the morning Shema.',
@@ -95,6 +104,14 @@ describe('ZmanimList', () => {
   it('formats a time and shows a dash for a null time', () => {
     render(<ZmanimList groups={groups} />);
     expect(screen.getByText(/5:42/)).toBeInTheDocument();
-    expect(screen.getByText('—')).toBeInTheDocument();
+    // One dash for the null-time row, one for the null-duration row.
+    expect(screen.getAllByText('—')).toHaveLength(2);
+  });
+
+  it('renders a duration row as h:mm:ss, not a clock time, and dashes a null duration', () => {
+    render(<ZmanimList groups={groups} />);
+    expect(screen.getByText('1:15:30')).toBeInTheDocument();
+    // The null-duration shita row shows a dash (asserted above alongside the null time).
+    expect(screen.getByText('Vilna Gaon (dur)')).toBeInTheDocument();
   });
 });

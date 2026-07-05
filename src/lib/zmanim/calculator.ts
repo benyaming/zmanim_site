@@ -43,6 +43,12 @@ export function computeZmanim(input: ComputeZmanimInput): ComputedZman[] {
   calendar.setDate(localNoon);
 
   return ZMANIM.map((def) => {
+    // Duration zmanim (shaah zmanis): the method returns a length in ms, with
+    // kosher-zmanim's Long.MIN_VALUE sentinel (NaN) when the day is undefined.
+    if (def.duration) {
+      const ms = (calendar[def.method] as unknown as () => number)();
+      return { ...def, time: null, durationMillis: Number.isFinite(ms) ? ms : null };
+    }
     const base = (calendar[def.method] as () => DateTime | null)();
     const raw = base && def.offsetMinutes != null ? base.plus({ minutes: def.offsetMinutes }) : base;
     const time = raw ? raw.setZone(timeZoneId) : null;

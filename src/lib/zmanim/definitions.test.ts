@@ -56,7 +56,14 @@ describe('ZMANIM definitions integrity', () => {
       tzais42: 'getSunset',
       tzais72: 'getTzais72',
       chatzosLaila: 'getSolarMidnight',
+      shaahZmanisMGA: 'getShaahZmanisMGA',
+      shaahZmanisGRA: 'getShaahZmanisGra',
     });
+  });
+
+  it('marks exactly the astronomical hours as durations', () => {
+    const durations = ZMANIM.filter((z) => z.duration).map((z) => z.key);
+    expect(durations).toEqual(['shaahZmanisMGA', 'shaahZmanisGRA']);
   });
 
   it('locks the fixed-minute offsets (e.g. tzeit 42 = sunset + 42)', () => {

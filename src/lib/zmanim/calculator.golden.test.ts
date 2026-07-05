@@ -125,6 +125,18 @@ describe('computeZmanim golden values', () => {
     });
   }
 
+  it('pins the astronomical hour durations (Jerusalem equinox)', () => {
+    const zmanim = computeZmanim({ lat: 31.778, lng: 35.2354, date: DateTime.fromISO('2024-03-20') });
+    const byKey = Object.fromEntries(zmanim.map((z) => [z.key, z]));
+    // Sunrise 05:42:30 → sunset 17:50:44 is 12h08m14s of daylight; one GRA hour
+    // is a twelfth of that, and each MGA hour is exactly 12 minutes longer
+    // (the 2 × 72 fixed minutes spread over 12 hours).
+    expect(Math.round(byKey.shaahZmanisGRA.durationMillis!)).toBe(3_641_196);
+    expect(Math.round(byKey.shaahZmanisMGA.durationMillis!)).toBe(4_361_196);
+    expect(byKey.shaahZmanisGRA.time).toBeNull();
+    expect(byKey.shaahZmanisMGA.time).toBeNull();
+  });
+
   it('renders in the location timezone, independent of the host timezone', () => {
     const zmanim = computeZmanim({ lat: 31.778, lng: 35.2354, date: DateTime.fromISO('2024-03-20') });
     const sunrise = zmanim.find((z) => z.key === 'sunrise')!;

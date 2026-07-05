@@ -9,7 +9,7 @@ Sources used for the descriptions and definitions:
 
 ## `definitions.ts` — the single source of truth
 
-`src/lib/zmanim/definitions.ts` binds each displayed zman to an exact `kosher-zmanim` method. Each entry is `{ key, base, method, category, order, erevOnly? }`:
+`src/lib/zmanim/definitions.ts` binds each displayed zman to an exact `kosher-zmanim` method. Each entry is `{ key, base, method, category, order, erevOnly?, erevPesachOnly?, duration? }`:
 
 - `key` — stable id used to look up the name/shita/description in the message catalogs (`zmanim.names` / `zmanim.shitot` / `zmanim.descriptions`).
 - `base` — groups opinions of the same zman (e.g. `alos`, `misheyakir`, `sofZmanShma`, `sofZmanTfila`, `tzais`).
@@ -17,6 +17,8 @@ Sources used for the descriptions and definitions:
 - `category` — day-part for sectioning (`dawn`/`morning`/`midday`/`afternoon`/`evening`).
 - `order` — display order (strictly increasing).
 - `erevOnly` — `candleLighting` only.
+- `erevPesachOnly` — the chametz deadlines; surfaced only on 14 Nissan.
+- `duration` — the shaah zmanis (astronomical hour) entries only: the method returns a **length in milliseconds** (surfaced as `durationMillis`; `time` stays null), rendered as an h:mm:ss duration rather than a clock time. MGA divides alos 72 → tzais 72; GRA sunrise → sunset — so MGA's hour is always exactly 12 minutes longer (pinned by an invariant test). Lehumra rounding never touches them. They are opt-in: hidden by default for everyone, including saves that predate them (`OPT_IN_ZMANIM` in `visibility.ts` + the `seenOptInZmanim` migration in `app-state`).
 
 `definitions.test.ts` enforces the invariants: every `method` exists on the calendar prototype, keys are unique, `order` is strictly increasing, and the **exact `key → method` mapping is locked** — so a zman can never silently start being shown under the wrong name or computed by the wrong method. If you add/rename a zman, update the locked mapping test deliberately.
 
