@@ -135,7 +135,7 @@ function useCellFit(gridRef: RefObject<HTMLDivElement | null>, fontScale: string
 }
 
 export function CalendarGrid() {
-  const { monthDate, mode, selectedDay, setSelectedDay, location, candleLightingOffset, havdalahOpinion } =
+  const { monthDate, mode, selectedDay, setSelectedDay, location, candleLightingOffset, havdalahOpinion, useElevation } =
     useAppState();
   const { fontScale } = useAccessibility();
   const locale = useLocale();
@@ -152,8 +152,10 @@ export function CalendarGrid() {
     location.lat,
     location.lng,
     location.timeZoneId,
+    location.elevation,
     candleLightingOffset,
     havdalahOpinion,
+    useElevation,
   ].join('|');
   const { density, scale } = useCellFit(gridRef, fontScale, contentKey);
 
@@ -179,6 +181,8 @@ export function CalendarGrid() {
       lat: location.lat,
       lng: location.lng,
       date: cell.date,
+      elevation: location.elevation,
+      useElevation,
       timeZoneId: location.timeZoneId,
       candleLightingOffset,
     });

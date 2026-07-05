@@ -22,7 +22,7 @@ Sources used for the descriptions and definitions:
 
 ## `calculator.ts` — timezone-correct computation
 
-`computeZmanim({ lat, lng, date, elevation = 0, timeZoneId?, candleLightingOffset = 18 })` returns `{ key, time, erevOnly }[]`.
+`computeZmanim({ lat, lng, date, elevation = 0, useElevation = false, timeZoneId?, candleLightingOffset = 18 })` returns `{ key, time, erevOnly }[]`.
 
 **The critical detail:** the calendar day is established by constructing *noon in the target zone from date components*:
 
@@ -36,6 +36,8 @@ const localNoon = DateTime.fromObject(
 Do **not** `setZone()` an existing instant to get the day — that shifts the calendar day across timezone/DST boundaries and produces times for the wrong day. `kosher-zmanim` returns each result as a UTC `DateTime`, which is then converted with `.setZone(timeZoneId)` for display. A golden test (validated to the second against Hebcal across Jerusalem, Brooklyn, London, Buenos Aires, LA) guards this, alongside invariant sweeps (chronological ordering over a lat/lng/date grid) and edge cases (polar day/night, DST, elevation, offset).
 
 `candleLighting` is computed for **every** day (sunset − offset). It is only meaningful on Erev Shabbat / Erev Yom Tov; callers must filter it (the panel's times strip and `NextZman` both gate it on "erev").
+
+**Elevation is opt-in** (`useElevation`, off by default — a global user preference, since standard published times and the Hebcal cross-validation are sea-level). When enabled, sunrise/sunset and every zman measured from them (fixed-minute offsets, shaos-zmaniyos fractions) become elevation-adjusted, matching KosherJava's `setUseElevation` and Hebcal's `ue=on`; degree-based zmanim, chatzos and candle lighting intentionally stay sea-level. The calculator zeroes the elevation itself when the flag is off — kosher-zmanim's raw `getSunrise`/`getSunset` honor the `GeoLocation` elevation regardless of the flag, so passing it uninvited would shift only those rows and leave derived zmanim at sea level (an inconsistent panel). Negative elevations (Dead Sea basin) clamp to sea level; `GeoLocation.setElevation` throws on them. `AppLocation.elevation` comes from the Open-Meteo geocoder response, or is backfilled from the Open-Meteo elevation API (both keyless); a dedicated test file (`calculator.elevation.test.ts`) pins all of this against Hebcal-validated golden values.
 
 ## `groups.ts` — display grouping
 

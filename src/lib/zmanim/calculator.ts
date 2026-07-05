@@ -14,11 +14,24 @@ import type { ComputedZman, ComputeZmanimInput } from './types';
  * browser's timezone.
  */
 export function computeZmanim(input: ComputeZmanimInput): ComputedZman[] {
-  const { lat, lng, date, elevation = 0, candleLightingOffset = 18 } = input;
+  const { lat, lng, date, elevation = 0, useElevation = false, candleLightingOffset = 18 } = input;
   const timeZoneId = input.timeZoneId ?? tzFromLatLng(lat, lng);
 
-  const geo = new GeoLocation(null, lat, lng, elevation, timeZoneId);
+  // Elevation is all-or-nothing: the raw getSunrise/getSunset honor the
+  // GeoLocation elevation regardless of kosher-zmanim's useElevation flag, so
+  // a nonzero elevation without the flag would shift only those two rows and
+  // leave every derived zman at sea level — an inconsistent panel. When the
+  // user hasn't opted in, the elevation itself is zeroed. Negative elevations
+  // (Dead Sea basin) also clamp to sea level: GeoLocation rejects them, and
+  // the horizon-dip adjustment is only defined for an elevated observer.
+  const effectiveElevation = useElevation ? Math.max(0, elevation) : 0;
+  const geo = new GeoLocation(null, lat, lng, effectiveElevation, timeZoneId);
   const calendar = new ComplexZmanimCalendar(geo);
+  // With the flag on, sunrise/sunset (and fixed-minute zmanim measured from
+  // them, e.g. alos 72 / tzais 72) become elevation-adjusted. Degree-based
+  // zmanim, chatzos and candle lighting intentionally stay sea-level, matching
+  // KosherJava semantics and Hebcal's `ue=on` behavior.
+  calendar.setUseElevation(effectiveElevation > 0);
   calendar.setCandleLightingOffset(candleLightingOffset);
   // Anchor on the calendar date (year/month/day as given) at noon IN THE
   // LOCATION'S timezone. We must NOT `setZone` the instant — that would shift

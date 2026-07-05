@@ -51,11 +51,14 @@ function dayEventsFor(
   location: AppLocation,
   candleLightingOffset: number,
   havdalahOpinion: HavdalahOpinion,
+  useElevation: boolean,
 ): DayEvent[] {
   const z = computeZmanim({
     lat: location.lat,
     lng: location.lng,
     date,
+    elevation: location.elevation,
+    useElevation,
     timeZoneId: location.timeZoneId,
     candleLightingOffset,
   });
@@ -85,6 +88,7 @@ function buildDayTimes(
   location: AppLocation,
   candleLightingOffset: number,
   havdalahOpinion: HavdalahOpinion,
+  useElevation: boolean,
 ): DayEvent[] {
   const inIsrael = location.inIsrael;
   const bookends: DayEvent[] = [];
@@ -105,8 +109,8 @@ function buildDayTimes(
 
   if (firstRest && lastRest) {
     const erev = firstRest.minus({ days: 1 });
-    const candle = dayEventsFor(erev, location, candleLightingOffset, havdalahOpinion).find((e) => e.type === 'candle');
-    const havdalah = dayEventsFor(lastRest, location, candleLightingOffset, havdalahOpinion).find(
+    const candle = dayEventsFor(erev, location, candleLightingOffset, havdalahOpinion, useElevation).find((e) => e.type === 'candle');
+    const havdalah = dayEventsFor(lastRest, location, candleLightingOffset, havdalahOpinion, useElevation).find(
       (e) => e.type === 'havdalah',
     );
     if (candle) bookends.push(candle);
@@ -114,7 +118,7 @@ function buildDayTimes(
   }
 
   // Same-day fast events (minor fasts, Yom Kippur, Tisha B'Av).
-  let fasts = dayEventsFor(selectedDay, location, candleLightingOffset, havdalahOpinion).filter(
+  let fasts = dayEventsFor(selectedDay, location, candleLightingOffset, havdalahOpinion, useElevation).filter(
     (e) => e.type === 'fastStart' || e.type === 'fastEnd',
   );
 
@@ -130,12 +134,12 @@ function buildDayTimes(
   };
   if (isTishaBav(selectedDay)) {
     // The day itself: prepend the onset (yesterday's sunset) from the eve.
-    const eve = dayEventsFor(selectedDay.minus({ days: 1 }), location, candleLightingOffset, havdalahOpinion);
+    const eve = dayEventsFor(selectedDay.minus({ days: 1 }), location, candleLightingOffset, havdalahOpinion, useElevation);
     const start = eve.find((e) => e.type === 'fastStart');
     if (start) fasts = [start, ...fasts];
   } else if (isTishaBav(selectedDay.plus({ days: 1 }))) {
     // The eve: append tomorrow's fast-end times after tonight's onset.
-    const day = dayEventsFor(selectedDay.plus({ days: 1 }), location, candleLightingOffset, havdalahOpinion);
+    const day = dayEventsFor(selectedDay.plus({ days: 1 }), location, candleLightingOffset, havdalahOpinion, useElevation);
     fasts = [...fasts, ...day.filter((e) => e.type === 'fastEnd')];
   }
 
@@ -200,7 +204,7 @@ function buildDayChips(info: DayInfo, locale: string, t: { cat: Translator; pane
 }
 
 export function ZmanimPanel() {
-  const { selectedDay, location, candleLightingOffset, havdalahOpinion, hiddenZmanim } = useAppState();
+  const { selectedDay, location, candleLightingOffset, havdalahOpinion, hiddenZmanim, useElevation } = useAppState();
   const zmanim = useZmanim();
   const locale = useLocale();
   const tName = useTranslations('zmanim.names');
@@ -218,7 +222,7 @@ export function ZmanimPanel() {
 
   // Candle lighting + havdalah for the rest period (both bookends on both days),
   // plus any fast times for the selected day.
-  const events = buildDayTimes(selectedDay, location, candleLightingOffset, havdalahOpinion);
+  const events = buildDayTimes(selectedDay, location, candleLightingOffset, havdalahOpinion, useElevation);
   // The fast end arrives once per tzeit opinion — render those as one grouped
   // block instead of repeating the "Fast ends" row three times.
   const fastEndEvents = events.filter((e) => e.type === 'fastEnd');

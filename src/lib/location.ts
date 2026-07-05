@@ -14,6 +14,14 @@ export interface AppLocation {
   labelLocale?: string;
   /** Whether to use the Israel luach (1-day Yom Tov, Israel parsha schedule). */
   inIsrael: boolean;
+  /**
+   * Meters above sea level. Can be negative (Dead Sea basin). Absent until
+   * resolved — geocoder search results carry it; other sources (GPS, IP,
+   * settlements, legacy saves) are backfilled best-effort from the Open-Meteo
+   * elevation API (see the app-state effect). Only affects zmanim when the
+   * user opts in via the `useElevation` preference.
+   */
+  elevation?: number;
 }
 
 /**
@@ -31,9 +39,15 @@ export function isIsraelTimezone(timeZoneId: string): boolean {
  * Pass `labelLocale` when the label is known to be in a specific UI language;
  * omit it for language-neutral or unknown labels.
  */
-export function makeLocation(lat: number, lng: number, label: string, labelLocale?: string): AppLocation {
+export function makeLocation(
+  lat: number,
+  lng: number,
+  label: string,
+  labelLocale?: string,
+  elevation?: number,
+): AppLocation {
   const timeZoneId = tzFromLatLng(lat, lng);
-  return { lat, lng, timeZoneId, label, labelLocale, inIsrael: isIsraelTimezone(timeZoneId) };
+  return { lat, lng, timeZoneId, label, labelLocale, inIsrael: isIsraelTimezone(timeZoneId), elevation };
 }
 
 export const DEFAULT_LOCATION: AppLocation = {

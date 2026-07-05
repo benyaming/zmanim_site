@@ -30,8 +30,9 @@ function useDebounced<T>(value: T, delay = 300): T {
 
 export function LocationPicker() {
   const t = useTranslations('location');
+  const tSettings = useTranslations('settings');
   const locale = useLocale();
-  const { location, setLocation } = useAppState();
+  const { location, setLocation, useElevation } = useAppState();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounced(query);
@@ -51,6 +52,14 @@ export function LocationPicker() {
         <Button variant="outline" size="sm" className="min-w-0 shrink max-w-[12rem] gap-1.5">
           <MapPin className="size-4 shrink-0" />
           <span className="truncate">{location.label}</span>
+          {/* Elevation-adjusted zmanim change the displayed times, so surface
+              the elevation where the location is — only while the setting is
+              on, so the default view stays uncluttered. */}
+          {useElevation && typeof location.elevation === 'number' && (
+            <span className="text-muted-foreground shrink-0 text-xs">
+              {location.elevation} {tSettings('meters')}
+            </span>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
@@ -79,7 +88,7 @@ export function LocationPicker() {
                   key={place.id}
                   value={place.id}
                   onSelect={() => {
-                    setLocation(makeLocation(place.lat, place.lng, place.name, locale));
+                    setLocation(makeLocation(place.lat, place.lng, place.name, locale, place.elevation));
                     setOpen(false);
                     setQuery('');
                   }}

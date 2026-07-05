@@ -52,8 +52,18 @@ export interface ComputeZmanimInput {
   lng: number;
   /** Any Luxon DateTime; only the calendar date is used. */
   date: DateTime;
-  /** Meters above sea level. Defaults to 0 (sea level) to match standard published times. */
+  /**
+   * Meters above sea level. Only applied when `useElevation` is true; may be
+   * negative (Dead Sea basin), which clamps to sea level.
+   */
   elevation?: number;
+  /**
+   * Opt-in: factor elevation into sunrise/sunset (visible-horizon dip) and the
+   * zmanim derived from them. Defaults to false — standard published times
+   * (and the Hebcal cross-validation) use sea level. Degree-based zmanim,
+   * chatzos and candle lighting are unaffected by design; see calculator.ts.
+   */
+  useElevation?: boolean;
   /** IANA timezone id. Resolved from lat/lng when omitted. */
   timeZoneId?: string;
   /** Candle-lighting minutes before sunset. Defaults to 18 (40 is common for Jerusalem). */

@@ -79,8 +79,11 @@ export function CalendarSettings() {
   const tGroup = useTranslations('zmanim.groups');
   const tLearning = useTranslations('learning');
   const {
+    location,
     candleLightingOffset,
     setCandleLightingOffset,
+    useElevation,
+    setUseElevation,
     havdalahOpinion,
     setHavdalahOpinion,
     hiddenZmanim,
@@ -125,6 +128,25 @@ export function CalendarSettings() {
           <span className="text-muted-foreground text-sm">{t('minutes')}</span>
         </div>
         <p className="text-muted-foreground text-xs">{t('candleOffsetHint')}</p>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        <label htmlFor="use-elevation" className="flex cursor-pointer items-center gap-2">
+          <Checkbox id="use-elevation" checked={useElevation} onCheckedChange={(v) => setUseElevation(v === true)} />
+          <span className="text-sm font-medium">{t('elevation')}</span>
+          {/* The detected elevation is shown (not edited — users don't know it;
+              it's resolved from the coordinates) so the choice is informed. A
+              backfilled value can be negative (Dead Sea basin); the calculator
+              clamps that to sea level. */}
+          {typeof location.elevation === 'number' && (
+            <span className="text-muted-foreground text-xs">
+              {location.elevation} {t('meters')}
+            </span>
+          )}
+        </label>
+        <p className="text-muted-foreground text-xs">{t('elevationHint')}</p>
       </div>
 
       <Separator />

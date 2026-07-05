@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 
 import { type CalendarMode, monthAnchor } from '@/lib/calendar';
 import { browserGeolocate } from '@/lib/geo/browser-location';
+import { fetchElevation } from '@/lib/geo/elevation';
 import { reverseGeocode } from '@/lib/geo/geocoding';
 import { ipGeolocate } from '@/lib/geo/ip-location';
 import { normalizeIsraelAreaTimezone } from '@/lib/geo/timezone';
@@ -42,6 +43,9 @@ interface AppStateValue {
   /** Candle-lighting minutes before sunset. */
   candleLightingOffset: number;
   setCandleLightingOffset: (m: number) => void;
+  /** Opt-in: factor the location's elevation into sunrise/sunset-based zmanim. */
+  useElevation: boolean;
+  setUseElevation: (on: boolean) => void;
   /** Which tzeit opinion determines the havdalah time. */
   havdalahOpinion: HavdalahOpinion;
   setHavdalahOpinion: (o: HavdalahOpinion) => void;
@@ -62,6 +66,8 @@ const STORAGE_KEY = 'zmanim:prefs:v1';
 interface PersistedPrefs {
   location?: AppLocation;
   candleLightingOffset?: number;
+  /** Opt-in elevation-adjusted zmanim; absent/false = standard sea-level times. */
+  useElevation?: boolean;
   havdalahOpinion?: HavdalahOpinion;
   /** Hidden (not visible) keys, so zmanim added later default to shown. */
   hiddenZmanim?: string[];
@@ -132,6 +138,7 @@ export function AppStateProvider({
     setMonthDate((prev) => monthAnchor(prev, m));
   };
   const [candleLightingOffset, setCandleLightingOffset] = useState(DEFAULT_CANDLE_OFFSET);
+  const [useElevation, setUseElevation] = useState(false);
   const [havdalahOpinion, setHavdalahOpinion] = useState<HavdalahOpinion>(DEFAULT_HAVDALAH_OPINION);
   const [hiddenZmanim, setHiddenZmanim] = useState<string[]>([...DEFAULT_HIDDEN_ZMANIM]);
   const [zmanimCustomized, setZmanimCustomized] = useState(false);
@@ -166,6 +173,7 @@ export function AppStateProvider({
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCandleLightingOffset(Math.min(CANDLE_OFFSET_MAX, Math.round(savedOffset)));
     }
+    if (prefs.useElevation === true) setUseElevation(true);
     if (isHavdalahOpinion(prefs.havdalahOpinion)) setHavdalahOpinion(prefs.havdalahOpinion);
     // Unknown/stale keys are dropped, so a save from an old version self-heals.
     // The saved hide list only overrides the default set when it's an explicit
@@ -246,17 +254,45 @@ export function AppStateProvider({
     return () => controller.abort();
   }, [location, locale, urlProvided]);
 
+  // Backfill elevation for locations that arrived without one (GPS/IP fixes,
+  // settlement picks, deep links, saves that predate the field). Best-effort
+  // and patch-only — like the relabel effect it must not lock the location,
+  // and it only applies if the coordinates haven't changed meanwhile. Runs at
+  // most once per location since a successful patch persists the value.
+  useEffect(() => {
+    const loc = location;
+    if (typeof loc.elevation === 'number') return;
+    const controller = new AbortController();
+    fetchElevation(loc.lat, loc.lng, controller.signal)
+      .then((elevation) => {
+        if (elevation == null) return;
+        setLocationState((prev) => (prev.lat === loc.lat && prev.lng === loc.lng ? { ...prev, elevation } : prev));
+      })
+      .catch(() => {
+        // Aborted (location changed / unmount) — the next run retries.
+      });
+    return () => controller.abort();
+  }, [location]);
+
   // Persist preferences whenever they change.
   useEffect(() => {
     try {
       window.localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ location, candleLightingOffset, havdalahOpinion, hiddenZmanim, zmanimCustomized, hiddenLearning }),
+        JSON.stringify({
+          location,
+          candleLightingOffset,
+          useElevation,
+          havdalahOpinion,
+          hiddenZmanim,
+          zmanimCustomized,
+          hiddenLearning,
+        }),
       );
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [location, candleLightingOffset, havdalahOpinion, hiddenZmanim, zmanimCustomized, hiddenLearning]);
+  }, [location, candleLightingOffset, useElevation, havdalahOpinion, hiddenZmanim, zmanimCustomized, hiddenLearning]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
@@ -326,6 +362,8 @@ export function AppStateProvider({
     setSelectedDay,
     candleLightingOffset,
     setCandleLightingOffset,
+    useElevation,
+    setUseElevation,
     havdalahOpinion,
     setHavdalahOpinion,
     hiddenZmanim,
