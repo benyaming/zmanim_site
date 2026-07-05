@@ -3,6 +3,9 @@ export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3
 
 export const SITE_NAME = 'Zmanim';
 
+/** Public host shown in generated artifacts (report footers) regardless of env. */
+export const SITE_HOST = 'zmanim.ginzburg.io';
+
 /** Build a deep link into the interactive app centered on a location. */
 export function appLink(lat: number, lng: number, label: string): string {
   const params = new URLSearchParams({ lat: String(lat), lng: String(lng), label });

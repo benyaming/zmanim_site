@@ -218,7 +218,7 @@ export function LocationPicker() {
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md lg:max-w-xl">
         <DialogHeader className="px-4 pt-4">
           <DialogTitle>{t('choose')}</DialogTitle>
           <DialogDescription>{t('hint')}</DialogDescription>

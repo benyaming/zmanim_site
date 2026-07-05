@@ -108,6 +108,10 @@ export function CalendarSettings() {
 
   return (
     <SettingsDialogShell icon={Settings} label={t('calendarOpen')} title={t('calendarTitle')} wide>
+      {/* One column on small screens (ruled by separators); two columns on
+          desktop, where the separators disappear and the big zmanim picker
+          spans the full width with its sections flowing in two columns. */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start lg:gap-x-10">
       <div className="space-y-2">
         <label htmlFor="candle-offset" className="text-sm font-medium">
           {t('candleOffset')}
@@ -135,36 +139,7 @@ export function CalendarSettings() {
         <p className="text-muted-foreground text-xs">{t('candleOffsetHint')}</p>
       </div>
 
-      <Separator />
-
-      <div className="space-y-2">
-        <label htmlFor="use-elevation" className="flex cursor-pointer items-center gap-2">
-          <Checkbox id="use-elevation" checked={useElevation} onCheckedChange={(v) => setUseElevation(v === true)} />
-          <span className="text-sm font-medium">{t('elevation')}</span>
-          {/* The detected elevation is shown (not edited — users don't know it;
-              it's resolved from the coordinates) so the choice is informed. A
-              backfilled value can be negative (Dead Sea basin); the calculator
-              clamps that to sea level. */}
-          {typeof location.elevation === 'number' && (
-            <span className="text-muted-foreground text-xs">
-              {location.elevation} {t('meters')}
-            </span>
-          )}
-        </label>
-        <p className="text-muted-foreground text-xs">{t('elevationHint')}</p>
-      </div>
-
-      <Separator />
-
-      <div className="space-y-2">
-        <label htmlFor="lehumra" className="flex cursor-pointer items-center gap-2">
-          <Checkbox id="lehumra" checked={lehumra} onCheckedChange={(v) => setLehumra(v === true)} />
-          <span className="text-sm font-medium">{t('lehumra')}</span>
-        </label>
-        <p className="text-muted-foreground text-xs whitespace-pre-line">{tPanel('lehumraDetail')}</p>
-      </div>
-
-      <Separator />
+      <Separator className="lg:hidden" />
 
       <div className="space-y-2">
         <label htmlFor="havdalah-opinion" className="text-sm font-medium">
@@ -185,7 +160,36 @@ export function CalendarSettings() {
         <p className="text-muted-foreground text-xs">{t('havdalaHint')}</p>
       </div>
 
-      <Separator />
+      <Separator className="lg:hidden" />
+
+      <div className="space-y-2">
+        <label htmlFor="use-elevation" className="flex cursor-pointer items-center gap-2">
+          <Checkbox id="use-elevation" checked={useElevation} onCheckedChange={(v) => setUseElevation(v === true)} />
+          <span className="text-sm font-medium">{t('elevation')}</span>
+          {/* The detected elevation is shown (not edited — users don't know it;
+              it's resolved from the coordinates) so the choice is informed. A
+              backfilled value can be negative (Dead Sea basin); the calculator
+              clamps that to sea level. */}
+          {typeof location.elevation === 'number' && (
+            <span className="text-muted-foreground text-xs">
+              {location.elevation} {t('meters')}
+            </span>
+          )}
+        </label>
+        <p className="text-muted-foreground text-xs">{t('elevationHint')}</p>
+      </div>
+
+      <Separator className="lg:hidden" />
+
+      <div className="space-y-2">
+        <label htmlFor="lehumra" className="flex cursor-pointer items-center gap-2">
+          <Checkbox id="lehumra" checked={lehumra} onCheckedChange={(v) => setLehumra(v === true)} />
+          <span className="text-sm font-medium">{t('lehumra')}</span>
+        </label>
+        <p className="text-muted-foreground text-xs whitespace-pre-line">{tPanel('lehumraDetail')}</p>
+      </div>
+
+      <Separator className="lg:hidden" />
 
       {/* Sits between the event times and the zmanim picker, mirroring the
           day panel's order: masthead → daily learning → zmanim. */}
@@ -212,9 +216,9 @@ export function CalendarSettings() {
         <p className="text-muted-foreground text-xs">{t('learningDisplayHint')}</p>
       </div>
 
-      <Separator />
+      <Separator className="lg:hidden" />
 
-      <div className="space-y-2">
+      <div className="space-y-2 lg:col-span-2">
         <div className="flex min-h-8 items-center justify-between gap-2">
           <span className="text-sm font-medium">{t('zmanimDisplay')}</span>
           {hiddenZmanim.length > 0 && (
@@ -225,9 +229,9 @@ export function CalendarSettings() {
         </div>
         {/* The dialog body is the single scroll context (see SettingsDialogShell),
             so this list no longer scrolls on its own. */}
-        <div className="space-y-3 rounded-lg border p-3">
+        <div className="space-y-3 rounded-lg border p-3 lg:columns-2 lg:gap-x-10">
           {ZMAN_SECTIONS.map((section) => (
-            <section key={section.category} className="space-y-1.5">
+            <section key={section.category} className="space-y-1.5 lg:break-inside-avoid">
               <h4 className="text-muted-foreground/70 text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
                 {tGroup(section.category)}
               </h4>
@@ -280,6 +284,7 @@ export function CalendarSettings() {
           ))}
         </div>
         <p className="text-muted-foreground text-xs">{t('zmanimDisplayHint')}</p>
+      </div>
       </div>
     </SettingsDialogShell>
   );

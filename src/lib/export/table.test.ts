@@ -1,0 +1,157 @@
+import { DateTime } from 'luxon';
+import { describe, expect, it } from 'vitest';
+
+import { formatTime } from '@/lib/format';
+import { DEFAULT_LOCATION } from '@/lib/location';
+import { computeZmanim } from '@/lib/zmanim';
+
+import { buildZmanimTable, orderedZmanKeys, tableDayCount } from './table';
+
+const BASE_OPTS = {
+  location: DEFAULT_LOCATION, // Jerusalem
+  candleLightingOffset: 18,
+  useElevation: false,
+  lehumra: false,
+  locale: 'en',
+};
+
+describe('orderedZmanKeys', () => {
+  it('re-orders selected keys to the canonical definition order and drops unknowns', () => {
+    expect(orderedZmanKeys(['tzais', 'sunrise', 'nope', 'shaahZmanisGRA', 'sunset'])).toEqual([
+      'sunrise',
+      'sunset',
+      'tzais',
+      'shaahZmanisGRA',
+    ]);
+  });
+});
+
+describe('tableDayCount', () => {
+  it('counts inclusive days', () => {
+    expect(tableDayCount(DateTime.fromISO('2026-01-04'), DateTime.fromISO('2026-01-10'))).toBe(7);
+    expect(tableDayCount(DateTime.fromISO('2026-01-04'), DateTime.fromISO('2026-01-04'))).toBe(1);
+  });
+
+  it('returns 0 for a reversed range', () => {
+    expect(tableDayCount(DateTime.fromISO('2026-01-10'), DateTime.fromISO('2026-01-04'))).toBe(0);
+  });
+
+  it('counts calendar days, not 24-hour periods, across DST transitions', () => {
+    // Israel springs forward on 2026-03-27, so the 27th's midnight-to-midnight
+    // span is 23 hours. Luxon's day-diff is calendar-aware, so the inclusive
+    // count must still be exact — 3 days, not floor(2.96) + 1 = 2.
+    const zone = 'Asia/Jerusalem';
+    expect(tableDayCount(DateTime.fromISO('2026-03-26', { zone }), DateTime.fromISO('2026-03-28', { zone }))).toBe(3);
+    // And across a fall-back (25-hour day): America/New_York, 2025-11-02.
+    const ny = 'America/New_York';
+    expect(tableDayCount(DateTime.fromISO('2025-11-01', { zone: ny }), DateTime.fromISO('2025-11-03', { zone: ny }))).toBe(3);
+  });
+});
+
+describe('buildZmanimTable', () => {
+  const start = DateTime.fromISO('2026-01-04');
+  const end = DateTime.fromISO('2026-01-10');
+  const table = buildZmanimTable({
+    ...BASE_OPTS,
+    start,
+    end,
+    keys: ['tzais', 'sunrise', 'sunset', 'shaahZmanisGRA'],
+  });
+
+  it('emits one row per day, cells aligned with the ordered keys', () => {
+    expect(table.keys).toEqual(['sunrise', 'sunset', 'tzais', 'shaahZmanisGRA']);
+    expect(table.rows).toHaveLength(7);
+    expect(table.rows[0].iso).toBe('2026-01-04');
+    expect(table.rows[6].iso).toBe('2026-01-10');
+    for (const row of table.rows) expect(row.cells).toHaveLength(4);
+  });
+
+  it('formats clock times exactly like the day panel', () => {
+    const zmanim = computeZmanim({
+      lat: DEFAULT_LOCATION.lat,
+      lng: DEFAULT_LOCATION.lng,
+      date: start,
+      timeZoneId: DEFAULT_LOCATION.timeZoneId,
+      candleLightingOffset: 18,
+    });
+    const sunrise = zmanim.find((z) => z.key === 'sunrise')!;
+    expect(table.rows[0].cells[0]).toBe(formatTime(sunrise.time, 'en'));
+  });
+
+  it('formats the shaah zmanis as an h:mm:ss duration', () => {
+    expect(table.rows[0].cells[3]).toMatch(/^\d+:\d{2}:\d{2}$/);
+  });
+
+  it('fills the date/weekday/Hebrew-date columns', () => {
+    const row = table.rows[0];
+    expect(row.weekday).toBe('Sun');
+    expect(row.dateLabel).toContain('2026');
+    expect(row.hebrewDate).toMatch(/\d+ \S+/);
+  });
+
+  it('fills the day-event and parsha columns like the calendar cells', () => {
+    // 2026-01-09 is a Friday, 2026-01-10 its Shabbat (Parashat Shemos, no fast).
+    const friday = table.rows[5];
+    const shabbat = table.rows[6];
+    expect(friday.candleLighting).toMatch(/\d+:\d{2}/);
+    expect(friday.havdalah).toBe('');
+    expect(shabbat.havdalah).toMatch(/\d+:\d{2}/);
+    expect(shabbat.candleLighting).toBe('');
+    expect(shabbat.parsha).not.toBe('');
+    expect(friday.parsha).toBe(''); // parsha rides only the Shabbat row
+    expect(friday.fastStart).toBe('');
+    expect(friday.fastEnd).toBe('');
+  });
+
+  it('fills the fast bookends on a fast day', () => {
+    // 2026-07-02 is 17 Tammuz.
+    const fast = buildZmanimTable({
+      ...BASE_OPTS,
+      start: DateTime.fromISO('2026-07-02'),
+      end: DateTime.fromISO('2026-07-02'),
+      keys: ['sunrise'],
+    }).rows[0];
+    expect(fast.fastStart).toMatch(/\d+:\d{2}/);
+    expect(fast.fastEnd).toMatch(/\d+:\d{2}/);
+    expect(fast.candleLighting).toBe('');
+  });
+
+  it('appends the special-Shabbat name to the parsha via the provided label', () => {
+    // 2026-03-14 is Shabbat Parashat Vayakhel — Shabbat Parah 5786.
+    const parah = buildZmanimTable({
+      ...BASE_OPTS,
+      start: DateTime.fromISO('2026-03-14'),
+      end: DateTime.fromISO('2026-03-14'),
+      keys: ['sunrise'],
+      specialShabbatLabel: (name) => `Shabbat ${name}`,
+    }).rows[0];
+    expect(parah.parsha).toContain(' · Shabbat ');
+    // The Shabbat before Rosh Chodesh Nissan is also Shabbat Mevarchim.
+    expect(parah.mevarchim).toBe('✓');
+  });
+
+  it('fills the omer column during the counting period only', () => {
+    // 2026-04-10 is 23 Nissan 5786 — the 8th day of the omer.
+    const omerRow = buildZmanimTable({
+      ...BASE_OPTS,
+      start: DateTime.fromISO('2026-04-10'),
+      end: DateTime.fromISO('2026-04-10'),
+      keys: ['sunrise'],
+    }).rows[0];
+    expect(omerRow.omer).toBe('8');
+    expect(table.rows[0].omer).toBe(''); // January — outside the count
+    expect(table.rows[0].mevarchim).toBe('');
+  });
+
+  it('names the holiday on significant days and leaves weekdays empty', () => {
+    // 2026-04-02 is 15 Nissan — the first day of Pesach.
+    const pesach = buildZmanimTable({
+      ...BASE_OPTS,
+      start: DateTime.fromISO('2026-04-01'),
+      end: DateTime.fromISO('2026-04-02'),
+      keys: ['sunrise'],
+    });
+    expect(pesach.rows[1].holiday).toContain('Pesach');
+    expect(table.rows[0].holiday).toBe(''); // a plain Sunday
+  });
+});
