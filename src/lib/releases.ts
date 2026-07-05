@@ -18,6 +18,30 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.5',
+    date: '2026-07-05',
+    notes: {
+      en: [
+        'New "Daily learning" section in the day panel: Daf Yomi, Yerushalmi Yomi, Mishna Yomit, Nach Yomi, daily Tehillim, Daily Rambam — and Pirkei Avot on its Shabbatot — each with a short explanation behind the info icon.',
+        'Every reading links straight to its text on Sefaria.',
+        'The day panel was visually unified: a tinted day header and matching ruled section headings for learning and zmanim.',
+        'Calendar settings let you choose which learning cycles are displayed, just like the zmanim.',
+      ],
+      he: [
+        'מדור חדש "לימוד יומי" בפאנל היום: דף היומי, ירושלמי יומי, משנה יומית, נ״ך יומי, תהלים יומי ורמב״ם יומי — ופרקי אבות בשבתות הקיץ — עם הסבר קצר מאחורי סמל המידע.',
+        'כל לימוד מקושר ישירות לטקסט בספריא.',
+        'פאנל היום עוצב מחדש באחידות: כותרת יום מודגשת וכותרות מדור אחידות עם קו לאורך — ללימוד היומי ולזמנים.',
+        'בהגדרות הלוח אפשר לבחור אילו מסלולי לימוד יוצגו — בדיוק כמו הזמנים.',
+      ],
+      ru: [
+        'Новый раздел «Ежедневное изучение» в панели дня: даф йоми, Йерушалми йоми, мишна йомит, нах йоми, теилим по дням месяца, Рамбам — и Пиркей авот по субботам — с кратким пояснением за значком информации.',
+        'Каждый урок ведёт по ссылке прямо к тексту на Сефарии.',
+        'Панель дня приведена к единому стилю: выделенная шапка дня и одинаковые заголовки разделов с линейкой — для изучения и зманим.',
+        'В настройках календаря можно выбрать, какие циклы изучения показывать, — так же, как зманим.',
+      ],
+    },
+  },
+  {
     version: '1.4',
     date: '2026-07-05',
     notes: {

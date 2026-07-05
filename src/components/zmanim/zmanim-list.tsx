@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import type { ZmanBaseGroup, ZmanGroup } from '@/lib/zmanim';
 
 import { InfoHint } from './info-hint';
+import { SectionHeading } from './section-heading';
 
 function Time({ time, locale }: { time: DateTime | null; locale: string }) {
   return (
@@ -65,9 +66,7 @@ export function ZmanimList({ groups, locale = 'en' }: { groups: ZmanGroup[]; loc
     <div className="space-y-4 2xl:grid 2xl:grid-cols-2 2xl:gap-x-10 2xl:gap-y-4 2xl:space-y-0">
       {groups.map((group) => (
         <section key={group.category}>
-          <h4 className="text-muted-foreground/70 mb-1.5 text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
-            {group.label}
-          </h4>
+          <SectionHeading>{group.label}</SectionHeading>
           <ul className="space-y-1.5">
             {group.items.map((item) => (
               <BaseItem key={item.base} item={item} locale={locale} />
