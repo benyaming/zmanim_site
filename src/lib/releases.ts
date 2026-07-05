@@ -18,6 +18,21 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.11',
+    date: '2026-07-05',
+    notes: {
+      en: [
+        'New "App" section in the appearance menu: if you skipped the browser\'s suggestion to install the app, an "Install app" button lets you bring the prompt back. On browsers without one-tap install (e.g. iPhone/iPad) the section shows short instructions instead.',
+      ],
+      he: [
+        'מדור חדש "אפליקציה" בתפריט המראה: אם דילגתם על הצעת הדפדפן להתקין את האפליקציה, כפתור "התקנת האפליקציה" מאפשר להציג את ההצעה שוב. בדפדפנים ללא התקנה בלחיצה אחת (למשל אייפון/אייפד) יוצגו במקום זאת הוראות קצרות.',
+      ],
+      ru: [
+        'Новый раздел «Приложение» в меню оформления: если вы пропустили предложение браузера установить приложение, кнопка «Установить приложение» вызовет его снова. В браузерах без установки в одно касание (например, iPhone/iPad) вместо этого показана короткая инструкция.',
+      ],
+    },
+  },
+  {
     version: '1.10',
     date: '2026-07-05',
     notes: {

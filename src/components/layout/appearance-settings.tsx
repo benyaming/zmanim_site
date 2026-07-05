@@ -1,12 +1,13 @@
 'use client';
 
-import { Palette } from 'lucide-react';
+import { MonitorDown, Palette } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type FontScale, useAccessibility } from '@/components/providers/accessibility-provider';
 import { type Theme, useTheme } from '@/components/providers/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { isIosFamily, promptInstall, useInstallPrompt } from '@/hooks/use-install-prompt';
 
 import { SettingsDialogShell } from './settings-shell';
 
@@ -17,7 +18,37 @@ const FONT_SCALES: { value: FontScale; px: string }[] = [
   { value: 'xxl', px: '19px' },
 ];
 
-/** Appearance menu: theme + accessibility (text size, motion, contrast). */
+/**
+ * "Install app" section: re-offers the PWA install for users who skipped the
+ * browser's own suggestion. When the stashed `beforeinstallprompt` event is
+ * available the button re-triggers the native prompt; otherwise (iOS, Firefox,
+ * prompt already consumed) short manual instructions are shown instead.
+ */
+function InstallAppSection() {
+  const t = useTranslations('settings');
+  const status = useInstallPrompt();
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-semibold">{t('installTitle')}</p>
+      {status === 'installed' ? (
+        <p className="text-muted-foreground text-sm">{t('installDone')}</p>
+      ) : status === 'available' ? (
+        <>
+          <Button variant="outline" size="sm" className="w-full" onClick={() => void promptInstall()}>
+            <MonitorDown className="size-4" />
+            {t('installButton')}
+          </Button>
+          <p className="text-muted-foreground text-sm">{t('installHint')}</p>
+        </>
+      ) : (
+        <p className="text-muted-foreground text-sm">{isIosFamily() ? t('installManualIos') : t('installManual')}</p>
+      )}
+    </div>
+  );
+}
+
+/** Appearance menu: theme + accessibility (text size, motion, contrast) + app install. */
 export function AppearanceSettings() {
   const t = useTranslations('settings');
   const { theme, setTheme } = useTheme();
@@ -94,6 +125,10 @@ export function AppearanceSettings() {
           </Button>
         </div>
       </div>
+
+      <Separator />
+
+      <InstallAppSection />
     </SettingsDialogShell>
   );
 }
