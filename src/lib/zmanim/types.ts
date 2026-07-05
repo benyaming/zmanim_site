@@ -39,12 +39,20 @@ export interface ZmanDefinition {
   erevOnly?: boolean;
   /** Only meaningful on Erev Pesach (14 Nissan) — the chametz deadlines. */
   erevPesachOnly?: boolean;
+  /**
+   * This zman is a LENGTH (the shaah zmanis / astronomical hour), not a moment
+   * of the day: `method` returns milliseconds, surfaced as `durationMillis`
+   * (`time` stays null and the UI renders an h:mm:ss duration).
+   */
+  duration?: boolean;
 }
 
 /** A computed zman: the definition plus its resolved time (null if undefined that day). */
 export interface ComputedZman extends ZmanDefinition {
   /** The time in the location's timezone, or null (e.g. polar day with no sunrise). */
   time: DateTime | null;
+  /** For `duration` zmanim only: the length in ms, or null when the day is undefined. */
+  durationMillis?: number | null;
 }
 
 export interface ComputeZmanimInput {

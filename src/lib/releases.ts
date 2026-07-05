@@ -18,6 +18,21 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.9',
+    date: '2026-07-05',
+    notes: {
+      en: [
+        'New "Astronomical hour" in the zmanim list — the length of one proportional hour (shaah zmanit) by the Magen Avraham and by the Vilna Gaon, shown as a duration (h:mm:ss) rather than a clock time. Hidden by default — enable it under "Displayed zmanim" in the calendar settings.',
+      ],
+      he: [
+        'זמן חדש ברשימת הזמנים — "שעה זמנית": אורך שעה זמנית אחת לדעת המגן אברהם ולדעת הגר"א, מוצג כמשך זמן (שעות:דקות:שניות) ולא כשעת שעון. מוסתר כברירת מחדל — ניתן להפעילו תחת "זמנים מוצגים" בהגדרות הלוח.',
+      ],
+      ru: [
+        'Новый пункт в списке зманим — «Шаа зманит (астрономический час)»: длина одного временно́го часа по Маген Аврааму и по Виленскому Гаону, показывается как длительность (ч:мм:сс), а не как время суток. По умолчанию скрыт — включается в разделе «Отображаемые зманим» в настройках календаря.',
+      ],
+    },
+  },
+  {
     version: '1.8',
     date: '2026-07-05',
     notes: {

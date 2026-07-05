@@ -97,6 +97,31 @@ describe('zmanim ordering invariants', () => {
     }
   });
 
+  it('shaah zmanis is the day it divides: GRA = (sunset − sunrise) / 12, MGA = GRA + 12 min', () => {
+    let checks = 0;
+    for (const lat of LATS) {
+      for (const iso of DATES) {
+        const zmanim = computeZmanim({ lat, lng: 35, date: LuxonDateTime.fromISO(iso) });
+        const byKey = Object.fromEntries(zmanim.map((z) => [z.key, z]));
+        const gra = byKey.shaahZmanisGRA;
+        const mga = byKey.shaahZmanisMGA;
+        // Durations are never clock times.
+        expect(gra.time).toBeNull();
+        expect(mga.time).toBeNull();
+        const { sunrise, sunset } = byKey;
+        if (!sunrise.time || !sunset.time) continue;
+        const label = `${lat} ${iso}`;
+        expect(gra.durationMillis, label).not.toBeNull();
+        expect(Math.abs(gra.durationMillis! - (sunset.time.toMillis() - sunrise.time.toMillis()) / 12), label).toBeLessThan(2);
+        // MGA's day is the GRA day plus 72 fixed minutes on each side → each of
+        // its 12 hours is exactly 12 minutes longer.
+        expect(Math.abs(mga.durationMillis! - (gra.durationMillis! + 12 * 60_000)), label).toBeLessThan(2);
+        checks++;
+      }
+    }
+    expect(checks).toBeGreaterThan(30);
+  });
+
   it('produces deterministic output for identical input', () => {
     const a = computeZmanim({ lat: 40.6782, lng: -73.9442, date: LuxonDateTime.fromISO('2024-06-15') });
     const b = computeZmanim({ lat: 40.6782, lng: -73.9442, date: LuxonDateTime.fromISO('2024-06-15') });

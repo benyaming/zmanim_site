@@ -17,6 +17,7 @@ import {
   DEFAULT_HIDDEN_ZMANIM,
   type HavdalahOpinion,
   isHavdalahOpinion,
+  OPT_IN_ZMANIM,
   sanitizeHiddenZmanim,
 } from '@/lib/zmanim';
 
@@ -84,6 +85,13 @@ interface PersistedPrefs {
    * default across releases.
    */
   zmanimCustomized?: boolean;
+  /**
+   * Opt-in zman keys this save has already encountered. An opt-in zman (e.g.
+   * the astronomical hour) missing from this list starts hidden even for a
+   * customized hide list — once — instead of defaulting to shown like other
+   * newly added zmanim.
+   */
+  seenOptInZmanim?: string[];
   /** Hidden learning cycles — same hide-list convention as hiddenZmanim. */
   hiddenLearning?: string[];
 }
@@ -189,7 +197,12 @@ export function AppStateProvider({
     // show-everything default — those users move to the current default.
     const savedHidden = sanitizeHiddenZmanim(prefs.hiddenZmanim);
     if (prefs.zmanimCustomized ?? savedHidden.length > 0) {
-      setHiddenZmanim(savedHidden);
+      // Opt-in zmanim this save has never seen start hidden here too — for
+      // them the new-zmanim-default-to-shown convention is deliberately
+      // reversed, once per key (the persist below records them as seen).
+      const seen = new Set(Array.isArray(prefs.seenOptInZmanim) ? prefs.seenOptInZmanim : []);
+      const unseenOptIn = OPT_IN_ZMANIM.filter((k) => !seen.has(k));
+      setHiddenZmanim([...new Set([...savedHidden, ...unseenOptIn])]);
       setZmanimCustomized(true);
     }
     const savedHiddenLearning = sanitizeHiddenLearning(prefs.hiddenLearning);
@@ -294,6 +307,7 @@ export function AppStateProvider({
           lehumra,
           hiddenZmanim,
           zmanimCustomized,
+          seenOptInZmanim: [...OPT_IN_ZMANIM],
           hiddenLearning,
         }),
       );

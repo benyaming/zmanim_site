@@ -1,17 +1,18 @@
-import type { DateTime } from 'luxon';
 import type { ReactNode } from 'react';
 
-import { formatTime } from '@/lib/format';
+import { formatDuration, formatTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import type { ZmanBaseGroup, ZmanGroup } from '@/lib/zmanim';
+import type { ZmanBaseGroup, ZmanGroup, ZmanRow } from '@/lib/zmanim';
 
 import { InfoHint } from './info-hint';
 import { SectionHeading } from './section-heading';
 
-function Time({ time, locale }: { time: DateTime | null; locale: string }) {
+function Time({ time, durationMillis, locale }: Pick<ZmanRow, 'time' | 'durationMillis'> & { locale: string }) {
+  // Duration zmanim (shaah zmanis) carry a length, not a moment — render h:mm:ss.
+  const text = durationMillis !== undefined ? formatDuration(durationMillis) : formatTime(time, locale);
   return (
-    <time className={cn('shrink-0 font-mono text-sm tabular-nums', !time && 'text-muted-foreground')}>
-      {formatTime(time, locale)}
+    <time className={cn('shrink-0 font-mono text-sm tabular-nums', text === '—' && 'text-muted-foreground')}>
+      {text}
     </time>
   );
 }
@@ -38,7 +39,7 @@ function BaseItem({ item, locale }: { item: ZmanBaseGroup; locale: string }) {
           <ZmanName name={item.name} description={item.description} />
           {row.shita && <span className="text-muted-foreground text-xs">{row.shita}</span>}
         </div>
-        <Time time={row.time} locale={locale} />
+        <Time time={row.time} durationMillis={row.durationMillis} locale={locale} />
       </li>
     );
   }
@@ -56,7 +57,7 @@ function BaseItem({ item, locale }: { item: ZmanBaseGroup; locale: string }) {
               {row.shita}
               {row.detail && <InfoHint detail={row.detail} label={row.shita} />}
             </span>
-            <Time time={row.time} locale={locale} />
+            <Time time={row.time} durationMillis={row.durationMillis} locale={locale} />
           </div>
         ))}
       </div>

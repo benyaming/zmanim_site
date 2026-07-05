@@ -43,6 +43,9 @@ const EXPECTED_DIRECTIONS: Record<string, 'earlier' | 'later'> = {
 describe('zmanLehumraDirection', () => {
   it('classifies every defined zman, and exactly as pinned', () => {
     for (const def of ZMANIM) {
+      // Duration zmanim (shaah zmanis) carry a length, not a clock time —
+      // there is nothing for lehumra to round, so they are exempt.
+      if (def.duration) continue;
       expect(EXPECTED_DIRECTIONS[def.key], `missing expectation for ${def.key}`).toBeDefined();
       expect(zmanLehumraDirection(def.key), def.key).toBe(EXPECTED_DIRECTIONS[def.key]);
     }

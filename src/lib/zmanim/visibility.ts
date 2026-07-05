@@ -43,6 +43,16 @@ export const DEFAULT_HIDDEN_ZMANIM: readonly string[] = CONFIGURABLE_ZMANIM.filt
 ).map((z) => z.key);
 
 /**
+ * Zmanim introduced as strictly OPT-IN: hidden by default for everyone,
+ * including users whose persisted hide list predates them. The hide-list
+ * convention normally makes a newly added zman visible to existing users;
+ * app-state's load migration reverses that for these keys — exactly once per
+ * key, tracked via the persisted `seenOptInZmanim` list — so they only appear
+ * when explicitly enabled in the settings picker.
+ */
+export const OPT_IN_ZMANIM: readonly string[] = ['shaahZmanisMGA', 'shaahZmanisGRA'];
+
+/**
  * Validate a persisted hidden-zmanim preference. Visibility is stored as the
  * set of HIDDEN keys (not visible ones) so zmanim added in future releases
  * default to shown for existing users. Unknown or malformed entries are

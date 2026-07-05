@@ -59,7 +59,9 @@
       "tzais": "Tzeit ha-Kochavim",
       "tzais72": "Tzeit ha-Kochavim",
       "chatzosLaila": "Chatzot Laila",
-      "tzais42": "Tzeit ha-Kochavim"
+      "tzais42": "Tzeit ha-Kochavim",
+      "shaahZmanisMGA": "Astronomical hour",
+      "shaahZmanisGRA": "Astronomical hour"
     },
     "shitot": {
       "alosHashachar": "16.1°",
@@ -86,7 +88,9 @@
       "tzais": "3 stars · 8.5°",
       "tzais72": "Rabbeinu Tam · 72 min",
       "chatzosLaila": "",
-      "tzais42": "fixed 42 min"
+      "tzais42": "fixed 42 min",
+      "shaahZmanisMGA": "Magen Avraham",
+      "shaahZmanisGRA": "Vilna Gaon"
     },
     "descriptions": {
       "alosHashachar": "First light, with the sun 16.1° below the horizon — the degree equivalent of a 72-minute dawn, so it tracks the same twilight at any latitude or season.",
@@ -113,7 +117,9 @@
       "tzais": "Three small stars are visible — sun 8.5° below the horizon (≈36 min after sunset in Jerusalem near the equinox). A slightly stringent nightfall; the new day begins.",
       "tzais72": "Rabbeinu Tam's stringent nightfall — a fixed 72 minutes after sunset (4 mil × 18 min). Relied on for ending Shabbat, Yom Tov, and Yom Kippur.",
       "chatzosLaila": "Solar midnight — the halachic midpoint of the night, halfway between sunset and sunrise.",
-      "tzais42": "A fixed 42 minutes after sunset — a common practical nightfall some communities use to end Shabbat and Yom Tov."
+      "tzais42": "A fixed 42 minutes after sunset — a common practical nightfall some communities use to end Shabbat and Yom Tov.",
+      "shaahZmanisMGA": "The length of one proportional hour by the Magen Avraham — the day measured from dawn (72 min before sunrise) to nightfall (72 min after sunset), so the hour is longer.",
+      "shaahZmanisGRA": "The length of one proportional hour by the Vilna Gaon (GRA) — the day measured from sunrise to sunset."
     },
     "baseDescriptions": {
       "alos": "Dawn — first light; the start of the halachic day for many mitzvot.",
@@ -122,7 +128,8 @@
       "sofZmanTfila": "Latest time for the morning Amidah (Shacharit) — the end of the fourth proportional hour.",
       "achilasChametz": "Erev Pesach: the latest time to eat chametz — the end of the fourth proportional hour.",
       "biurChametz": "Erev Pesach: the latest time to burn / dispose of the chametz — the end of the fifth proportional hour.",
-      "tzais": "Nightfall — three stars are visible and the new halachic day begins."
+      "tzais": "Nightfall — three stars are visible and the new halachic day begins.",
+      "shaahZmanis": "The length of one halachic (proportional) hour — a twelfth of the halachic day; zmanim like sof zman Shema are counted in these hours. Shown as a duration (h:mm:ss), not a clock time."
     }
   },
   "categories": {

@@ -53,4 +53,11 @@ export const ZMANIM: readonly ZmanDefinition[] = [
   { key: 'tzais42', base: 'tzais', method: 'getSunset', offsetMinutes: 42, category: 'evening', order: 135 },
   { key: 'tzais72', base: 'tzais', method: 'getTzais72', category: 'evening', order: 140 }, // Rabbeinu Tam
   { key: 'chatzosLaila', base: 'chatzosLaila', method: 'getSolarMidnight', category: 'evening', order: 150 },
+
+  // Shaah zmanis (astronomical hour) — the LENGTH of one proportional hour,
+  // shown as a duration rather than a clock time (hence last, after all the
+  // moments of the day). MGA divides alos 72 → tzais 72; GRA sunrise → sunset.
+  // Matches zmanim_api/zmanim_bot's astronomical_hour_ma / astronomical_hour_gra.
+  { key: 'shaahZmanisMGA', base: 'shaahZmanis', method: 'getShaahZmanisMGA', category: 'evening', order: 160, duration: true },
+  { key: 'shaahZmanisGRA', base: 'shaahZmanis', method: 'getShaahZmanisGra', category: 'evening', order: 165, duration: true },
 ] as const;
