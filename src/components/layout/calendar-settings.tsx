@@ -71,6 +71,9 @@ function ZmanCheckboxRow({
 /** Calendar menu: zmanim/luach preferences (candle-lighting offset, havdalah opinion, displayed zmanim). */
 export function CalendarSettings() {
   const t = useTranslations('settings');
+  // The lehumra explanation is shared with the day panel's chip/footnote
+  // popover, so settings and panel always describe the same rules.
+  const tPanel = useTranslations('panel');
   // Same name + shita as the zmanim panel, so settings and panel stay consistent.
   // The panel shows the base name ("Tzeit ha-Kochavim") as a group header and the
   // shita ("8.5°") as the row; here we combine them so every option reads fully.
@@ -86,6 +89,8 @@ export function CalendarSettings() {
     setUseElevation,
     havdalahOpinion,
     setHavdalahOpinion,
+    lehumra,
+    setLehumra,
     hiddenZmanim,
     setZmanVisible,
     showAllZmanim,
@@ -147,6 +152,16 @@ export function CalendarSettings() {
           )}
         </label>
         <p className="text-muted-foreground text-xs">{t('elevationHint')}</p>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        <label htmlFor="lehumra" className="flex cursor-pointer items-center gap-2">
+          <Checkbox id="lehumra" checked={lehumra} onCheckedChange={(v) => setLehumra(v === true)} />
+          <span className="text-sm font-medium">{t('lehumra')}</span>
+        </label>
+        <p className="text-muted-foreground text-xs whitespace-pre-line">{tPanel('lehumraDetail')}</p>
       </div>
 
       <Separator />

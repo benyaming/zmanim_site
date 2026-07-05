@@ -62,7 +62,10 @@ function GithubIcon(props: SVGProps<SVGSVGElement>) {
 export function SiteFooter() {
   const t = useTranslations('footer');
   return (
-    <footer className="text-muted-foreground relative shrink-0 border-t py-2.5 text-center text-[0.6875rem] leading-tight">
+    // Pinned to the viewport bottom like the header is to the top. Only mobile
+    // actually scrolls (the lg+ shell is a fixed viewport), so there sticky
+    // keeps the footer visible; the translucent blur matches the header.
+    <footer className="text-muted-foreground bg-card/80 supports-[backdrop-filter]:bg-card/60 sticky bottom-0 z-30 shrink-0 border-t py-2.5 text-center text-[0.6875rem] leading-tight backdrop-blur">
       {/* sm:px-36 keeps the centered content clear of the corner changelog button;
           on mobile the button drops into its own centered row below instead. */}
       <div className="mx-auto flex max-w-[2200px] flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 sm:px-36">

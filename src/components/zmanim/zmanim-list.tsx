@@ -1,4 +1,5 @@
 import type { DateTime } from 'luxon';
+import type { ReactNode } from 'react';
 
 import { formatTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -71,8 +72,8 @@ export function ZmanimList({
 }: {
   groups: ZmanGroup[];
   locale?: string;
-  /** Small muted note under the list (e.g. "more zmanim in settings"). */
-  footnote?: string;
+  /** Small muted note(s) under the list (e.g. "more zmanim in settings"). */
+  footnote?: ReactNode;
 }) {
   return (
     <div>
@@ -88,7 +89,7 @@ export function ZmanimList({
           </section>
         ))}
       </div>
-      {footnote && <p className="text-muted-foreground mt-4 text-xs">{footnote}</p>}
+      {footnote && <div className="text-muted-foreground mt-4 space-y-1 text-xs">{footnote}</div>}
     </div>
   );
 }

@@ -44,6 +44,34 @@ describe('getDayEvents', () => {
     expect(events('2024-04-22')).toEqual(['candle']); // Erev Pesach
   });
 
+  it('shows the 2nd-night candle lighting at nightfall on the 1st Yom Tov day (diaspora)', () => {
+    // Pesach I 5784 (Tue 2024-04-23); day 2 follows in the diaspora.
+    const e = getDayEvents(DateTime.fromISO('2024-04-23'), TIMES);
+    expect(e).toEqual([{ type: 'candle', time: TIMES.havdalah, afterNightfall: true }]);
+  });
+
+  it('shows havdalah (no 2nd-night candle) after the same day in Israel', () => {
+    const e = getDayEvents(DateTime.fromISO('2024-04-23'), TIMES, true);
+    expect(e).toEqual([{ type: 'havdalah', time: TIMES.havdalah }]);
+  });
+
+  it('keeps the pre-sunset time for Shabbat candles on a Friday Yom Tov', () => {
+    // Rosh Hashana 5785: Thu 2024-10-03 (2nd night at nightfall) + Fri
+    // 2024-10-04 (Shabbat follows — candles must precede sunset even on YT).
+    expect(getDayEvents(DateTime.fromISO('2024-10-03'), TIMES)).toEqual([
+      { type: 'candle', time: TIMES.havdalah, afterNightfall: true },
+    ]);
+    expect(getDayEvents(DateTime.fromISO('2024-10-04'), TIMES)).toEqual([
+      { type: 'candle', time: TIMES.candleLighting },
+    ]);
+  });
+
+  it('lights after nightfall (and says no havdalah) when Yom Tov starts on Motzei Shabbat', () => {
+    // Shabbat 2025-04-12 = Erev Pesach 5785 → Yom Tov begins at Shabbat's end.
+    const e = getDayEvents(DateTime.fromISO('2025-04-12'), TIMES);
+    expect(e).toEqual([{ type: 'candle', time: TIMES.havdalah, afterNightfall: true }]);
+  });
+
   it('shows havdalah at the end of Yom Tov', () => {
     // 8th day Pesach (last day in the diaspora) → followed by a weekday.
     expect(events('2024-04-30')).toEqual(['havdalah']);

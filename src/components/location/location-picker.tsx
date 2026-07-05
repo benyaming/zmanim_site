@@ -49,16 +49,24 @@ export function LocationPicker() {
       <DialogTrigger asChild>
         {/* `shrink min-w-0` overrides the button base's shrink-0 so a long city
             name ellipsizes instead of overflowing the header on narrow screens. */}
-        <Button variant="outline" size="sm" className="min-w-0 shrink max-w-[12rem] gap-1.5">
+        {/* h-auto + min-h-8 keeps the normal pill height but lets it grow when
+            the elevation wraps to a second line on narrow screens. */}
+        <Button variant="outline" size="sm" className="h-auto min-h-8 min-w-0 shrink max-w-[12rem] gap-1.5 py-1">
           <MapPin className="size-4 shrink-0" />
-          <span className="truncate">{location.label}</span>
           {/* Elevation-adjusted zmanim change the displayed times, so surface
               the elevation where the location is — only while the setting is
-              on, so the default view stays uncluttered. */}
-          {useElevation && typeof location.elevation === 'number' && (
-            <span className="text-muted-foreground shrink-0 text-xs">
-              {location.elevation} {tSettings('meters')}
+              on, so the default view stays uncluttered. On sm+ it sits inline
+              after the name; on narrow screens it drops to a second line so
+              the city name keeps the full pill width instead of ellipsizing. */}
+          {useElevation && typeof location.elevation === 'number' ? (
+            <span className="flex min-w-0 flex-col items-start leading-tight sm:flex-row sm:items-baseline sm:gap-1.5">
+              <span className="w-full min-w-0 truncate sm:w-auto">{location.label}</span>
+              <span className="text-muted-foreground w-full truncate text-start text-[0.625rem] font-normal sm:w-auto sm:shrink-0 sm:text-xs">
+                {location.elevation} {tSettings('meters')}
+              </span>
             </span>
+          ) : (
+            <span className="truncate">{location.label}</span>
           )}
         </Button>
       </DialogTrigger>

@@ -7,7 +7,7 @@ import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 
 import { useAccessibility } from '@/components/providers/accessibility-provider';
 import { useAppState } from '@/components/providers/app-state';
 import { buildMonthGrid, createHebrewFormatter, getDayEvents, getDayInfo, localizedHolidayLabel } from '@/lib/calendar';
-import { computeZmanim, havdalahTime } from '@/lib/zmanim';
+import { applyLehumraToEvents, computeZmanim, havdalahTime } from '@/lib/zmanim';
 
 import { CalendarDay, type CellChip, type CellDensity } from './calendar-day';
 
@@ -135,8 +135,17 @@ function useCellFit(gridRef: RefObject<HTMLDivElement | null>, fontScale: string
 }
 
 export function CalendarGrid() {
-  const { monthDate, mode, selectedDay, setSelectedDay, location, candleLightingOffset, havdalahOpinion, useElevation } =
-    useAppState();
+  const {
+    monthDate,
+    mode,
+    selectedDay,
+    setSelectedDay,
+    location,
+    candleLightingOffset,
+    havdalahOpinion,
+    useElevation,
+    lehumra,
+  } = useAppState();
   const { fontScale } = useAccessibility();
   const locale = useLocale();
   const tCat = useTranslations('categories');
@@ -156,6 +165,7 @@ export function CalendarGrid() {
     candleLightingOffset,
     havdalahOpinion,
     useElevation,
+    lehumra,
   ].join('|');
   const { density, scale } = useCellFit(gridRef, fontScale, contentKey);
 
@@ -189,7 +199,7 @@ export function CalendarGrid() {
     const byKey = Object.fromEntries(zmanim.map((z) => [z.key, z.time]));
     // A cell only has room for one fast-end time — keep the earliest opinion
     // (Geonim 5.95°); the day panel shows all three.
-    const events = getDayEvents(
+    const rawEvents = getDayEvents(
       cell.date,
       {
         candleLighting: byKey.candleLighting,
@@ -202,6 +212,7 @@ export function CalendarGrid() {
       },
       location.inIsrael,
     ).filter((e) => e.type !== 'fastEnd' || e.zmanKey === 'tzaisGeonim');
+    const events = lehumra ? applyLehumraToEvents(rawEvents) : rawEvents;
 
     return { cell, info, chips, events };
   });

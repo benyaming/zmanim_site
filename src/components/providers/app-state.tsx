@@ -49,6 +49,9 @@ interface AppStateValue {
   /** Which tzeit opinion determines the havdalah time. */
   havdalahOpinion: HavdalahOpinion;
   setHavdalahOpinion: (o: HavdalahOpinion) => void;
+  /** Opt-in lehumra mode: round displayed times to the stringent whole minute. */
+  lehumra: boolean;
+  setLehumra: (on: boolean) => void;
   /** Zman keys the user chose to hide from the day panel (empty = show all). */
   hiddenZmanim: string[];
   setZmanVisible: (key: string, visible: boolean) => void;
@@ -69,6 +72,8 @@ interface PersistedPrefs {
   /** Opt-in elevation-adjusted zmanim; absent/false = standard sea-level times. */
   useElevation?: boolean;
   havdalahOpinion?: HavdalahOpinion;
+  /** Opt-in stringent minute rounding; absent/false = exact times. */
+  lehumra?: boolean;
   /** Hidden (not visible) keys, so zmanim added later default to shown. */
   hiddenZmanim?: string[];
   /**
@@ -140,6 +145,7 @@ export function AppStateProvider({
   const [candleLightingOffset, setCandleLightingOffset] = useState(DEFAULT_CANDLE_OFFSET);
   const [useElevation, setUseElevation] = useState(false);
   const [havdalahOpinion, setHavdalahOpinion] = useState<HavdalahOpinion>(DEFAULT_HAVDALAH_OPINION);
+  const [lehumra, setLehumra] = useState(false);
   const [hiddenZmanim, setHiddenZmanim] = useState<string[]>([...DEFAULT_HIDDEN_ZMANIM]);
   const [zmanimCustomized, setZmanimCustomized] = useState(false);
   const setZmanVisible = (key: string, visible: boolean) => {
@@ -175,6 +181,7 @@ export function AppStateProvider({
     }
     if (prefs.useElevation === true) setUseElevation(true);
     if (isHavdalahOpinion(prefs.havdalahOpinion)) setHavdalahOpinion(prefs.havdalahOpinion);
+    if (prefs.lehumra === true) setLehumra(true);
     // Unknown/stale keys are dropped, so a save from an old version self-heals.
     // The saved hide list only overrides the default set when it's an explicit
     // choice (zmanimCustomized). Legacy saves predate the flag: there a
@@ -284,6 +291,7 @@ export function AppStateProvider({
           candleLightingOffset,
           useElevation,
           havdalahOpinion,
+          lehumra,
           hiddenZmanim,
           zmanimCustomized,
           hiddenLearning,
@@ -292,7 +300,7 @@ export function AppStateProvider({
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [location, candleLightingOffset, useElevation, havdalahOpinion, hiddenZmanim, zmanimCustomized, hiddenLearning]);
+  }, [location, candleLightingOffset, useElevation, havdalahOpinion, lehumra, hiddenZmanim, zmanimCustomized, hiddenLearning]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
@@ -366,6 +374,8 @@ export function AppStateProvider({
     setUseElevation,
     havdalahOpinion,
     setHavdalahOpinion,
+    lehumra,
+    setLehumra,
     hiddenZmanim,
     setZmanVisible,
     showAllZmanim,

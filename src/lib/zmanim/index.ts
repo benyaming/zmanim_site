@@ -9,5 +9,12 @@ export {
   havdalahZmanKey,
   isHavdalahOpinion,
 } from './havdalah';
+export {
+  applyLehumra,
+  applyLehumraToEvents,
+  type LehumraDirection,
+  roundTimeLehumra,
+  zmanLehumraDirection,
+} from './lehumra';
 export type { ComputedZman, ComputeZmanimInput, ZmanCategory, ZmanDefinition } from './types';
 export { CONFIGURABLE_ZMANIM, DEFAULT_HIDDEN_ZMANIM, sanitizeHiddenZmanim } from './visibility';
