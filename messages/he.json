@@ -148,7 +148,10 @@
     "specialShabbat": "שבת {name}",
     "molad": "המולד: {weekday}, {time} ו־{chalakim} חלקים",
     "parasha": "פרשת {name}",
-    "detailsAria": "{label} — פרטים"
+    "detailsAria": "{label} — פרטים",
+    "zmanimSettingsHint": "אפשר להציג זמנים ושיטות נוספים בהגדרות לוח השנה.",
+    "observedPostponed": "נדחה השנה בשל שבת.",
+    "observedAdvanced": "הוקדם השנה בשל שבת."
   },
   "learning": {
     "title": "לימוד יומי",

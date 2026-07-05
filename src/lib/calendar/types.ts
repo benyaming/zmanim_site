@@ -50,6 +50,12 @@ export interface DayInfo {
   isShabbosMevorchim: boolean;
   /** Molad of the incoming month — set on Rosh Chodesh & Shabbos Mevorchim, else null. */
   molad: MoladInfo | null;
+  /**
+   * Set when the day's observance is kept on a different date than its nominal
+   * one because of Shabbat (e.g. a fast that is nidche, or the Israeli national
+   * days): 'postponed' = kept later, 'advanced' = kept earlier. Null otherwise.
+   */
+  observedShift: 'postponed' | 'advanced' | null;
   /** Hebrew day-of-month number (1-30). */
   hebrewDayOfMonth: number;
   /** Formatted Hebrew month name. */

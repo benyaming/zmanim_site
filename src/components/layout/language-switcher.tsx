@@ -21,7 +21,12 @@ export function LanguageSwitcher() {
   const pathname = usePathname();
 
   const switchTo = (next: Locale) => {
-    if (next !== locale) router.replace(pathname, { locale: next });
+    if (next === locale) return;
+    // Keep the query string: it carries the calendar state (?m/?d/?v), so
+    // dropping it snapped the app back to today. Read it from the location —
+    // app-state maintains it via history.replaceState, which the Next router
+    // (and therefore useSearchParams) does not observe.
+    router.replace(`${pathname}${window.location.search}`, { locale: next });
   };
 
   return (

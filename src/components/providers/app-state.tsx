@@ -11,7 +11,13 @@ import { ipGeolocate } from '@/lib/geo/ip-location';
 import { normalizeIsraelAreaTimezone } from '@/lib/geo/timezone';
 import { sanitizeHiddenLearning } from '@/lib/learning';
 import { type AppLocation, DEFAULT_LOCATION, isDefaultLocation, isIsraelTimezone, makeLocation } from '@/lib/location';
-import { DEFAULT_HAVDALAH_OPINION, type HavdalahOpinion, isHavdalahOpinion, sanitizeHiddenZmanim } from '@/lib/zmanim';
+import {
+  DEFAULT_HAVDALAH_OPINION,
+  DEFAULT_HIDDEN_ZMANIM,
+  type HavdalahOpinion,
+  isHavdalahOpinion,
+  sanitizeHiddenZmanim,
+} from '@/lib/zmanim';
 
 export { DEFAULT_LOCATION, makeLocation };
 export type { AppLocation };
@@ -59,6 +65,14 @@ interface PersistedPrefs {
   havdalahOpinion?: HavdalahOpinion;
   /** Hidden (not visible) keys, so zmanim added later default to shown. */
   hiddenZmanim?: string[];
+  /**
+   * True once the user has touched zmanim visibility. Only then does the
+   * persisted hide list override DEFAULT_HIDDEN_ZMANIM — it distinguishes an
+   * explicit "show all" (empty list, customized) from a never-opened picker
+   * (empty-or-default list, not customized), which should track the app
+   * default across releases.
+   */
+  zmanimCustomized?: boolean;
   /** Hidden learning cycles — same hide-list convention as hiddenZmanim. */
   hiddenLearning?: string[];
 }
@@ -119,13 +133,19 @@ export function AppStateProvider({
   };
   const [candleLightingOffset, setCandleLightingOffset] = useState(DEFAULT_CANDLE_OFFSET);
   const [havdalahOpinion, setHavdalahOpinion] = useState<HavdalahOpinion>(DEFAULT_HAVDALAH_OPINION);
-  const [hiddenZmanim, setHiddenZmanim] = useState<string[]>([]);
-  const setZmanVisible = (key: string, visible: boolean) =>
+  const [hiddenZmanim, setHiddenZmanim] = useState<string[]>([...DEFAULT_HIDDEN_ZMANIM]);
+  const [zmanimCustomized, setZmanimCustomized] = useState(false);
+  const setZmanVisible = (key: string, visible: boolean) => {
+    setZmanimCustomized(true);
     setHiddenZmanim((prev) => {
       if (visible) return prev.includes(key) ? prev.filter((k) => k !== key) : prev;
       return prev.includes(key) ? prev : [...prev, key];
     });
-  const showAllZmanim = () => setHiddenZmanim([]);
+  };
+  const showAllZmanim = () => {
+    setZmanimCustomized(true);
+    setHiddenZmanim([]);
+  };
   const [hiddenLearning, setHiddenLearning] = useState<string[]>([]);
   const setLearningVisible = (key: string, visible: boolean) =>
     setHiddenLearning((prev) => {
@@ -148,8 +168,15 @@ export function AppStateProvider({
     }
     if (isHavdalahOpinion(prefs.havdalahOpinion)) setHavdalahOpinion(prefs.havdalahOpinion);
     // Unknown/stale keys are dropped, so a save from an old version self-heals.
+    // The saved hide list only overrides the default set when it's an explicit
+    // choice (zmanimCustomized). Legacy saves predate the flag: there a
+    // non-empty list was deliberate, while an empty one just mirrored the old
+    // show-everything default — those users move to the current default.
     const savedHidden = sanitizeHiddenZmanim(prefs.hiddenZmanim);
-    if (savedHidden.length > 0) setHiddenZmanim(savedHidden);
+    if (prefs.zmanimCustomized ?? savedHidden.length > 0) {
+      setHiddenZmanim(savedHidden);
+      setZmanimCustomized(true);
+    }
     const savedHiddenLearning = sanitizeHiddenLearning(prefs.hiddenLearning);
     if (savedHiddenLearning.length > 0) setHiddenLearning(savedHiddenLearning);
     // A location from the URL (deep link) takes precedence over the saved one.
@@ -224,12 +251,12 @@ export function AppStateProvider({
     try {
       window.localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ location, candleLightingOffset, havdalahOpinion, hiddenZmanim, hiddenLearning }),
+        JSON.stringify({ location, candleLightingOffset, havdalahOpinion, hiddenZmanim, zmanimCustomized, hiddenLearning }),
       );
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [location, candleLightingOffset, havdalahOpinion, hiddenZmanim, hiddenLearning]);
+  }, [location, candleLightingOffset, havdalahOpinion, hiddenZmanim, zmanimCustomized, hiddenLearning]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
@@ -263,7 +290,18 @@ export function AppStateProvider({
 
   // Reflect mode + selected day + viewed month in the URL (without a
   // navigation) for sharing and reloads.
+  const reflectedOnce = useRef(false);
   useEffect(() => {
+    // Skip the mount run: it fires before the URL-restore effect's setStates
+    // have re-rendered, so it would overwrite the very params restore just
+    // read with the initial (today) state. That clobber broke locale
+    // switching — the switch remounts this provider, and the re-read URL had
+    // already been reset to today. Any state change re-runs this with fresh
+    // values; until then the URL already says what the state says.
+    if (!reflectedOnce.current) {
+      reflectedOnce.current = true;
+      return;
+    }
     const p = new URLSearchParams(window.location.search);
     p.set('m', mode);
     const iso = selectedDay.toISODate();
