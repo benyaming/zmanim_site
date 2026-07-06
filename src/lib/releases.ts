@@ -218,10 +218,19 @@ export function releaseNotes(release: Release, locale: string): string[] {
   return release.notes[locale as ReleaseLocale] ?? release.notes.en;
 }
 
-/** Numeric compare of dotted version strings, so "1.10" > "1.9". */
+/**
+ * Numeric compare of dotted version strings, so "1.10" > "1.9". Non-numeric
+ * segments (e.g. a corrupted persisted version) count as 0, so the result is
+ * always finite — a garbage last-seen version reads as older than everything.
+ */
 export function compareVersions(a: string, b: string): number {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
+  const parse = (version: string) =>
+    version.split('.').map((segment) => {
+      const n = Number(segment);
+      return Number.isFinite(n) ? n : 0;
+    });
+  const pa = parse(a);
+  const pb = parse(b);
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
     const diff = (pa[i] ?? 0) - (pb[i] ?? 0);
     if (diff !== 0) return diff;

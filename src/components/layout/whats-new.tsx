@@ -47,7 +47,8 @@ export function WhatsNewDialog() {
     try {
       window.localStorage.setItem(LAST_SEEN_VERSION_KEY, APP_VERSION);
     } catch {
-      // Storage unavailable — the popup simply reappears next visit.
+      // Best-effort: if only writes fail, the popup reappears next visit; if
+      // reads fail too, readLastSeenVersion already suppressed it entirely.
     }
   }, []);
 

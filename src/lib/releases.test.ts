@@ -14,6 +14,12 @@ describe('compareVersions', () => {
     expect(compareVersions('1', '1.0')).toBe(0);
     expect(compareVersions('1.0.1', '1.0')).toBeGreaterThan(0);
   });
+
+  it('treats non-numeric segments as zero, never returning NaN', () => {
+    expect(compareVersions('abc', '1.0')).toBeLessThan(0);
+    expect(compareVersions('1.x', '1.0')).toBe(0);
+    expect(Number.isNaN(compareVersions('garbage', 'also.garbage'))).toBe(false);
+  });
 });
 
 describe('releasesSince', () => {
@@ -30,6 +36,10 @@ describe('releasesSince', () => {
   it('returns only the releases newer than the last seen version', () => {
     const unseen = releasesSince('1.12');
     expect(unseen.map((r) => r.version)).toEqual(['1.14', '1.13']);
+  });
+
+  it('treats a corrupted stored version as older than everything', () => {
+    expect(releasesSince('garbage')).toEqual(RELEASES);
   });
 });
 
