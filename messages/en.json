@@ -297,6 +297,7 @@
   "releases": {
     "title": "What's new",
     "subtitle": "Changes in each release.",
-    "changelog": "Changelog"
+    "changelog": "Changelog",
+    "gotIt": "Got it"
   }
 }
