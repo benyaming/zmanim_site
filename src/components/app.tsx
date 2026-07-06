@@ -10,6 +10,7 @@ import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { ToolsMenu } from '@/components/layout/tools-menu';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
+import { WhatsNewDialog } from '@/components/layout/whats-new';
 import { LocationPicker } from '@/components/location/location-picker';
 import { AppStateProvider, type AppLocation } from '@/components/providers/app-state';
 import { QueryProvider } from '@/components/providers/query-provider';
@@ -80,6 +81,8 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
               <AppSkeleton />
             )}
           </main>
+          {/* Mount-gated: it reads localStorage synchronously, so it must never render on the server. */}
+          {mounted && <WhatsNewDialog />}
           <SiteFooter />
         </div>
       </AppStateProvider>

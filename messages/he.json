@@ -297,6 +297,7 @@
   "releases": {
     "title": "מה חדש",
     "subtitle": "השינויים בכל גרסה.",
-    "changelog": "יומן שינויים"
+    "changelog": "יומן שינויים",
+    "gotIt": "הבנתי"
   }
 }
