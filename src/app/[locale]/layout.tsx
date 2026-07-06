@@ -21,6 +21,12 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  /* Parse-time "this page has a native dark theme" signal. Chromium-family
+     "force dark web pages" features (CCleaner/Avast browsers, auto-dark)
+     decide from the head metadata whether to run their per-element inversion;
+     without this they can invert our already-dark UI patchily. The theme init
+     script below still sets the effective per-user scheme before paint. */
+  colorScheme: 'light dark',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#0b1220' },
@@ -47,6 +53,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       ],
       apple: '/icon-192.png',
     },
+    // Tells Dark Reader (and browser dark modes built on it) the site ships
+    // its own dark theme, so it must not re-darken the page.
+    other: { 'darkreader-lock': 'true' },
   };
 }
 
