@@ -69,7 +69,8 @@
 .export-light {
   /* Declared in CSS as well as via the pre-paint inline style: forced-dark
      browser features read the used color-scheme to decide whether to invert
-     the page, and this keeps the opt-out alive without JS. */
+     the page, and some forks only honor the signal when it comes from a
+     stylesheet, not a script-set inline style. */
   color-scheme: light;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
