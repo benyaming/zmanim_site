@@ -67,6 +67,10 @@
    and use no `dark:` variants). */
 :root,
 .export-light {
+  /* Declared in CSS as well as via the pre-paint inline style: forced-dark
+     browser features read the used color-scheme to decide whether to invert
+     the page, and this keeps the opt-out alive without JS. */
+  color-scheme: light;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -119,6 +123,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
