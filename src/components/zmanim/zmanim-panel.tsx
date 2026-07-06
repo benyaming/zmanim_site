@@ -1,7 +1,18 @@
 'use client';
 
 import { JewishCalendar } from 'kosher-zmanim';
-import { BookOpen, CalendarClock, Clock, Flame, Moon, Sparkles, Utensils, UtensilsCrossed, Wheat } from 'lucide-react';
+import {
+  BookOpen,
+  CalendarClock,
+  CalendarHeart,
+  Clock,
+  Flame,
+  Moon,
+  Sparkles,
+  Utensils,
+  UtensilsCrossed,
+  Wheat,
+} from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { DateTime } from 'luxon';
 import type { LucideIcon } from 'lucide-react';
@@ -23,6 +34,7 @@ import {
   type DayEventType,
   type DayInfo,
 } from '@/lib/calendar';
+import { type CustomDateOccurrence, occurrencesOn } from '@/lib/custom-dates';
 import { formatMoladParts, formatTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
@@ -221,8 +233,26 @@ function buildDayChips(info: DayInfo, locale: string, t: { cat: Translator; pane
   return chips;
 }
 
+/** A masthead chip for a personal date observed on the selected day. */
+function customChip(occ: CustomDateOccurrence, t: Translator): Chip {
+  const { entry, number } = occ;
+  const label = entry.label.trim() || t(`kind${entry.kind[0].toUpperCase()}${entry.kind.slice(1)}`);
+  const key = `custom-${entry.id}`;
+  const chip = (text: string): Chip => ({ key, label: text, tone: 'custom', Icon: CalendarHeart });
+  switch (entry.kind) {
+    case 'birthday':
+      return chip(number === 0 ? t('chipBorn', { label }) : t('chipBirthday', { label, age: number }));
+    case 'barMitzvah':
+      return chip(t('chipBarMitzvah', { label }));
+    case 'batMitzvah':
+      return chip(t('chipBatMitzvah', { label }));
+    case 'yahrzeit':
+      return chip(t('chipYahrzeit', { label, n: number }));
+  }
+}
+
 export function ZmanimPanel() {
-  const { selectedDay, location, candleLightingOffset, havdalahOpinion, hiddenZmanim, useElevation, lehumra } =
+  const { selectedDay, location, candleLightingOffset, havdalahOpinion, hiddenZmanim, useElevation, lehumra, customDates } =
     useAppState();
   const zmanim = useZmanim();
   const locale = useLocale();
@@ -234,10 +264,12 @@ export function ZmanimPanel() {
   const tCat = useTranslations('categories');
   const tPanel = useTranslations('panel');
   const tEvents = useTranslations('events');
+  const tCustom = useTranslations('customDates');
 
   const info = getDayInfo(selectedDay, undefined, locale, location.inIsrael);
 
   const chips = buildDayChips(info, locale, { cat: tCat, panel: tPanel });
+  for (const occ of occurrencesOn(selectedDay, customDates)) chips.push(customChip(occ, tCustom));
 
   // Candle lighting + havdalah for the rest period (both bookends on both days),
   // plus any fast times for the selected day. Lehumra rounds per event type

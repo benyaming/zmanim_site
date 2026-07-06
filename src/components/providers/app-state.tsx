@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { type CalendarMode, monthAnchor } from '@/lib/calendar';
+import { type CustomDate, MAX_CUSTOM_DATES, newCustomDateId, sanitizeCustomDates } from '@/lib/custom-dates';
 import { browserGeolocate } from '@/lib/geo/browser-location';
 import { fetchElevation } from '@/lib/geo/elevation';
 import { reverseGeocode } from '@/lib/geo/geocoding';
@@ -31,6 +32,7 @@ import {
 export { DEFAULT_LOCATION, makeLocation };
 export type { AppLocation };
 export type { SavedLocation };
+export type { CustomDate };
 
 export const DEFAULT_CANDLE_OFFSET = 18;
 /** Candle lighting is always *before* sunset, so the offset must be ≥ 1 minute. */
@@ -78,6 +80,12 @@ interface AppStateValue {
   hiddenLearning: string[];
   setLearningVisible: (key: string, visible: boolean) => void;
   showAllLearning: () => void;
+  /** Personal recurring dates (birthdays, bar/bat mitzvahs, yahrzeits). */
+  customDates: CustomDate[];
+  /** Add an entry; a no-op once MAX_CUSTOM_DATES is reached. Returns the new id, or null if full. */
+  addCustomDate: (entry: Omit<CustomDate, 'id'>) => string | null;
+  updateCustomDate: (id: string, entry: Omit<CustomDate, 'id'>) => void;
+  removeCustomDate: (id: string) => void;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -112,6 +120,8 @@ interface PersistedPrefs {
   seenOptInZmanim?: string[];
   /** Hidden learning cycles — same hide-list convention as hiddenZmanim. */
   hiddenLearning?: string[];
+  /** Personal recurring dates. */
+  customDates?: CustomDate[];
 }
 
 function loadPrefs(): PersistedPrefs | null {
@@ -239,6 +249,17 @@ export function AppStateProvider({
     });
   const showAllLearning = () => setHiddenLearning([]);
 
+  const [customDates, setCustomDates] = useState<CustomDate[]>([]);
+  const addCustomDate = (entry: Omit<CustomDate, 'id'>): string | null => {
+    if (customDates.length >= MAX_CUSTOM_DATES) return null;
+    const id = newCustomDateId();
+    setCustomDates((prev) => (prev.length >= MAX_CUSTOM_DATES ? prev : [...prev, { ...entry, id }]));
+    return id;
+  };
+  const updateCustomDate = (id: string, entry: Omit<CustomDate, 'id'>) =>
+    setCustomDates((prev) => prev.map((e) => (e.id === id ? { ...entry, id } : e)));
+  const removeCustomDate = (id: string) => setCustomDates((prev) => prev.filter((e) => e.id !== id));
+
   // Load saved preferences once after mount. Done in an effect (not the initial
   // render) so server and client first-render agree — avoids hydration drift.
   useEffect(() => {
@@ -273,6 +294,8 @@ export function AppStateProvider({
     if (savedHiddenLearning.length > 0) setHiddenLearning(savedHiddenLearning);
     const savedList = sanitizeSavedLocations(prefs.savedLocations);
     if (savedList.length > 0) setSavedLocations(savedList);
+    const savedCustomDates = sanitizeCustomDates(prefs.customDates);
+    if (savedCustomDates.length > 0) setCustomDates(savedCustomDates);
     // A location from the URL (deep link) takes precedence over the saved one.
     // Ignore a persisted *default* (eager-persisted, not a real choice) so it
     // doesn't lock out auto-detection. inIsrael is always derived from the
@@ -376,12 +399,13 @@ export function AppStateProvider({
           zmanimCustomized,
           seenOptInZmanim: [...OPT_IN_ZMANIM],
           hiddenLearning,
+          customDates,
         }),
       );
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, hiddenZmanim, zmanimCustomized, hiddenLearning]);
+  }, [location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, hiddenZmanim, zmanimCustomized, hiddenLearning, customDates]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
@@ -468,6 +492,10 @@ export function AppStateProvider({
     hiddenLearning,
     setLearningVisible,
     showAllLearning,
+    customDates,
+    addCustomDate,
+    updateCustomDate,
+    removeCustomDate,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

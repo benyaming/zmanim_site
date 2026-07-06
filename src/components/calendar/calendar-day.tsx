@@ -10,7 +10,7 @@ import type { CalendarMode, DayCategory, DayEvent, DayEventType, DayInfo } from 
 import { formatTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
-import { categoryChipClass, cellBackgroundClass, DAY_TONE, significantTone } from './day-style';
+import { categoryChipClass, cellBackgroundClass, DAY_TONE, type DayTone, significantTone } from './day-style';
 
 const EVENT_META: Record<DayEventType, { Icon: ComponentType<{ className?: string }>; className: string }> = {
   candle: { Icon: CandleFlames, className: 'text-amber-600 dark:text-amber-400' },
@@ -34,6 +34,11 @@ export type CellDensity = 'compact' | 'medium' | 'full';
 export interface CellChip {
   label: string;
   category: DayCategory;
+  /**
+   * An explicit tone, overriding the category-derived one. Used by personal
+   * dates, which carry their own color rather than a halachic day category.
+   */
+  tone?: DayTone;
 }
 
 interface CalendarDayProps {
@@ -75,8 +80,9 @@ export function CalendarDay({
       : `${info.hebrewDayOfMonth} ${info.hebrewMonth}`;
 
   // The dot mirrors its chip's color; a Chanukah label keeps its Chanukah tone.
-  const chipTone = (chip: CellChip) =>
-    significantTone(chip.category, chip.category === 'weekday' ? info.dayOfChanukah : 0);
+  // A chip's explicit tone (personal dates) wins over the category-derived one.
+  const chipTone = (chip: CellChip): DayTone =>
+    chip.tone ?? significantTone(chip.category, chip.category === 'weekday' ? info.dayOfChanukah : 0);
 
   const showLabels = density !== 'compact'; // medium + full
   const showExtras = density === 'full'; // omer + parsha
@@ -151,9 +157,9 @@ export function CalendarDay({
       {/* Compact: a dot per significant-day marker. */}
       {(chips.length > 0 || specialShabbosLabel || mevarchimLabel) && !showLabels && (
         <div className="flex gap-0.5" aria-hidden>
-          {chips.map((chip) => (
+          {chips.map((chip, i) => (
             <span
-              key={chip.label}
+              key={`${i}-${chip.label}`}
               className={cn('size-1.5 shrink-0 rounded-full', DAY_TONE[chipTone(chip)].dot)}
               title={chip.label}
             />
@@ -171,12 +177,16 @@ export function CalendarDay({
           lines) rather than clip — the grid's fit measurement absorbs the
           extra line. */}
       {showLabels &&
-        chips.map((chip) => (
+        chips.map((chip, i) => (
           <span
-            key={chip.label}
+            key={`${i}-${chip.label}`}
             className={cn(
-              'line-clamp-2 rounded px-1 text-[0.6875rem] leading-tight font-medium text-[color:var(--day-label)]',
-              categoryChipClass(chip.category),
+              'line-clamp-2 rounded px-1 text-[0.6875rem] leading-tight font-medium',
+              // Tone chips (personal dates) carry their own text color; category
+              // chips use the shared --day-label variable.
+              chip.tone
+                ? DAY_TONE[chip.tone].chip
+                : cn('text-[color:var(--day-label)]', categoryChipClass(chip.category)),
             )}
             title={chip.label}
           >

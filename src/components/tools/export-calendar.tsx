@@ -9,6 +9,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useAccessibility, type FontScale } from '@/components/providers/accessibility-provider';
 import { useAppState } from '@/components/providers/app-state';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -148,8 +149,9 @@ export function ExportCalendarTool() {
   const tCal = useTranslations('calendar');
   const tSettings = useTranslations('settings');
   const locale = useLocale();
-  const { monthDate, mode, candleLightingOffset, havdalahOpinion } = useAppState();
+  const { monthDate, mode, candleLightingOffset, havdalahOpinion, customDates } = useAppState();
   const { fontScale: appFontScale } = useAccessibility();
+  const [includeCustomDates, setIncludeCustomDates] = useState(true);
 
   const { location, field: locationField } = useExportLocation();
   const { reportLocale, field: languageField } = useReportLocale();
@@ -167,11 +169,13 @@ export function ExportCalendarTool() {
     havdalahOpinion,
     useElevation,
     lehumra,
+    customDates: includeCustomDates ? customDates : [],
     labels: {
       roshChodesh: tr('categories.roshChodesh'),
       mevarchim: tr('panel.shabbatMevarchim'),
       omer: (day: number) => tr('panel.omer', { day }),
       specialShabbat: (name: string) => tr('panel.specialShabbat', { name }),
+      customDate: (kind) => tr(`customDates.kind${kind[0].toUpperCase()}${kind.slice(1)}`),
     },
   };
 
@@ -284,6 +288,13 @@ export function ExportCalendarTool() {
       </div>
 
       {computeField}
+
+      {customDates.length > 0 && (
+        <label className="flex cursor-pointer items-center gap-2">
+          <Checkbox checked={includeCustomDates} onCheckedChange={(v) => setIncludeCustomDates(v === true)} />
+          <span className="text-sm">{t('includeCustomDates')}</span>
+        </label>
+      )}
 
       {error && <p className="text-destructive text-xs">{error}</p>}
       <Button onClick={exportGrid} disabled={busy} className="w-full">

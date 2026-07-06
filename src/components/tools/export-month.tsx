@@ -16,6 +16,7 @@ import {
   getDayInfo,
   localizedHolidayLabel,
 } from '@/lib/calendar';
+import { type CustomDate, type CustomDateKind, occurrencesOn } from '@/lib/custom-dates';
 import { alternateMonthsTitle, monthTitle, PAGE_HEIGHT_PX, PAGE_WIDTH_PX, weekdayHeaders } from '@/lib/export';
 import { formatTime } from '@/lib/format';
 import type { AppLocation } from '@/lib/location';
@@ -33,12 +34,16 @@ export interface ExportMonthCfg {
   havdalahOpinion: HavdalahOpinion;
   useElevation: boolean;
   lehumra: boolean;
+  /** Personal dates to overlay on the grid (empty unless the user opted in). */
+  customDates: CustomDate[];
   /** Translated labels the cells need (resolved by the caller, which has hooks). */
   labels: {
     roshChodesh: string;
     mevarchim: string;
     omer: (day: number) => string;
     specialShabbat: (name: string) => string;
+    /** Fallback name for an unlabeled personal date, by kind. */
+    customDate: (kind: CustomDateKind) => string;
   };
 }
 
@@ -48,7 +53,7 @@ interface ExportCell {
   secondary: string;
   inMonth: boolean;
   category: DayCategory;
-  chips: { label: string; category: DayCategory }[];
+  chips: { label: string; category: DayCategory; custom?: boolean }[];
   events: { type: DayEventType; time: string }[];
   omerLabel: string | null;
   parshaLine: string | null;
@@ -80,6 +85,9 @@ export function buildExportMonth(monthDate: DateTime, mode: CalendarMode, cfg: E
     if (label) chips.push({ label, category: info.category });
     if (info.isRoshChodesh && !(label && info.category === 'roshChodesh')) {
       chips.push({ label: cfg.labels.roshChodesh, category: 'roshChodesh' });
+    }
+    for (const occ of occurrencesOn(date, cfg.customDates)) {
+      chips.push({ label: occ.entry.label.trim() || cfg.labels.customDate(occ.entry.kind), category: 'weekday', custom: true });
     }
 
     const zmanim = computeZmanim({
@@ -189,6 +197,17 @@ function chipClasses(category: DayCategory, theme: ExportGridTheme): string {
   return cn(categoryChipClass(category), 'font-medium text-[color:var(--day-label)]');
 }
 
+/**
+ * Personal-date chip styling — the app's teal tone, spelled out per theme (no
+ * `dark:` variants; the dark page instead sets a `.dark` root, like the rest of
+ * this file).
+ */
+const CUSTOM_CHIP: Record<ExportGridTheme, string> = {
+  color: 'bg-teal-100 font-medium text-teal-800',
+  mono: 'border border-neutral-400 font-medium text-neutral-900',
+  dark: 'bg-teal-500/20 font-medium text-teal-200',
+};
+
 /** Body text size of the page at scale 1 — every em size below is relative to it. */
 const BASE_FONT_PX = 11;
 
@@ -252,10 +271,13 @@ export function ExportMonthPage({
               </span>
               <span className={cn('min-w-0 truncate leading-tight', muted)}>{cell.secondary}</span>
             </div>
-            {cell.chips.map((chip) => (
+            {cell.chips.map((chip, i) => (
               <span
-                key={chip.label}
-                className={cn('line-clamp-2 rounded px-[4px] leading-tight', chipClasses(chip.category, theme))}
+                key={`${i}-${chip.label}`}
+                className={cn(
+                  'line-clamp-2 rounded px-[4px] leading-tight',
+                  chip.custom ? CUSTOM_CHIP[theme] : chipClasses(chip.category, theme),
+                )}
               >
                 {chip.label}
               </span>

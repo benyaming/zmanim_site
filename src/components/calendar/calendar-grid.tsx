@@ -19,6 +19,7 @@ import {
   nextMonth,
   prevMonth,
 } from '@/lib/calendar';
+import { type CustomDate, type CustomDateKind, customDatesFingerprint, occurrencesOn } from '@/lib/custom-dates';
 import { type AppLocation } from '@/lib/location';
 import { applyLehumraToEvents, computeZmanim, type HavdalahOpinion, havdalahTime } from '@/lib/zmanim';
 
@@ -86,6 +87,12 @@ interface DayRenderCfg {
   havdalahOpinion: HavdalahOpinion;
   useElevation: boolean;
   lehumra: boolean;
+  /** Personal recurring dates rendered as teal chips. */
+  customDates: CustomDate[];
+  /** Fingerprint of `customDates` — the cache identity (the array's isn't). */
+  customDatesKey: string;
+  /** Kind names for entries with no user label — derived from `locale`, so not part of the cache key. */
+  customDateFallbackLabels: Record<CustomDateKind, string>;
 }
 
 // The formatter only depends on the locale — reuse it across renders and months.
@@ -138,6 +145,17 @@ function computeDayRender(date: DateTime, cfg: DayRenderCfg) {
   ).filter((e) => e.type !== 'fastEnd' || e.zmanKey === 'tzaisGeonim');
   const events = cfg.lehumra ? applyLehumraToEvents(rawEvents) : rawEvents;
 
+  // Personal dates: one teal chip each. Cells are tight, so show only the
+  // entry's name (or its kind, when unnamed) — the day panel adds the "turns
+  // N" / "Nth yahrzeit" qualifier.
+  for (const occ of occurrencesOn(date, cfg.customDates)) {
+    chips.push({
+      label: occ.entry.label.trim() || cfg.customDateFallbackLabels[occ.entry.kind],
+      category: 'weekday',
+      tone: 'custom',
+    });
+  }
+
   return { info, chips, events };
 }
 
@@ -164,6 +182,7 @@ function getCachedDayRender(date: DateTime, cfg: DayRenderCfg): ReturnType<typeo
     cfg.havdalahOpinion,
     cfg.useElevation,
     cfg.lehumra,
+    cfg.customDatesKey,
   ].join('|');
   const hit = dayCache.get(key);
   if (hit) {
@@ -402,12 +421,15 @@ export function CalendarGrid() {
     havdalahOpinion,
     useElevation,
     lehumra,
+    customDates,
   } = useAppState();
   const { fontScale } = useAccessibility();
   const locale = useLocale();
   const t = useTranslations('calendar');
   const tCat = useTranslations('categories');
+  const tCustom = useTranslations('customDates');
 
+  const customDatesKey = customDatesFingerprint(customDates);
   const cfg: DayRenderCfg = {
     locale,
     roshChodeshLabel: tCat('roshChodesh'),
@@ -416,6 +438,14 @@ export function CalendarGrid() {
     havdalahOpinion,
     useElevation,
     lehumra,
+    customDates,
+    customDatesKey,
+    customDateFallbackLabels: {
+      birthday: tCustom('kindBirthday'),
+      barMitzvah: tCustom('kindBarMitzvah'),
+      batMitzvah: tCustom('kindBatMitzvah'),
+      yahrzeit: tCustom('kindYahrzeit'),
+    },
   };
 
   // The side panels only matter once a swipe starts, so the initial render pays
@@ -450,6 +480,7 @@ export function CalendarGrid() {
     havdalahOpinion,
     useElevation,
     lehumra,
+    customDatesKey,
   ].join('|');
   const { density, scale } = useCellFit(wrapperRef, fontScale, contentKey);
 

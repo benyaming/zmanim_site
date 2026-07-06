@@ -21,6 +21,27 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.15',
+    date: '2026-07-06',
+    notes: {
+      en: [
+        'Personal dates: birthdays, bar/bat mitzvahs and yahrzeits on the calendar, entered by Hebrew or Gregorian date.',
+        'Custom Hebrew and civil date pickers throughout, replacing the browser default.',
+        'Option to include personal dates on the exported calendar.',
+      ],
+      he: [
+        'תאריכים אישיים: ימי הולדת, בר/בת מצווה ויארצייט בלוח, בהזנה עברית או לועזית.',
+        'בוחרי תאריך עבריים ולועזיים מותאמים בכל האפליקציה, במקום ברירת המחדל של הדפדפן.',
+        'אפשרות לכלול תאריכים אישיים בייצוא לוח השנה.',
+      ],
+      ru: [
+        'Личные даты: дни рождения, бар/бат-мицвы и йорцайты в календаре, ввод по еврейской или григорианской дате.',
+        'Свои выборы еврейской и григорианской даты по всему приложению вместо стандартного браузерного.',
+        'Возможность добавить личные даты в экспорт календаря.',
+      ],
+    },
+  },
+  {
     version: '1.14',
     date: '2026-07-06',
     notes: {

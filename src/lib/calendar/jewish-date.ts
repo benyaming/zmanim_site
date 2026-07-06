@@ -1,4 +1,4 @@
-import type { JewishDate } from 'kosher-zmanim';
+import { JewishDate } from 'kosher-zmanim';
 import { DateTime } from 'luxon';
 
 /**
@@ -16,4 +16,21 @@ import { DateTime } from 'luxon';
 export function jewishToLocalDay(jd: JewishDate): DateTime {
   const d = jd.getDate();
   return DateTime.fromObject({ year: d.year, month: d.month, day: d.day }).startOf('day');
+}
+
+/** Metonic-cycle leap-year rule: 7 leap years in each 19-year cycle. */
+export function isHebrewLeapYear(year: number): boolean {
+  return (year * 7 + 1) % 19 < 7;
+}
+
+/**
+ * Length (29 or 30) of Hebrew month `month` (1=Nisan … 12=Adar/Adar I,
+ * 13=Adar II) in Hebrew year `year`. The month must exist in that year —
+ * passing 13 in a non-leap year throws inside kosher-zmanim, so callers
+ * validate with `isHebrewLeapYear` first.
+ */
+export function daysInJewishMonth(year: number, month: number): number {
+  const jd = new JewishDate();
+  jd.setJewishDate(year, month, 1);
+  return jd.getDaysInJewishMonth();
 }

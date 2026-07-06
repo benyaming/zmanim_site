@@ -2,7 +2,7 @@ import { JewishDate } from 'kosher-zmanim';
 import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
 
-import { monthAnchor, nextMonth, nextYear, prevMonth, prevYear } from './navigation';
+import { hebrewMonthsOfYear, monthAnchor, nextMonth, nextYear, prevMonth, prevYear } from './navigation';
 
 describe('monthAnchor', () => {
   it('anchors the Gregorian 15th in Gregorian mode', () => {
@@ -117,5 +117,17 @@ describe('Hebrew navigation', () => {
     }
     expect(seen.size).toBe(13); // all 13 distinct months visited
     expect(new JewishDate(date).getJewishMonth()).toBe(startMonth); // wrapped around
+  });
+});
+
+describe('hebrewMonthsOfYear', () => {
+  it('lists a regular year Tishrei-first without Adar II', () => {
+    // 5786 is a regular year.
+    expect(hebrewMonthsOfYear(5786)).toEqual([7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it('inserts Adar II after Adar I in a leap year', () => {
+    // 5787 is a leap year (Adar I + Adar II).
+    expect(hebrewMonthsOfYear(5787)).toEqual([7, 8, 9, 10, 11, 12, 13, 1, 2, 3, 4, 5, 6]);
   });
 });
