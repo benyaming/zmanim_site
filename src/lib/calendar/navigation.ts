@@ -1,7 +1,7 @@
 import { JewishDate } from 'kosher-zmanim';
 import type { DateTime } from 'luxon';
 
-import { jewishToLocalDay } from './jewish-date';
+import { isHebrewLeapYear, jewishToLocalDay } from './jewish-date';
 import type { CalendarMode } from './types';
 
 /**
@@ -63,9 +63,15 @@ export function nextYear(date: DateTime, mode: CalendarMode): DateTime {
   return shiftYear(date, mode, 1);
 }
 
-/** Metonic-cycle leap-year rule: 7 leap years in each 19-year cycle. */
-function isHebrewLeapYear(year: number): boolean {
-  return (year * 7 + 1) % 19 < 7;
+/**
+ * The Jewish year's months in calendar order (Tishrei → Elul). kosher-zmanim
+ * numbers months from Nissan (1), so the calendar-order list starts at
+ * Tishrei (7); leap years insert Adar II (13) after Adar I (12).
+ */
+export function hebrewMonthsOfYear(year: number): number[] {
+  return isHebrewLeapYear(year)
+    ? [7, 8, 9, 10, 11, 12, 13, 1, 2, 3, 4, 5, 6]
+    : [7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6];
 }
 
 function shiftHebrewYear(date: DateTime, direction: 1 | -1): DateTime {

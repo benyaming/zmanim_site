@@ -17,7 +17,8 @@ export type DayTone =
   | 'shabbat'
   | 'omer'
   | 'mevorchim'
-  | 'parsha';
+  | 'parsha'
+  | 'custom';
 
 export const DAY_TONE: Record<DayTone, { chip: string; dot: string }> = {
   festival: { chip: 'bg-pink-100 text-pink-800 dark:bg-pink-500/20 dark:text-pink-200', dot: 'bg-pink-500' },
@@ -32,6 +33,9 @@ export const DAY_TONE: Record<DayTone, { chip: string; dot: string }> = {
   omer: { chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300', dot: 'bg-emerald-500' },
   mevorchim: { chip: 'bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300', dot: 'bg-violet-500' },
   parsha: { chip: 'bg-muted text-foreground', dot: 'bg-muted-foreground' },
+  // Personal dates (birthdays, bar/bat mitzvahs, yahrzeits) — teal, a hue no
+  // significant-day category uses, so they read as clearly "yours".
+  custom: { chip: 'bg-teal-100 text-teal-800 dark:bg-teal-500/20 dark:text-teal-200', dot: 'bg-teal-500' },
 };
 
 /** The tone of the day's single most significant marker (used for the grid dot). */

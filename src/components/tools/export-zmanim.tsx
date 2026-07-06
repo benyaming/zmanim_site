@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useAppState } from '@/components/providers/app-state';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { dirForLocale } from '@/i18n/routing';
 import {
   buildZmanimTable,
@@ -213,13 +213,13 @@ export function ExportZmanimTool() {
             <label htmlFor="export-table-start" className="text-muted-foreground w-10 shrink-0 text-xs">
               {t('from')}
             </label>
-            <Input id="export-table-start" type="date" value={startIso} onChange={(e) => setStartIso(e.target.value)} />
+            <DatePicker id="export-table-start" value={startIso} onChange={setStartIso} aria-label={t('from')} />
           </div>
           <div className="flex items-center gap-2">
             <label htmlFor="export-table-end" className="text-muted-foreground w-10 shrink-0 text-xs">
               {t('to')}
             </label>
-            <Input id="export-table-end" type="date" value={endIso} onChange={(e) => setEndIso(e.target.value)} />
+            <DatePicker id="export-table-end" value={endIso} onChange={setEndIso} aria-label={t('to')} />
           </div>
           {locationField}
           {languageField}
