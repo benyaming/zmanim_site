@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   anniversaryInYear,
+  customDatesFingerprint,
   hebrewPartsToDay,
   nextOccurrence,
   occurrenceInYear,
@@ -195,5 +196,25 @@ describe('nextOccurrence', () => {
     const next = nextOccurrence(yahrzeit, DateTime.fromISO('2024-12-02'));
     expect(next?.hebrew.year).toBe(5786);
     expect(next?.number).toBe(1);
+  });
+});
+
+describe('customDatesFingerprint', () => {
+  const make = (id: string, label: string): CustomDate => ({ id, kind: 'birthday', label, hebrew: d(5760, 4, 22) });
+
+  it('changes when any rendering-relevant field changes', () => {
+    const base = [make('1', 'Rivka')];
+    expect(customDatesFingerprint(base)).toBe(customDatesFingerprint([make('1', 'Rivka')]));
+    expect(customDatesFingerprint(base)).not.toBe(customDatesFingerprint([make('1', 'Leah')]));
+    expect(customDatesFingerprint(base)).not.toBe(customDatesFingerprint([{ ...make('1', 'Rivka'), kind: 'yahrzeit' }]));
+    expect(customDatesFingerprint(base)).not.toBe(customDatesFingerprint([]));
+  });
+
+  it('does not collide when a label contains the delimiter characters', () => {
+    // A naive `id|…|label` + `;` join lets a crafted label forge the two-entry
+    // string, staling the calendar cache. JSON encoding keeps them distinct.
+    const two = [make('1', 'A'), make('2', 'B')];
+    const one = [make('1', 'A;2|birthday|5760-4-22||B')];
+    expect(customDatesFingerprint(two)).not.toBe(customDatesFingerprint(one));
   });
 });

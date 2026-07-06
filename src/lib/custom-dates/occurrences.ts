@@ -197,10 +197,12 @@ export function nextOccurrence(entry: CustomDate, today: DateTime): NextOccurren
 
 /**
  * A stable serialization of everything that affects rendering, used as the
- * calendar grid's cache identity (the array's object identity is not).
+ * calendar grid's cache identity (the array's object identity is not). JSON,
+ * not a delimiter join: `label` is free user text and could otherwise contain
+ * the separators and forge a different list's fingerprint, staling the cache.
  */
 export function customDatesFingerprint(entries: readonly CustomDate[]): string {
-  return entries
-    .map((e) => `${e.id}|${e.kind}|${e.hebrew.year}-${e.hebrew.month}-${e.hebrew.day}|${e.adarBehavior ?? ''}|${e.label}`)
-    .join(';');
+  return JSON.stringify(
+    entries.map((e) => [e.id, e.kind, e.hebrew.year, e.hebrew.month, e.hebrew.day, e.adarBehavior ?? '', e.label]),
+  );
 }
