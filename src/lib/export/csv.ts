@@ -1,6 +1,9 @@
 import { downloadBlob } from './download';
 import type { DayColumnKey, ZmanimTable } from './table';
 
+/** UTF-8 byte-order mark — makes spreadsheet apps read the file as UTF-8. */
+const BOM = '\uFEFF';
+
 export interface CsvExportOptions {
   table: ZmanimTable;
   /** Localized headers for the fixed leading columns (date, weekday, Hebrew date, holiday). */
@@ -33,5 +36,5 @@ export function zmanimTableToCsv(o: Omit<CsvExportOptions, 'filename'>): string 
 /** Build and download the zmanim table as a UTF-8 CSV file. */
 export function exportTableToCsv(o: CsvExportOptions): void {
   // Prepend a BOM so spreadsheet apps open the UTF-8 content (Hebrew/Russian) correctly.
-  downloadBlob(new Blob(['﻿' + zmanimTableToCsv(o)], { type: 'text/csv;charset=utf-8' }), o.filename);
+  downloadBlob(new Blob([BOM + zmanimTableToCsv(o)], { type: 'text/csv;charset=utf-8' }), o.filename);
 }

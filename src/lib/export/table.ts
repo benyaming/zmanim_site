@@ -153,11 +153,14 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       return e ? formatTime(e.time, o.locale) : '';
     };
 
-    // Every learning key present as a column, empty by default; filled only when
-    // any learning column was requested (the lookup is skipped otherwise).
+    // Every learning key present as a column, empty by default; only the
+    // requested cycles are filled (the lookup is skipped when none are asked for).
     const learning = Object.fromEntries(LEARNING_CYCLE_KEYS.map((k) => [k, ''])) as Record<LearningCycleKey, string>;
     if (learningKeys.length > 0) {
-      for (const item of getDailyLearning(date, o.location.inIsrael, o.locale)) learning[item.key] = item.reading;
+      const requested = new Set(learningKeys);
+      for (const item of getDailyLearning(date, o.location.inIsrael, o.locale)) {
+        if (requested.has(item.key)) learning[item.key] = item.reading;
+      }
     }
 
     rows.push({
