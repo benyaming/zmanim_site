@@ -80,12 +80,12 @@ export function CalendarView() {
 
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="flex flex-wrap items-center gap-x-2 gap-y-0 text-xl font-semibold tracking-tight hover:opacity-80 sm:text-2xl"
+              className="flex flex-col items-start gap-0.5 text-xl font-semibold tracking-tight hover:opacity-80 sm:text-2xl"
             >
               <span className="flex items-center gap-1.5 capitalize">
                 {title}

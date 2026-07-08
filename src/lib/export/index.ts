@@ -1,3 +1,4 @@
+export { exportTableToCsv, zmanimTableToCsv } from './csv';
 export { downloadBlob } from './download';
 export { exportTableToExcel } from './excel';
 export {
@@ -17,6 +18,7 @@ export {
   MAX_TABLE_DAYS,
   orderedZmanKeys,
   tableDayCount,
+  TEXT_DAY_COLUMNS,
   type ZmanimTable,
   type ZmanimTableOptions,
   type ZmanimTableRow,

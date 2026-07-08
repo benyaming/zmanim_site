@@ -2,6 +2,7 @@ import type { DateTime } from 'luxon';
 
 import { createHebrewFormatter, getDayEvents, getDayInfo, localizedHolidayLabel } from '@/lib/calendar';
 import { formatDuration, formatTime } from '@/lib/format';
+import { getDailyLearning, LEARNING_CYCLE_KEYS, type LearningCycleKey } from '@/lib/learning';
 import type { AppLocation } from '@/lib/location';
 import {
   applyLehumra,
@@ -24,7 +25,12 @@ export type DayColumnKey =
   | 'fastStart'
   | 'fastEnd'
   | 'mevarchim'
-  | 'omer';
+  | 'omer'
+  // Daily-learning cycles (Daf Yomi, Mishna Yomit, …) render as text columns.
+  | LearningCycleKey;
+
+/** Day-column keys that hold free text (not clock times) — left-aligned, wider. */
+export const TEXT_DAY_COLUMNS: ReadonlySet<DayColumnKey> = new Set<DayColumnKey>(['parsha', ...LEARNING_CYCLE_KEYS]);
 
 export interface ZmanimTableOptions {
   /** First day, inclusive. Only the calendar date is used. */
@@ -42,9 +48,11 @@ export interface ZmanimTableOptions {
   havdalahOpinion?: HavdalahOpinion;
   /** Wraps a special-Shabbat name for display ("Nachamu" → "Shabbat Nachamu"). */
   specialShabbatLabel?: (name: string) => string;
+  /** Learning cycles to include as columns (empty = none, skips the lookup). */
+  learningKeys?: LearningCycleKey[];
 }
 
-export interface ZmanimTableRow {
+export type ZmanimTableRow = {
   iso: string;
   /** Localized short civil date, e.g. "7/6/2026". */
   dateLabel: string;
@@ -67,7 +75,9 @@ export interface ZmanimTableRow {
   omer: string;
   /** One formatted value per key (clock time, h:mm:ss duration, or a dash). */
   cells: string[];
-}
+  // Each learning cycle's localized reading for the day (empty when not requested
+  // or when the cycle hadn't begun / is skipped that day).
+} & Record<LearningCycleKey, string>;
 
 export interface ZmanimTable {
   /** The selected keys in canonical (chronological definition) order. */
@@ -100,6 +110,7 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
   const formatter = createHebrewFormatter(o.locale);
   const havdalahOpinion = o.havdalahOpinion ?? DEFAULT_HAVDALAH_OPINION;
   const specialShabbat = o.specialShabbatLabel ?? ((name: string) => name);
+  const learningKeys = o.learningKeys ?? [];
   const rows: ZmanimTableRow[] = [];
   const days = Math.min(tableDayCount(o.start, o.end), MAX_TABLE_DAYS);
 
@@ -142,6 +153,13 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       return e ? formatTime(e.time, o.locale) : '';
     };
 
+    // Every learning key present as a column, empty by default; filled only when
+    // any learning column was requested (the lookup is skipped otherwise).
+    const learning = Object.fromEntries(LEARNING_CYCLE_KEYS.map((k) => [k, ''])) as Record<LearningCycleKey, string>;
+    if (learningKeys.length > 0) {
+      for (const item of getDailyLearning(date, o.location.inIsrael, o.locale)) learning[item.key] = item.reading;
+    }
+
     rows.push({
       iso: date.toISODate() ?? '',
       dateLabel: date.setLocale(o.locale).toLocaleString({ year: 'numeric', month: 'numeric', day: 'numeric' }),
@@ -162,6 +180,7 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
         if (!z) return '—';
         return z.duration ? formatDuration(z.durationMillis) : formatTime(z.time, o.locale);
       }),
+      ...learning,
     });
   }
 

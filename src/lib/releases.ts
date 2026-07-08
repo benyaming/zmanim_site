@@ -21,6 +21,24 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.16',
+    date: '2026-07-09',
+    notes: {
+      en: [
+        'Zmanim export adds a CSV format and optional daily-learning columns.',
+        'Fixed the calendar controls wrapping to a second line when the month label is long.',
+      ],
+      he: [
+        'ייצוא הזמנים כולל כעת פורמט CSV ועמודות לימוד יומי לבחירה.',
+        'תוקן: כפתורי הלוח נשברו לשורה שנייה כשתווית החודש ארוכה.',
+      ],
+      ru: [
+        'Экспорт зманим получил формат CSV и столбцы ежедневного изучения.',
+        'Исправлено: кнопки календаря переносились на вторую строку при длинном названии месяца.',
+      ],
+    },
+  },
+  {
     version: '1.15',
     date: '2026-07-06',
     notes: {
