@@ -12,6 +12,7 @@ import {
   createHebrewFormatter,
   type DayCategory,
   type DayEventType,
+  dayEventZmanKeys,
   getDayEvents,
   getDayInfo,
   localizedHolidayLabel,
@@ -20,7 +21,13 @@ import { type CustomDate, type CustomDateKind, occurrencesOn } from '@/lib/custo
 import { alternateMonthsTitle, monthTitle, PAGE_HEIGHT_PX, PAGE_WIDTH_PX, weekdayHeaders } from '@/lib/export';
 import { formatTime } from '@/lib/format';
 import type { AppLocation } from '@/lib/location';
-import { applyLehumraToEvents, computeZmanim, type HavdalahOpinion, havdalahTime } from '@/lib/zmanim';
+import {
+  applyLehumraToEvents,
+  computeZmanim,
+  type HavdalahOpinion,
+  havdalahTime,
+  havdalahZmanKey,
+} from '@/lib/zmanim';
 import { cn } from '@/lib/utils';
 
 /** Page styles for the grid export: the app's day colors, ink-saving black & white, or the dark theme. */
@@ -90,6 +97,7 @@ export function buildExportMonth(monthDate: DateTime, mode: CalendarMode, cfg: E
       chips.push({ label: occ.entry.label.trim() || cfg.labels.customDate(occ.entry.kind), category: 'weekday', custom: true });
     }
 
+    // The month calendar shows only event dots, so compute just the event keys.
     const zmanim = computeZmanim({
       lat: location.lat,
       lng: location.lng,
@@ -98,22 +106,24 @@ export function buildExportMonth(monthDate: DateTime, mode: CalendarMode, cfg: E
       useElevation: cfg.useElevation,
       timeZoneId: location.timeZoneId,
       candleLightingOffset: cfg.candleLightingOffset,
+      keys: dayEventZmanKeys(havdalahZmanKey(cfg.havdalahOpinion)),
     });
     const byKey = Object.fromEntries(zmanim.map((z) => [z.key, z.time]));
-    // Like the on-screen cells: one fast-end time only (earliest opinion).
-    const rawEvents = getDayEvents(
+    // Like the on-screen cells: one fast-end time only (the earliest opinion).
+    const allEvents = getDayEvents(
       date,
       {
         candleLighting: byKey.candleLighting,
         alos: byKey.alosHashachar,
         sunset: byKey.sunset,
-        tzaisGeonim: byKey.tzaisGeonim,
-        tzais: byKey.tzais,
-        tzais42: byKey.tzais42,
         havdalah: havdalahTime(cfg.havdalahOpinion, byKey),
+        tzeitByKey: byKey,
       },
       location.inIsrael,
-    ).filter((e) => e.type !== 'fastEnd' || e.zmanKey === 'tzaisGeonim');
+      [],
+    );
+    const firstFastEnd = allEvents.find((e) => e.type === 'fastEnd');
+    const rawEvents = allEvents.filter((e) => e.type !== 'fastEnd' || e === firstFastEnd);
     const events = (cfg.lehumra ? applyLehumraToEvents(rawEvents) : rawEvents).map((e) => ({
       type: e.type,
       time: formatTime(e.time, locale),

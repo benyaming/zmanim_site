@@ -18,11 +18,23 @@ import type { ComputedZman } from './types';
  */
 export type LehumraDirection = 'earlier' | 'later';
 
-/** Zman keys whose displayed time is a deadline — lehumra rounds them down. */
+/**
+ * Zman keys whose displayed time is a deadline — lehumra rounds them down.
+ * All Sof zman Shma / Tefila opinions (every shita, any day-length definition)
+ * are deadlines; so are the chametz deadlines, sunset and candle lighting.
+ */
 const EARLIER_KEYS: ReadonlySet<string> = new Set([
+  'sofZmanShmaMGA90',
+  'sofZmanShmaMGA18',
+  'sofZmanShmaMGA161',
   'sofZmanShmaMGA',
+  'sofZmanShmaBaalHatanya',
   'sofZmanShmaGRA',
+  'sofZmanTfilaMGA90',
+  'sofZmanTfilaMGA18',
+  'sofZmanTfilaMGA161',
   'sofZmanTfilaMGA',
+  'sofZmanTfilaBaalHatanya',
   'sofZmanTfilaGRA',
   'sofZmanAchilasChametzMGA',
   'sofZmanAchilasChametzGRA',

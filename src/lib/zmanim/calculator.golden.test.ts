@@ -142,4 +142,63 @@ describe('computeZmanim golden values', () => {
     const sunrise = zmanim.find((z) => z.key === 'sunrise')!;
     expect(sunrise.time!.zoneName).toBe('Asia/Jerusalem');
   });
+
+  /**
+   * The additional (opt-in) shitot, pinned at the Jerusalem equinox. These lock
+   * our method WIRING — each value is produced by the exact KosherJava
+   * calculation named in definitions.ts. The engine itself is Hebcal-validated
+   * to the second by the Jerusalem case above, and the ordering-invariants
+   * sweep guards their chronology across latitudes/seasons; this block guards
+   * that the right method stays bound to the right key.
+   */
+  it('pins the added shitot (wiring locks, Jerusalem equinox)', () => {
+    const zmanim = computeZmanim({ lat: 31.778, lng: 35.2354, date: DateTime.fromISO('2024-03-20') });
+    const byKey = Object.fromEntries(zmanim.map((z) => [z.key, z]));
+    const expected: Record<string, string> = {
+      // Alot ha-Shachar
+      alos90: '04:12:30',
+      alos198: '04:12:34',
+      alos18: '04:21:14',
+      alosBaalHatanya: '04:26:30',
+      alos72Zmanis: '04:29:40',
+      alos60: '04:42:30',
+      // Misheyakir
+      misheyakir95: '05:01:40',
+      misheyakir765: '05:10:25',
+      // Sof zman Shma
+      sofZmanShmaMGA90: '07:59:33',
+      sofZmanShmaMGA18: '08:03:58',
+      sofZmanShmaMGA161: '08:08:30',
+      sofZmanShmaBaalHatanya: '08:42:48',
+      // Sof zman Tefila
+      sofZmanTfilaMGA90: '09:15:15',
+      sofZmanTfilaMGA18: '09:18:12',
+      sofZmanTfilaMGA161: '09:21:14',
+      sofZmanTfilaBaalHatanya: '09:44:04',
+      // Mincha Gedola
+      minchaGedola30: '12:16:31',
+      minchaGedolaBaalHatanya: '12:17:15',
+      minchaGedola161: '12:23:03',
+      // Mincha Ketana
+      minchaKetanaBaalHatanya: '15:21:05',
+      minchaKetana161: '16:01:13',
+      // Plag ha-Mincha
+      plagBaalHatanya: '16:37:40',
+      // Tzeit ha-Kochavim
+      tzaisGeonim645: '18:17:12',
+      tzaisGeonim7083: '18:20:12',
+      tzaisAteretTorah: '18:30:44',
+      tzais50: '18:40:44',
+      tzais60: '18:50:44',
+      tzais161: '19:03:02',
+      tzais72Zmanis: '19:03:34',
+      tzais18: '19:12:10',
+      tzais90: '19:20:44',
+    };
+    for (const [key, want] of Object.entries(expected)) {
+      const zman = byKey[key];
+      expect(zman, `missing zman ${key}`).toBeDefined();
+      expect(zman.time ? zman.time.toFormat('HH:mm:ss') : null, key).toBe(want);
+    }
+  });
 });

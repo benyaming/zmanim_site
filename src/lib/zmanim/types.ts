@@ -76,4 +76,11 @@ export interface ComputeZmanimInput {
   timeZoneId?: string;
   /** Candle-lighting minutes before sunset. Defaults to 18 (40 is common for Jerusalem). */
   candleLightingOffset?: number;
+  /**
+   * Restrict computation to these zman keys (a performance optimization for
+   * callers that only need a few — e.g. the calendar grid needs just the
+   * event-dot times, not all 50+ opinions). Omitted = compute every zman.
+   * Unknown keys are ignored; the result keeps definition order.
+   */
+  keys?: Iterable<string>;
 }

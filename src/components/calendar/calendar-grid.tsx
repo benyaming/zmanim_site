@@ -13,6 +13,7 @@ import {
   buildMonthGrid,
   type CalendarMode,
   createHebrewFormatter,
+  dayEventZmanKeys,
   getDayEvents,
   getDayInfo,
   localizedHolidayLabel,
@@ -21,7 +22,7 @@ import {
 } from '@/lib/calendar';
 import { type CustomDate, type CustomDateKind, customDatesFingerprint, occurrencesOn } from '@/lib/custom-dates';
 import { type AppLocation } from '@/lib/location';
-import { applyLehumraToEvents, computeZmanim, type HavdalahOpinion, havdalahTime } from '@/lib/zmanim';
+import { applyLehumraToEvents, computeZmanim, type HavdalahOpinion, havdalahTime, havdalahZmanKey } from '@/lib/zmanim';
 
 import { CalendarDay, type CellChip, type CellDensity } from './calendar-day';
 
@@ -118,6 +119,8 @@ function computeDayRender(date: DateTime, cfg: DayRenderCfg) {
     chips.push({ label: cfg.roshChodeshLabel, category: 'roshChodesh' });
   }
 
+  // A cell shows only event dots (candle/havdalah/fast times), so compute just
+  // the keys those need — not all 50+ opinions — for far cheaper month renders.
   const zmanim = computeZmanim({
     lat: location.lat,
     lng: location.lng,
@@ -126,23 +129,26 @@ function computeDayRender(date: DateTime, cfg: DayRenderCfg) {
     useElevation: cfg.useElevation,
     timeZoneId: location.timeZoneId,
     candleLightingOffset: cfg.candleLightingOffset,
+    keys: dayEventZmanKeys(havdalahZmanKey(cfg.havdalahOpinion)),
   });
   const byKey = Object.fromEntries(zmanim.map((z) => [z.key, z.time]));
-  // A cell only has room for one fast-end time — keep the earliest opinion
-  // (Geonim 5.95°); the day panel shows all three.
-  const rawEvents = getDayEvents(
+  // A cell only has room for one fast-end time — keep the earliest opinion (the
+  // full catalog, so it stays the canonical earliest regardless of the user's
+  // panel selection); the day panel shows every chosen opinion.
+  const allEvents = getDayEvents(
     date,
     {
       candleLighting: byKey.candleLighting,
       alos: byKey.alosHashachar,
       sunset: byKey.sunset,
-      tzaisGeonim: byKey.tzaisGeonim,
-      tzais: byKey.tzais,
-      tzais42: byKey.tzais42,
       havdalah: havdalahTime(cfg.havdalahOpinion, byKey),
+      tzeitByKey: byKey,
     },
     location.inIsrael,
-  ).filter((e) => e.type !== 'fastEnd' || e.zmanKey === 'tzaisGeonim');
+    [],
+  );
+  const firstFastEnd = allEvents.find((e) => e.type === 'fastEnd');
+  const rawEvents = allEvents.filter((e) => e.type !== 'fastEnd' || e === firstFastEnd);
   const events = cfg.lehumra ? applyLehumraToEvents(rawEvents) : rawEvents;
 
   // Personal dates: one teal chip each. Cells are tight, so show only the

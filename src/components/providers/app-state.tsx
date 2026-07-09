@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 import { useLocale, useTranslations } from 'next-intl';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { type CalendarMode, monthAnchor } from '@/lib/calendar';
+import { type CalendarMode, DEFAULT_HIDDEN_FAST_END, monthAnchor, sanitizeHiddenFastEnd } from '@/lib/calendar';
 import { type CustomDate, MAX_CUSTOM_DATES, newCustomDateId, sanitizeCustomDates } from '@/lib/custom-dates';
 import { browserGeolocate } from '@/lib/geo/browser-location';
 import { fetchElevation } from '@/lib/geo/elevation';
@@ -80,6 +80,10 @@ interface AppStateValue {
   hiddenLearning: string[];
   setLearningVisible: (key: string, visible: boolean) => void;
   showAllLearning: () => void;
+  /** Fast-end opinion keys the user chose to hide (see fast-end.ts). */
+  hiddenFastEnd: string[];
+  setFastEndVisible: (key: string, visible: boolean) => void;
+  showAllFastEnd: () => void;
   /** Personal recurring dates (birthdays, bar/bat mitzvahs, yahrzeits). */
   customDates: CustomDate[];
   /** Add an entry; a no-op once MAX_CUSTOM_DATES is reached. Returns the new id, or null if full. */
@@ -120,6 +124,10 @@ interface PersistedPrefs {
   seenOptInZmanim?: string[];
   /** Hidden learning cycles — same hide-list convention as hiddenZmanim. */
   hiddenLearning?: string[];
+  /** Hidden fast-end opinions — hide-list convention; applied only when customized. */
+  hiddenFastEnd?: string[];
+  /** True once the user has touched the fast-end picker; only then does hiddenFastEnd override the default. */
+  fastEndCustomized?: boolean;
   /** Personal recurring dates. */
   customDates?: CustomDate[];
 }
@@ -249,6 +257,24 @@ export function AppStateProvider({
     });
   const showAllLearning = () => setHiddenLearning([]);
 
+  // Fast-end opinions start at the curated default set (see DEFAULT_HIDDEN_FAST_END).
+  // Only a persisted list from a user who actually customized it overrides the
+  // default (fastEndCustomized) — so tweaks to the default reach everyone who
+  // hasn't hand-picked, instead of being frozen by the eager persist.
+  const [hiddenFastEnd, setHiddenFastEnd] = useState<string[]>([...DEFAULT_HIDDEN_FAST_END]);
+  const [fastEndCustomized, setFastEndCustomized] = useState(false);
+  const setFastEndVisible = (key: string, visible: boolean) => {
+    setFastEndCustomized(true);
+    setHiddenFastEnd((prev) => {
+      if (visible) return prev.includes(key) ? prev.filter((k) => k !== key) : prev;
+      return prev.includes(key) ? prev : [...prev, key];
+    });
+  };
+  const showAllFastEnd = () => {
+    setFastEndCustomized(true);
+    setHiddenFastEnd([]);
+  };
+
   const [customDates, setCustomDates] = useState<CustomDate[]>([]);
   const addCustomDate = (entry: Omit<CustomDate, 'id'>): string | null => {
     if (customDates.length >= MAX_CUSTOM_DATES) return null;
@@ -292,6 +318,13 @@ export function AppStateProvider({
     }
     const savedHiddenLearning = sanitizeHiddenLearning(prefs.hiddenLearning);
     if (savedHiddenLearning.length > 0) setHiddenLearning(savedHiddenLearning);
+    // Fast-end default is a curated non-empty set (unlike learning's show-all),
+    // so a stored list overrides it only once the user has actually customized —
+    // otherwise the current default applies, so default tweaks reach them.
+    if (prefs.fastEndCustomized && Array.isArray(prefs.hiddenFastEnd)) {
+      setHiddenFastEnd(sanitizeHiddenFastEnd(prefs.hiddenFastEnd));
+      setFastEndCustomized(true);
+    }
     const savedList = sanitizeSavedLocations(prefs.savedLocations);
     if (savedList.length > 0) setSavedLocations(savedList);
     const savedCustomDates = sanitizeCustomDates(prefs.customDates);
@@ -399,13 +432,15 @@ export function AppStateProvider({
           zmanimCustomized,
           seenOptInZmanim: [...OPT_IN_ZMANIM],
           hiddenLearning,
+          hiddenFastEnd,
+          fastEndCustomized,
           customDates,
         }),
       );
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, hiddenZmanim, zmanimCustomized, hiddenLearning, customDates]);
+  }, [location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, hiddenZmanim, zmanimCustomized, hiddenLearning, hiddenFastEnd, fastEndCustomized, customDates]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
@@ -492,6 +527,9 @@ export function AppStateProvider({
     hiddenLearning,
     setLearningVisible,
     showAllLearning,
+    hiddenFastEnd,
+    setFastEndVisible,
+    showAllFastEnd,
     customDates,
     addCustomDate,
     updateCustomDate,

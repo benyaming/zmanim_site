@@ -26,6 +26,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useZmanim } from '@/hooks/use-zmanim';
 import {
+  DEFAULT_HIDDEN_FAST_END,
+  dayEventZmanKeys,
   getDayEvents,
   getDayInfo,
   isErevPesach,
@@ -72,6 +74,7 @@ function dayEventsFor(
   candleLightingOffset: number,
   havdalahOpinion: HavdalahOpinion,
   useElevation: boolean,
+  hiddenFastEnd: readonly string[] = DEFAULT_HIDDEN_FAST_END,
 ): DayEvent[] {
   const z = computeZmanim({
     lat: location.lat,
@@ -81,6 +84,8 @@ function dayEventsFor(
     useElevation,
     timeZoneId: location.timeZoneId,
     candleLightingOffset,
+    // Only event times are read here — not the full opinion list.
+    keys: dayEventZmanKeys(havdalahZmanKey(havdalahOpinion)),
   });
   const byKey = Object.fromEntries(z.map((x) => [x.key, x.time]));
   return getDayEvents(
@@ -89,12 +94,11 @@ function dayEventsFor(
       candleLighting: byKey.candleLighting,
       alos: byKey.alosHashachar,
       sunset: byKey.sunset,
-      tzaisGeonim: byKey.tzaisGeonim,
-      tzais: byKey.tzais,
-      tzais42: byKey.tzais42,
       havdalah: havdalahTime(havdalahOpinion, byKey),
+      tzeitByKey: byKey,
     },
     location.inIsrael,
+    hiddenFastEnd,
   );
 }
 
@@ -109,6 +113,7 @@ function buildDayTimes(
   candleLightingOffset: number,
   havdalahOpinion: HavdalahOpinion,
   useElevation: boolean,
+  hiddenFastEnd: readonly string[],
 ): DayEvent[] {
   const inIsrael = location.inIsrael;
   const bookends: DayEvent[] = [];
@@ -148,9 +153,14 @@ function buildDayTimes(
   }
 
   // Same-day fast events (minor fasts, Yom Kippur, Tisha B'Av).
-  let fasts = dayEventsFor(selectedDay, location, candleLightingOffset, havdalahOpinion, useElevation).filter(
-    (e) => e.type === 'fastStart' || e.type === 'fastEnd',
-  );
+  let fasts = dayEventsFor(
+    selectedDay,
+    location,
+    candleLightingOffset,
+    havdalahOpinion,
+    useElevation,
+    hiddenFastEnd,
+  ).filter((e) => e.type === 'fastStart' || e.type === 'fastEnd');
 
   // Tisha B'Av spans two civil days (sunset on the eve → nightfall), so show
   // BOTH its bookends on both days, mirroring the rest-day bookends above.
@@ -169,7 +179,14 @@ function buildDayTimes(
     if (start) fasts = [start, ...fasts];
   } else if (isTishaBav(selectedDay.plus({ days: 1 }))) {
     // The eve: append tomorrow's fast-end times after tonight's onset.
-    const day = dayEventsFor(selectedDay.plus({ days: 1 }), location, candleLightingOffset, havdalahOpinion, useElevation);
+    const day = dayEventsFor(
+      selectedDay.plus({ days: 1 }),
+      location,
+      candleLightingOffset,
+      havdalahOpinion,
+      useElevation,
+      hiddenFastEnd,
+    );
     fasts = [...fasts, ...day.filter((e) => e.type === 'fastEnd')];
   }
 
@@ -252,8 +269,17 @@ function customChip(occ: CustomDateOccurrence, t: Translator): Chip {
 }
 
 export function ZmanimPanel() {
-  const { selectedDay, location, candleLightingOffset, havdalahOpinion, hiddenZmanim, useElevation, lehumra, customDates } =
-    useAppState();
+  const {
+    selectedDay,
+    location,
+    candleLightingOffset,
+    havdalahOpinion,
+    hiddenZmanim,
+    hiddenFastEnd,
+    useElevation,
+    lehumra,
+    customDates,
+  } = useAppState();
   const zmanim = useZmanim();
   const locale = useLocale();
   const tName = useTranslations('zmanim.names');
@@ -264,6 +290,7 @@ export function ZmanimPanel() {
   const tCat = useTranslations('categories');
   const tPanel = useTranslations('panel');
   const tEvents = useTranslations('events');
+  const tFastEnd = useTranslations('events.fastEndOpinions');
   const tCustom = useTranslations('customDates');
 
   const info = getDayInfo(selectedDay, undefined, locale, location.inIsrael);
@@ -275,7 +302,14 @@ export function ZmanimPanel() {
   // plus any fast times for the selected day. Lehumra rounds per event type
   // (fast start DOWN although its clock time is alot, which rounds up as a
   // zman row), so it applies here rather than inside computeZmanim.
-  const rawEvents = buildDayTimes(selectedDay, location, candleLightingOffset, havdalahOpinion, useElevation);
+  const rawEvents = buildDayTimes(
+    selectedDay,
+    location,
+    candleLightingOffset,
+    havdalahOpinion,
+    useElevation,
+    hiddenFastEnd,
+  );
   const events = lehumra ? applyLehumraToEvents(rawEvents) : rawEvents;
   // The fast end arrives once per tzeit opinion — render those as one grouped
   // block instead of repeating the "Fast ends" row three times.
@@ -375,7 +409,7 @@ export function ZmanimPanel() {
                 <div className="mt-1 space-y-1 ps-6">
                   {fastEndEvents.map((event) => (
                     <div key={event.zmanKey} className="flex items-center justify-between gap-3">
-                      <span className="text-muted-foreground text-xs">{event.zmanKey ? tShita(event.zmanKey) : ''}</span>
+                      <span className="text-muted-foreground text-xs">{event.zmanKey ? tFastEnd(event.zmanKey) : ''}</span>
                       <time className="font-mono text-sm tabular-nums">{formatTime(event.time, locale)}</time>
                     </div>
                   ))}

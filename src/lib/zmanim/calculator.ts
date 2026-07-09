@@ -42,7 +42,13 @@ export function computeZmanim(input: ComputeZmanimInput): ComputedZman[] {
   );
   calendar.setDate(localNoon);
 
-  return ZMANIM.map((def) => {
+  // Compute only the requested subset when `keys` is given — the grid and
+  // exports pass just the keys they render, avoiding dozens of unused solar
+  // calculations per day.
+  const wanted = input.keys ? new Set(input.keys) : null;
+  const defs = wanted ? ZMANIM.filter((d) => wanted.has(d.key)) : ZMANIM;
+
+  return defs.map((def) => {
     // Duration zmanim (shaah zmanis): the method returns a length in ms, with
     // kosher-zmanim's Long.MIN_VALUE sentinel (NaN) when the day is undefined.
     if (def.duration) {
