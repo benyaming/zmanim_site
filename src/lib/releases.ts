@@ -26,14 +26,17 @@ export const RELEASES: readonly Release[] = [
     notes: {
       en: [
         'Zmanim export adds a CSV format and optional daily-learning columns.',
+        'Fast days now stand out in red on the calendar.',
         'Fixed the calendar controls wrapping to a second line when the month label is long.',
       ],
       he: [
         'ייצוא הזמנים כולל כעת פורמט CSV ועמודות לימוד יומי לבחירה.',
+        'ימי תענית מסומנים כעת באדום בלוח.',
         'תוקן: כפתורי הלוח נשברו לשורה שנייה כשתווית החודש ארוכה.',
       ],
       ru: [
         'Экспорт зманим получил формат CSV и столбцы ежедневного изучения.',
+        'Постовые дни теперь выделены красным в календаре.',
         'Исправлено: кнопки календаря переносились на вторую строку при длинном названии месяца.',
       ],
     },
