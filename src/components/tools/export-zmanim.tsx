@@ -9,6 +9,7 @@ import { useAppState } from '@/components/providers/app-state';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
+import { ZMAN_PICKER_SECTIONS, ZmanBaseControl } from '@/components/zmanim/zman-picker';
 import { dirForLocale } from '@/i18n/routing';
 import {
   buildZmanimTable,
@@ -21,22 +22,12 @@ import {
 } from '@/lib/export';
 import { LEARNING_CYCLE_KEYS, type LearningCycleKey } from '@/lib/learning';
 import { SITE_HOST } from '@/lib/site';
-import { CONFIGURABLE_ZMANIM, type ZmanCategory, ZMANIM } from '@/lib/zmanim';
+import { CONFIGURABLE_ZMANIM, ZMANIM } from '@/lib/zmanim';
 
 import { reportTranslator } from './export-i18n';
 import { renderExportPages } from './export-render';
 import { useExportComputeOptions, useExportLocation, useReportLocale } from './export-shared';
 import { ExportTablePage, TABLE_ROWS_PER_PAGE } from './export-table-page';
-
-// Picker structure: categories → keys, mirroring the calendar-settings picker.
-interface ZmanSection {
-  category: ZmanCategory;
-  keys: string[];
-}
-
-const ZMAN_SECTIONS: ZmanSection[] = (['dawn', 'morning', 'midday', 'afternoon', 'evening'] as ZmanCategory[])
-  .map((category) => ({ category, keys: CONFIGURABLE_ZMANIM.filter((z) => z.category === category).map((z) => z.key) }))
-  .filter((s) => s.keys.length > 0);
 
 /** Bases with several shitot get "name · shita" labels; single-opinion ones just the name. */
 const BASE_KEY_COUNT = new Map<string, number>();
@@ -60,12 +51,6 @@ export function ExportZmanimTool() {
   const tr = reportTranslator(reportLocale);
   const reportDir = dirForLocale(reportLocale) === 'rtl' ? 'rtl' : 'ltr';
 
-  /** Picker labels — UI language. */
-  const zmanLabel = (key: string) => {
-    const def = ZMANIM.find((z) => z.key === key);
-    const multi = def ? (BASE_KEY_COUNT.get(def.base) ?? 1) > 1 : false;
-    return multi ? `${tName(key)} · ${tShita(key)}` : tName(key);
-  };
   /** Column headers — report language. */
   const zmanHeader = (key: string) => {
     const def = ZMANIM.find((z) => z.key === key);
@@ -80,6 +65,15 @@ export function ExportZmanimTool() {
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
     () => new Set(CONFIGURABLE_ZMANIM.filter((z) => !hiddenZmanim.includes(z.key)).map((z) => z.key)),
   );
+  // Which multi-shita bases are expanded in the picker (all collapsed by default).
+  const [openBases, setOpenBases] = useState<Set<string>>(new Set());
+  const toggleBase = (base: string) =>
+    setOpenBases((prev) => {
+      const next = new Set(prev);
+      if (next.has(base)) next.delete(base);
+      else next.add(base);
+      return next;
+    });
   // The combined day columns: parsha (+ special Shabbat name), candle
   // lighting + havdalah, and the fast bookends.
   const [includeParsha, setIncludeParsha] = useState(true);
@@ -294,20 +288,24 @@ export function ExportZmanimTool() {
       <div className="space-y-2 lg:col-start-2 lg:row-span-2 lg:row-start-1">
         <span className="text-sm font-medium">{t('zmanimPick')}</span>
         <div className="space-y-3 rounded-lg border p-3 lg:columns-2 lg:gap-x-10">
-          {ZMAN_SECTIONS.map((section) => (
+          {ZMAN_PICKER_SECTIONS.map((section) => (
             <section key={section.category} className="space-y-1.5 lg:break-inside-avoid">
               <h4 className="text-muted-foreground/70 text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
                 {tGroup(section.category)}
               </h4>
-              {section.keys.map((key) => (
-                <label key={key} htmlFor={`export-zman-${key}`} className="flex cursor-pointer items-center gap-2">
-                  <Checkbox
-                    id={`export-zman-${key}`}
-                    checked={selectedKeys.has(key)}
-                    onCheckedChange={(v) => setKeySelected(key, v === true)}
-                  />
-                  <span className="text-sm">{zmanLabel(key)}</span>
-                </label>
+              {section.bases.map(({ base, keys }) => (
+                <ZmanBaseControl
+                  key={base}
+                  base={base}
+                  name={tName(keys[0])}
+                  keys={keys}
+                  shitaLabel={tShita}
+                  isSelected={(k) => selectedKeys.has(k)}
+                  setSelected={setKeySelected}
+                  open={openBases.has(base)}
+                  onToggleOpen={() => toggleBase(base)}
+                  idPrefix="export-zman"
+                />
               ))}
             </section>
           ))}

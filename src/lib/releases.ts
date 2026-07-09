@@ -21,6 +21,27 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.17',
+    date: '2026-07-09',
+    notes: {
+      en: [
+        'Many more zman opinions — Baal HaTanya, Rabbeinu Tam, extra Tzeit / Alot / Misheyakir shitot — opt-in in settings.',
+        'Configurable end-of-fast times, including the earlier gmar-taanis (three-medium-stars) opinions for minor fasts.',
+        'Accurate, source-checked descriptions for every zman and opinion; the day panel now lists them in time order.',
+      ],
+      he: [
+        'שיטות רבות נוספות לזמנים — בעל התניא, רבנו תם ועוד שיטות צאת הכוכבים, עלות וציצית — לבחירה בהגדרות.',
+        'זמני סיום תענית הניתנים להגדרה, כולל שיטות גמר תענית המוקדמות (שלושה כוכבים בינוניים) לתעניות קלות.',
+        'תיאורים מדויקים ומאומתים לכל זמן ושיטה; פאנל היום מציג אותם לפי סדר הזמן.',
+      ],
+      ru: [
+        'Больше мнений для зманим — Бааль а-Тания, Рабейну Там, дополнительные шитот выхода звёзд, зари и мишеякир — по выбору в настройках.',
+        'Настраиваемое время окончания поста, включая более ранние мнения гмар-таанит (три средние звезды) для малых постов.',
+        'Точные, сверенные с источниками описания каждого змана и мнения; панель дня показывает их по времени.',
+      ],
+    },
+  },
+  {
     version: '1.16',
     date: '2026-07-09',
     notes: {

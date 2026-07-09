@@ -1,6 +1,6 @@
 import type { DateTime } from 'luxon';
 
-import { createHebrewFormatter, getDayEvents, getDayInfo, localizedHolidayLabel } from '@/lib/calendar';
+import { createHebrewFormatter, dayEventZmanKeys, getDayEvents, getDayInfo, localizedHolidayLabel } from '@/lib/calendar';
 import { formatDuration, formatTime } from '@/lib/format';
 import { getDailyLearning, LEARNING_CYCLE_KEYS, type LearningCycleKey } from '@/lib/learning';
 import type { AppLocation } from '@/lib/location';
@@ -11,6 +11,7 @@ import {
   DEFAULT_HAVDALAH_OPINION,
   type HavdalahOpinion,
   havdalahTime,
+  havdalahZmanKey,
   ZMANIM,
 } from '@/lib/zmanim';
 
@@ -113,6 +114,9 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
   const learningKeys = o.learningKeys ?? [];
   const rows: ZmanimTableRow[] = [];
   const days = Math.min(tableDayCount(o.start, o.end), MAX_TABLE_DAYS);
+  // Compute only the selected columns plus the keys the day events need — not
+  // every opinion — which matters most over a long date range.
+  const computeKeys = new Set([...keys, ...dayEventZmanKeys(havdalahZmanKey(havdalahOpinion))]);
 
   for (let i = 0; i < days; i++) {
     const date = o.start.startOf('day').plus({ days: i });
@@ -124,6 +128,7 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       useElevation: o.useElevation,
       timeZoneId: o.location.timeZoneId,
       candleLightingOffset: o.candleLightingOffset,
+      keys: computeKeys,
     });
     const zmanim = o.lehumra ? applyLehumra(computed) : computed;
     const byKey = new Map(zmanim.map((z) => [z.key, z]));
@@ -132,21 +137,22 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
     const holiday = localizedHolidayLabel(o.locale, info.label, info.yomTovIndex, info.dayOfChanukah) ?? '';
 
     // Same event set as the calendar cells, incl. the earliest-opinion fast
-    // end (Geonim 5.95°) and the per-event lehumra rounding directions.
+    // end and the per-event lehumra rounding directions.
     const timeByKey = Object.fromEntries(zmanim.map((z) => [z.key, z.time]));
-    const rawEvents = getDayEvents(
+    const allEvents = getDayEvents(
       date,
       {
         candleLighting: timeByKey.candleLighting,
         alos: timeByKey.alosHashachar,
         sunset: timeByKey.sunset,
-        tzaisGeonim: timeByKey.tzaisGeonim,
-        tzais: timeByKey.tzais,
-        tzais42: timeByKey.tzais42,
         havdalah: havdalahTime(havdalahOpinion, timeByKey),
+        tzeitByKey: timeByKey,
       },
       o.location.inIsrael,
-    ).filter((e) => e.type !== 'fastEnd' || e.zmanKey === 'tzaisGeonim');
+      [],
+    );
+    const firstFastEnd = allEvents.find((e) => e.type === 'fastEnd');
+    const rawEvents = allEvents.filter((e) => e.type !== 'fastEnd' || e === firstFastEnd);
     const events = o.lehumra ? applyLehumraToEvents(rawEvents) : rawEvents;
     const eventTime = (type: string) => {
       const e = events.find((ev) => ev.type === type);

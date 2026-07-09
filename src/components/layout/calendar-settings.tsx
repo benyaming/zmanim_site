@@ -2,6 +2,7 @@
 
 import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 import { CANDLE_OFFSET_MAX, CANDLE_OFFSET_MIN, useAppState } from '@/components/providers/app-state';
 import { Button } from '@/components/ui/button';
@@ -9,43 +10,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { ZMAN_PICKER_SECTIONS, ZmanBaseControl } from '@/components/zmanim/zman-picker';
+import { FAST_END_OPINIONS, type FastEndKind } from '@/lib/calendar';
 import { LEARNING_CYCLE_KEYS } from '@/lib/learning';
-import {
-  CONFIGURABLE_ZMANIM,
-  HAVDALAH_OPINIONS,
-  havdalahZmanKey,
-  type HavdalahOpinion,
-  isHavdalahOpinion,
-  type ZmanCategory,
-} from '@/lib/zmanim';
+import { HAVDALAH_OPINIONS, havdalahZmanKey, type HavdalahOpinion, isHavdalahOpinion } from '@/lib/zmanim';
 
 import { SettingsDialogShell } from './settings-shell';
 
-interface ZmanBaseEntry {
-  base: string;
-  /** All shitot of this base, in definition (chronological) order. */
-  keys: string[];
-}
-
-interface ZmanSection {
-  category: ZmanCategory;
-  bases: ZmanBaseEntry[];
-}
-
-// The picker's structure (categories → bases → shitot) mirrors the zmanim
-// panel exactly, so what you toggle here is what you see there. ZMANIM is
-// static, so this is built once at module load.
-const ZMAN_SECTIONS: ZmanSection[] = (['dawn', 'morning', 'midday', 'afternoon', 'evening'] as ZmanCategory[])
-  .map((category) => {
-    const bases = new Map<string, ZmanBaseEntry>();
-    for (const z of CONFIGURABLE_ZMANIM.filter((z) => z.category === category)) {
-      const entry = bases.get(z.base) ?? { base: z.base, keys: [] };
-      entry.keys.push(z.key);
-      bases.set(z.base, entry);
-    }
-    return { category, bases: [...bases.values()] };
-  })
-  .filter((s) => s.bases.length > 0);
+// Fast-end opinions grouped by severity, for the picker: gmar-taanis (three
+// medium stars — minor fasts) then nightfall (three small stars — all fasts).
+const FAST_END_GROUPS: { kind: FastEndKind; keys: string[] }[] = (['gmarTaanis', 'nightfall'] as FastEndKind[]).map(
+  (kind) => ({ kind, keys: FAST_END_OPINIONS.filter((o) => o.kind === kind).map((o) => o.key) }),
+);
 
 function ZmanCheckboxRow({
   id,
@@ -81,6 +57,8 @@ export function CalendarSettings() {
   const tShita = useTranslations('zmanim.shitot');
   const tGroup = useTranslations('zmanim.groups');
   const tLearning = useTranslations('learning');
+  const tFastEnd = useTranslations('events.fastEndOpinions');
+  const tFastEndKind = useTranslations('events.fastEndKinds');
   const {
     location,
     candleLightingOffset,
@@ -97,14 +75,30 @@ export function CalendarSettings() {
     hiddenLearning,
     setLearningVisible,
     showAllLearning,
+    hiddenFastEnd,
+    setFastEndVisible,
+    showAllFastEnd,
   } = useAppState();
   const opinionLabel = (opinion: HavdalahOpinion) => {
     const key = havdalahZmanKey(opinion);
     return `${tName(key)} · ${tShita(key)}`;
   };
 
+  // Which multi-shita bases are expanded in the picker. All collapsed by
+  // default so the list stays one row per zman; the shown/total count conveys
+  // state without opening them.
+  const [openBases, setOpenBases] = useState<Set<string>>(new Set());
+  const toggleBase = (base: string) =>
+    setOpenBases((prev) => {
+      const next = new Set(prev);
+      if (next.has(base)) next.delete(base);
+      else next.add(base);
+      return next;
+    });
+
   const hidden = new Set(hiddenZmanim);
   const hiddenCycles = new Set(hiddenLearning);
+  const hiddenFast = new Set(hiddenFastEnd);
 
   return (
     <SettingsDialogShell icon={Settings} label={t('calendarOpen')} title={t('calendarTitle')} wide>
@@ -218,6 +212,41 @@ export function CalendarSettings() {
 
       <Separator className="lg:hidden" />
 
+      {/* Which end-of-fast opinions appear on a fast day. Grouped by severity:
+          gmar-taanis (three medium stars — minor fasts) and nightfall (three
+          small stars — all fasts, incl. Tisha b'Av). */}
+      <div className="space-y-2">
+        <div className="flex min-h-8 items-center justify-between gap-2">
+          <span className="text-sm font-medium">{t('fastEndDisplay')}</span>
+          {hiddenFastEnd.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={showAllFastEnd}>
+              {t('zmanimShowAll')}
+            </Button>
+          )}
+        </div>
+        <div className="space-y-2.5 rounded-lg border p-3">
+          {FAST_END_GROUPS.map(({ kind, keys }) => (
+            <div key={kind} className="space-y-1.5">
+              <h5 className="text-muted-foreground/70 text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
+                {tFastEndKind(kind)}
+              </h5>
+              {keys.map((key) => (
+                <ZmanCheckboxRow
+                  key={key}
+                  id={`fastend-${key}`}
+                  label={tFastEnd(key)}
+                  checked={!hiddenFast.has(key)}
+                  onChange={(visible) => setFastEndVisible(key, visible)}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+        <p className="text-muted-foreground text-xs">{t('fastEndDisplayHint')}</p>
+      </div>
+
+      <Separator className="lg:hidden" />
+
       <div className="space-y-2 lg:col-span-2">
         <div className="flex min-h-8 items-center justify-between gap-2">
           <span className="text-sm font-medium">{t('zmanimDisplay')}</span>
@@ -230,56 +259,25 @@ export function CalendarSettings() {
         {/* The dialog body is the single scroll context (see SettingsDialogShell),
             so this list no longer scrolls on its own. */}
         <div className="space-y-3 rounded-lg border p-3 lg:columns-2 lg:gap-x-10">
-          {ZMAN_SECTIONS.map((section) => (
+          {ZMAN_PICKER_SECTIONS.map((section) => (
             <section key={section.category} className="space-y-1.5 lg:break-inside-avoid">
               <h4 className="text-muted-foreground/70 text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
                 {tGroup(section.category)}
               </h4>
-              {section.bases.map(({ base, keys }) => {
-                // Single opinion → one flat checkbox. Several → a parent checkbox
-                // toggling the whole zman, with one checkbox per shita under it.
-                if (keys.length === 1) {
-                  const key = keys[0];
-                  return (
-                    <ZmanCheckboxRow
-                      key={base}
-                      id={`zman-${key}`}
-                      label={tName(key)}
-                      checked={!hidden.has(key)}
-                      onChange={(visible) => setZmanVisible(key, visible)}
-                    />
-                  );
-                }
-                const visibleCount = keys.filter((k) => !hidden.has(k)).length;
-                return (
-                  <div key={base} className="space-y-1">
-                    <label htmlFor={`zman-base-${base}`} className="flex cursor-pointer items-center gap-2">
-                      <Checkbox
-                        id={`zman-base-${base}`}
-                        checked={visibleCount === keys.length ? true : visibleCount === 0 ? false : 'indeterminate'}
-                        // Partially shown → show all; fully shown → hide all.
-                        onCheckedChange={() => {
-                          const showAll = visibleCount < keys.length;
-                          keys.forEach((k) => setZmanVisible(k, showAll));
-                        }}
-                      />
-                      <span className="text-sm">{tName(keys[0])}</span>
-                    </label>
-                    <div className="space-y-1 ps-6">
-                      {keys.map((key) => (
-                        <ZmanCheckboxRow
-                          key={key}
-                          id={`zman-${key}`}
-                          label={tShita(key)}
-                          checked={!hidden.has(key)}
-                          onChange={(visible) => setZmanVisible(key, visible)}
-                          muted
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+              {section.bases.map(({ base, keys }) => (
+                <ZmanBaseControl
+                  key={base}
+                  base={base}
+                  name={tName(keys[0])}
+                  keys={keys}
+                  shitaLabel={tShita}
+                  isSelected={(k) => !hidden.has(k)}
+                  setSelected={setZmanVisible}
+                  open={openBases.has(base)}
+                  onToggleOpen={() => toggleBase(base)}
+                  idPrefix="zman"
+                />
+              ))}
             </section>
           ))}
         </div>

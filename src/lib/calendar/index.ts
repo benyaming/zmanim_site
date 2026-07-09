@@ -1,5 +1,14 @@
 export { createHebrewFormatter, getDayInfo, isErevPesach } from './day-info';
-export { type DayEvent, type DayEventType, FAST_END_OPINIONS, type FastEndOpinion, getDayEvents } from './day-events';
+export { type DayEvent, type DayEventType, dayEventZmanKeys, getDayEvents } from './day-events';
+export {
+  DEFAULT_HIDDEN_FAST_END,
+  FAST_END_OPINIONS,
+  type FastEndKind,
+  type FastEndOpinionDef,
+  type FastEndOpinionKey,
+  fastEndOpinionsFor,
+  sanitizeHiddenFastEnd,
+} from './fast-end';
 export { getMolad, type MoladInfo } from './molad';
 export { localizedHolidayLabel, ruHolidayLabel } from './holidays-ru';
 export { RU_MONTHS, RU_MONTHS_GENITIVE } from './months-ru';
