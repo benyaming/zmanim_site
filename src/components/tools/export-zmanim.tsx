@@ -1,6 +1,6 @@
 'use client';
 
-import { FileDown, FileSpreadsheet } from 'lucide-react';
+import { FileDown, FileSpreadsheet, FileText } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -13,11 +13,13 @@ import { dirForLocale } from '@/i18n/routing';
 import {
   buildZmanimTable,
   type DayColumnKey,
+  exportTableToCsv,
   exportTableToExcel,
   MAX_TABLE_DAYS,
   pagesToPdf,
   tableDayCount,
 } from '@/lib/export';
+import { LEARNING_CYCLE_KEYS, type LearningCycleKey } from '@/lib/learning';
 import { SITE_HOST } from '@/lib/site';
 import { CONFIGURABLE_ZMANIM, type ZmanCategory, ZMANIM } from '@/lib/zmanim';
 
@@ -47,7 +49,8 @@ export function ExportZmanimTool() {
   const tShita = useTranslations('zmanim.shitot');
   const tGroup = useTranslations('zmanim.groups');
   const tPanel = useTranslations('panel');
-  const { candleLightingOffset, havdalahOpinion, hiddenZmanim } = useAppState();
+  const tLearning = useTranslations('learning');
+  const { candleLightingOffset, havdalahOpinion, hiddenZmanim, hiddenLearning } = useAppState();
   const { location, field: locationField } = useExportLocation();
   const { reportLocale, field: languageField } = useReportLocale();
   const { useElevation, lehumra, field: computeField } = useExportComputeOptions(location);
@@ -84,6 +87,10 @@ export function ExportZmanimTool() {
   const [includeFasts, setIncludeFasts] = useState(true);
   const [includeMevarchim, setIncludeMevarchim] = useState(true);
   const [includeOmer, setIncludeOmer] = useState(true);
+  // Daily-learning columns default to the cycles shown in the panel (not hidden).
+  const [selectedLearning, setSelectedLearning] = useState<Set<LearningCycleKey>>(
+    () => new Set(LEARNING_CYCLE_KEYS.filter((k) => !hiddenLearning.includes(k))),
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,7 +103,16 @@ export function ExportZmanimTool() {
     });
   };
 
-  const exportTable = async (format: 'xlsx' | 'pdf') => {
+  const setLearningSelected = (key: LearningCycleKey, selected: boolean) => {
+    setSelectedLearning((prev) => {
+      const next = new Set(prev);
+      if (selected) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  };
+
+  const exportTable = async (format: 'xlsx' | 'csv' | 'pdf') => {
     setError(null);
     const start = DateTime.fromISO(startIso);
     const end = DateTime.fromISO(endIso);
@@ -115,6 +131,7 @@ export function ExportZmanimTool() {
     }
     setBusy(true);
     try {
+      const learningKeys = LEARNING_CYCLE_KEYS.filter((k) => selectedLearning.has(k));
       const table = buildZmanimTable({
         start,
         end,
@@ -126,6 +143,7 @@ export function ExportZmanimTool() {
         locale: reportLocale,
         havdalahOpinion,
         specialShabbatLabel: (name) => tr('panel.specialShabbat', { name }),
+        learningKeys,
       });
       const fixedHeaders = [
         tr('export.colDate'),
@@ -149,6 +167,7 @@ export function ExportZmanimTool() {
           : []),
         ...(includeMevarchim ? [{ key: 'mevarchim' as const, header: tr('panel.shabbatMevarchim') }] : []),
         ...(includeOmer ? [{ key: 'omer' as const, header: tr('export.colOmer') }] : []),
+        ...learningKeys.map((key) => ({ key, header: tr(`learning.${key}`) })),
       ];
       const zmanHeaders = table.keys.map(zmanHeader);
       const footer = tr('export.generatedBy', { site: SITE_HOST });
@@ -165,6 +184,8 @@ export function ExportZmanimTool() {
           sheetName: 'Zmanim',
           filename,
         });
+      } else if (format === 'csv') {
+        exportTableToCsv({ table, fixedHeaders, dayColumns, zmanHeaders, footer, filename });
       } else {
         const pageCount = Math.ceil(table.rows.length / TABLE_ROWS_PER_PAGE);
         const locationLabel = location.customLabel || location.label;
@@ -254,6 +275,20 @@ export function ExportZmanimTool() {
             <span className="text-sm">{t('colOmer')}</span>
           </label>
         </div>
+
+        <div className="space-y-1.5">
+          <span className="text-sm font-medium">{tLearning('title')}</span>
+          {LEARNING_CYCLE_KEYS.map((key) => (
+            <label key={key} htmlFor={`export-learn-${key}`} className="flex cursor-pointer items-center gap-2">
+              <Checkbox
+                id={`export-learn-${key}`}
+                checked={selectedLearning.has(key)}
+                onCheckedChange={(v) => setLearningSelected(key, v === true)}
+              />
+              <span className="text-sm">{tLearning(key)}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-2 lg:col-start-2 lg:row-span-2 lg:row-start-1">
@@ -282,13 +317,17 @@ export function ExportZmanimTool() {
       <div className="space-y-3 lg:col-start-1 lg:row-start-2">
         {error && <p className="text-destructive text-xs">{error}</p>}
         <div className="flex gap-2">
+          <Button onClick={() => exportTable('pdf')} disabled={busy} className="flex-1" variant="outline">
+            <FileDown className="size-4" />
+            {busy ? t('generating') : t('formatPdf')}
+          </Button>
           <Button onClick={() => exportTable('xlsx')} disabled={busy} className="flex-1" variant="outline">
             <FileSpreadsheet className="size-4" />
-            {busy ? t('generating') : t('downloadExcel')}
+            {busy ? t('generating') : t('formatExcel')}
           </Button>
-          <Button onClick={() => exportTable('pdf')} disabled={busy} className="flex-1">
-            <FileDown className="size-4" />
-            {busy ? t('generating') : t('download')}
+          <Button onClick={() => exportTable('csv')} disabled={busy} className="flex-1" variant="outline">
+            <FileText className="size-4" />
+            {busy ? t('generating') : t('formatCsv')}
           </Button>
         </div>
       </div>

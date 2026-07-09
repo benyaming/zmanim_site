@@ -1,6 +1,6 @@
 'use client';
 
-import { PAGE_HEIGHT_PX, PAGE_WIDTH_PX } from '@/lib/export';
+import { PAGE_HEIGHT_PX, PAGE_WIDTH_PX, TEXT_DAY_COLUMNS } from '@/lib/export';
 import type { DayColumnKey, ZmanimTableRow } from '@/lib/export';
 import { cn } from '@/lib/utils';
 
@@ -42,10 +42,14 @@ export function ExportTablePage({
   // Fixed layout: the four leading columns get stable widths; the parsha
   // column (text, not a time) gets extra room; the rest split evenly.
   const fixedWidths = ['9%', '6%', '10%', '11%'];
-  const hasParsha = dayColumns.some((c) => c.key === 'parsha');
-  const timeColumns = dayColumns.length - (hasParsha ? 1 : 0) + zmanHeaders.length;
-  const timeWidth = `${(100 - 36 - (hasParsha ? 10 : 0)) / Math.max(1, timeColumns)}%`;
-  const dayColWidth = (key: DayColumnKey) => (key === 'parsha' ? '10%' : timeWidth);
+  // Text day-columns (parsha, learning readings) get a wider share than time
+  // columns; the share is capped so the time columns still get usable width.
+  const textCols = dayColumns.filter((c) => TEXT_DAY_COLUMNS.has(c.key));
+  const textShare = Math.min(textCols.length * 10, 40);
+  const perTextWidth = textCols.length > 0 ? textShare / textCols.length : 0;
+  const timeColumns = dayColumns.length - textCols.length + zmanHeaders.length;
+  const timeWidth = `${(100 - 36 - textShare) / Math.max(1, timeColumns)}%`;
+  const dayColWidth = (key: DayColumnKey) => (TEXT_DAY_COLUMNS.has(key) ? `${perTextWidth}%` : timeWidth);
 
   return (
     <div
@@ -90,7 +94,7 @@ export function ExportTablePage({
               <td className="truncate px-1 py-[3px]">{row.hebrewDate}</td>
               <td className="truncate px-1 py-[3px]">{row.holiday}</td>
               {dayColumns.map((c) => (
-                <td key={c.key} className={cn('truncate px-1 py-[3px]', c.key !== 'parsha' && 'tabular-nums')}>
+                <td key={c.key} className={cn('truncate px-1 py-[3px]', !TEXT_DAY_COLUMNS.has(c.key) && 'tabular-nums')}>
                   {row[c.key]}
                 </td>
               ))}

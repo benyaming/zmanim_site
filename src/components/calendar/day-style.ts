@@ -24,7 +24,7 @@ export const DAY_TONE: Record<DayTone, { chip: string; dot: string }> = {
   festival: { chip: 'bg-pink-100 text-pink-800 dark:bg-pink-500/20 dark:text-pink-200', dot: 'bg-pink-500' },
   cholHamoed: { chip: 'bg-pink-50 text-pink-700 dark:bg-pink-500/10 dark:text-pink-300', dot: 'bg-pink-300' },
   erev: { chip: 'bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300', dot: 'bg-amber-300' },
-  fast: { chip: 'bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300', dot: 'bg-slate-400' },
+  fast: { chip: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300', dot: 'bg-red-500' },
   roshChodesh: { chip: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300', dot: 'bg-blue-500' },
   chanukah: { chip: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300', dot: 'bg-amber-500' },
   minor: { chip: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/15 dark:text-yellow-300', dot: 'bg-yellow-400' },
