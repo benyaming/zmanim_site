@@ -11,11 +11,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
  * short-night seasonal-hour approximation because its degree-based calculation
  * was undefined).
  *
- * Reveals on HOVER for a mouse and on TAP for touch — not on a deliberate click.
- * The Popover is controlled: mouse pointer-enter/leave opens/closes it, while
- * Radix's own trigger still handles tap (touch), keyboard (Enter/Space),
- * outside-press and Escape — so it works on every input without a hover-only
- * tooltip that touch users couldn't reach.
+ * Controlled so it reveals on HOVER for a mouse (pointer-enter/leave) — no
+ * click needed, which is the point. Radix's own trigger still toggles it on
+ * tap (touch), on click, and on Enter/Space (keyboard), and closes it on
+ * outside-press or Escape — so it's reachable on every input, unlike a
+ * hover-only tooltip that touch users couldn't reach.
  */
 export function WarningHint({ detail, label }: { detail: string; label: string }) {
   const t = useTranslations('panel');
