@@ -56,7 +56,13 @@ const ORDER: Pair[] = [
 
 function timesFor(lat: number, lng: number, date: DateTime): Record<string, DateTime | null> {
   const zmanim = computeZmanim({ lat, lng, date });
-  return Object.fromEntries(zmanim.map((z) => [z.key, z.time]));
+  // Exclude short-night seasonal-hour fallbacks: they are explicit
+  // approximations that fill a null degree time and can legitimately interleave
+  // with real degree values (a real 11.5° misheyakir near solar midnight is a
+  // degenerate value), so they are not part of the real-astronomical ordering
+  // this sweep pins. Hiding them leaves the sweep seeing exactly the real times
+  // it saw before the fallback existed.
+  return Object.fromEntries(zmanim.map((z) => [z.key, z.approximate ? null : z.time]));
 }
 
 describe('zmanim ordering invariants', () => {

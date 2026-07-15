@@ -61,6 +61,7 @@ export default async function CityZmanimPage({ params }: { params: Promise<{ loc
   const tDetail = await getTranslations({ locale, namespace: 'zmanim.descriptions' });
   const tBaseDesc = await getTranslations({ locale, namespace: 'zmanim.baseDescriptions' });
   const tGroup = await getTranslations({ locale, namespace: 'zmanim.groups' });
+  const tZmanim = await getTranslations({ locale, namespace: 'zmanim' });
 
   const today = DateTime.now().setZone(city.timeZoneId);
   const zmanim = computeZmanim({
@@ -129,7 +130,7 @@ export default async function CityZmanimPage({ params }: { params: Promise<{ loc
           </CardHeader>
           <Separator />
           <CardContent className="px-5 py-3">
-            <ZmanimList groups={groups} locale={locale} />
+            <ZmanimList groups={groups} locale={locale} approxNote={tZmanim('approximateNote')} />
           </CardContent>
         </Card>
 

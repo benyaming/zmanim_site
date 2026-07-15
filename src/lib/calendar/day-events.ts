@@ -31,6 +31,12 @@ export interface DayEvent {
    * lehumra rounds it UP, unlike a regular pre-sunset lighting.
    */
   afterNightfall?: boolean;
+  /**
+   * The fast-start (alot) or fast-end (tzeit) time is a short-night seasonal-hour
+   * approximation because its degree-based zman was undefined (see calculator).
+   * Set on fastStart / fastEnd events only.
+   */
+  approximate?: boolean;
 }
 
 /** The zmanim a day's events can reference. */
@@ -51,6 +57,13 @@ export interface DayEventTimes {
    * their time from here. Pass the full `byKey` map.
    */
   tzeitByKey: Record<string, DateTime | null>;
+  /** True when the fast START (alot 16.1°) is a short-night approximation. */
+  alosApproximate?: boolean;
+  /**
+   * Which fast-end zman keys are short-night approximations (same keys as
+   * `tzeitByKey`). Absent = none. Surfaces on the emitted fastEnd events.
+   */
+  tzeitApproximateByKey?: Record<string, boolean>;
 }
 
 /**
@@ -119,7 +132,7 @@ export function getDayEvents(
   // Fast begins/ends on the fast day itself.
   if (jc.isTaanis()) {
     if (idx !== YOM_KIPPUR && idx !== TISHA_BEAV) {
-      events.push({ type: 'fastStart', time: times.alos });
+      events.push({ type: 'fastStart', time: times.alos, approximate: times.alosApproximate });
     }
     // Yom Kippur's end is already shown as havdalah; avoid a duplicate nightfall.
     // Tisha B'Av (a major fast) ends only at nightfall (three small stars); a
@@ -130,7 +143,12 @@ export function getDayEvents(
       const hidden = new Set(hiddenFastEnd);
       for (const op of fastEndOpinionsFor(idx === TISHA_BEAV)) {
         if (hidden.has(op.key)) continue;
-        events.push({ type: 'fastEnd', time: times.tzeitByKey[op.zmanKey] ?? null, zmanKey: op.key });
+        events.push({
+          type: 'fastEnd',
+          time: times.tzeitByKey[op.zmanKey] ?? null,
+          zmanKey: op.key,
+          approximate: times.tzeitApproximateByKey?.[op.zmanKey],
+        });
       }
     }
   }

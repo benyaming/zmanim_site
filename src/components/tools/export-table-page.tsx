@@ -1,55 +1,43 @@
 'use client';
 
-import { PAGE_HEIGHT_PX, PAGE_WIDTH_PX, TEXT_DAY_COLUMNS } from '@/lib/export';
-import type { DayColumnKey, ZmanimTableRow } from '@/lib/export';
+import { PAGE_HEIGHT_PX, PAGE_WIDTH_PX } from '@/lib/export';
+import type { ExportGrid } from '@/lib/export';
 import { cn } from '@/lib/utils';
-
-/** Rows per A4-landscape table page (header + body + footer fill the height). */
-export const TABLE_ROWS_PER_PAGE = 25;
 
 /**
  * One page of the zmanim-table PDF: a fixed-size A4-landscape sheet with a
- * title band, a slice of the rows and an attribution footer. Neutral
- * black-on-white styling (tables print; the color theming applies to the grid
- * export). px sizes only — see ExportMonthPage.
+ * title band, a slice of the grid and an attribution footer. The grid is
+ * pre-materialized (headers + string cells + per-column width/text hints), so
+ * this component just lays it out — the same renderer handles the normal and
+ * transposed orientations. Neutral black-on-white styling; px sizes only.
  */
 export function ExportTablePage({
   title,
   subtitle,
   pageLabel,
-  fixedHeaders,
-  dayColumns,
-  zmanHeaders,
-  rows,
+  grid,
   footer,
+  notes,
   dir,
 }: {
   title: string;
   subtitle: string;
   /** "3 / 7" page indicator. */
   pageLabel: string;
-  fixedHeaders: string[];
-  /** Enabled per-day columns (parsha, candle lighting, …) with localized headers. */
-  dayColumns: { key: DayColumnKey; header: string }[];
-  zmanHeaders: string[];
-  rows: ZmanimTableRow[];
+  grid: ExportGrid;
   /** Attribution line at the bottom of the page. */
   footer: string;
+  /** Compute-option note (elevation / lehumra) above the footer; empty when none. */
+  notes?: string;
   dir: 'ltr' | 'rtl';
 }) {
-  const columns = fixedHeaders.length + dayColumns.length + zmanHeaders.length;
-  const fontSize = columns <= 10 ? 'text-[11px]' : columns <= 16 ? 'text-[10px]' : 'text-[9px]';
-  // Fixed layout: the four leading columns get stable widths; the parsha
-  // column (text, not a time) gets extra room; the rest split evenly.
-  const fixedWidths = ['9%', '6%', '10%', '11%'];
-  // Text day-columns (parsha, learning readings) get a wider share than time
-  // columns; the share is capped so the time columns still get usable width.
-  const textCols = dayColumns.filter((c) => TEXT_DAY_COLUMNS.has(c.key));
-  const textShare = Math.min(textCols.length * 10, 40);
-  const perTextWidth = textCols.length > 0 ? textShare / textCols.length : 0;
-  const timeColumns = dayColumns.length - textCols.length + zmanHeaders.length;
-  const timeWidth = `${(100 - 36 - textShare) / Math.max(1, timeColumns)}%`;
-  const dayColWidth = (key: DayColumnKey) => (TEXT_DAY_COLUMNS.has(key) ? `${perTextWidth}%` : timeWidth);
+  const columns = grid.headers.length;
+  const fontSize = columns <= 10 ? 'text-[11px]' : columns <= 16 ? 'text-[10px]' : columns <= 26 ? 'text-[9px]' : 'text-[8px]';
+  // Proportional widths from the per-column weights (text columns are wider),
+  // so every column gets a fair share and headers wrap cleanly instead of
+  // colliding — no more starved time columns or overlapping titles.
+  const totalWeight = grid.weights.reduce((sum, w) => sum + w, 0) || 1;
+  const widths = grid.weights.map((w) => `${((w / totalWeight) * 100).toFixed(3)}%`);
 
   return (
     <div
@@ -67,39 +55,24 @@ export function ExportTablePage({
 
       <table className={cn('w-full table-fixed border-collapse', fontSize)}>
         <colgroup>
-          {fixedWidths.map((width, i) => (
-            <col key={`f-${i}`} style={{ width }} />
-          ))}
-          {dayColumns.map((c) => (
-            <col key={`d-${c.key}`} style={{ width: dayColWidth(c.key) }} />
-          ))}
-          {zmanHeaders.map((_, i) => (
-            <col key={`z-${i}`} style={{ width: timeWidth }} />
+          {widths.map((width, i) => (
+            <col key={i} style={{ width }} />
           ))}
         </colgroup>
         <thead>
           <tr className="border-b-2 border-neutral-500">
-            {[...fixedHeaders, ...dayColumns.map((c) => c.header), ...zmanHeaders].map((header, i) => (
-              <th key={i} className="px-1 pb-1 text-start align-bottom font-semibold">
+            {grid.headers.map((header, i) => (
+              <th key={i} className="px-1 pb-1 text-start align-bottom font-semibold leading-tight break-words">
                 {header}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => (
-            <tr key={row.iso} className={cn('border-b border-neutral-200', i % 2 === 1 && 'bg-neutral-50')}>
-              <td className="truncate px-1 py-[3px] tabular-nums">{row.dateLabel}</td>
-              <td className="truncate px-1 py-[3px]">{row.weekday}</td>
-              <td className="truncate px-1 py-[3px]">{row.hebrewDate}</td>
-              <td className="truncate px-1 py-[3px]">{row.holiday}</td>
-              {dayColumns.map((c) => (
-                <td key={c.key} className={cn('truncate px-1 py-[3px]', !TEXT_DAY_COLUMNS.has(c.key) && 'tabular-nums')}>
-                  {row[c.key]}
-                </td>
-              ))}
-              {row.cells.map((cell, j) => (
-                <td key={j} className="truncate px-1 py-[3px] tabular-nums">
+          {grid.rows.map((row, i) => (
+            <tr key={i} className={cn('border-b border-neutral-200', i % 2 === 1 && 'bg-neutral-50')}>
+              {row.map((cell, j) => (
+                <td key={j} className={cn('truncate px-1 py-[3px]', !grid.text[j] && 'tabular-nums')}>
                   {cell}
                 </td>
               ))}
@@ -108,7 +81,10 @@ export function ExportTablePage({
         </tbody>
       </table>
 
-      <p className="mt-auto shrink-0 pt-2 text-center text-[10px] text-neutral-400">{footer}</p>
+      <div className="mt-auto shrink-0 pt-2">
+        {notes && <p className="pb-[2px] text-center text-[10px] text-neutral-500">{notes}</p>}
+        <p className="text-center text-[10px] text-neutral-400">{footer}</p>
+      </div>
     </div>
   );
 }

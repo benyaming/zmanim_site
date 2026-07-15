@@ -50,6 +50,7 @@ import {
 
 import { DailyLearning } from './daily-learning';
 import { InfoHint } from './info-hint';
+import { WarningHint } from './warning-hint';
 import { ZmanimList } from './zmanim-list';
 
 const EVENT_META: Record<DayEventType, { Icon: ComponentType<{ className?: string }>; className: string }> = {
@@ -88,6 +89,7 @@ function dayEventsFor(
     keys: dayEventZmanKeys(havdalahZmanKey(havdalahOpinion)),
   });
   const byKey = Object.fromEntries(z.map((x) => [x.key, x.time]));
+  const approxByKey = Object.fromEntries(z.map((x) => [x.key, Boolean(x.approximate)]));
   return getDayEvents(
     date,
     {
@@ -96,6 +98,8 @@ function dayEventsFor(
       sunset: byKey.sunset,
       havdalah: havdalahTime(havdalahOpinion, byKey),
       tzeitByKey: byKey,
+      alosApproximate: approxByKey.alosHashachar,
+      tzeitApproximateByKey: approxByKey,
     },
     location.inIsrael,
     hiddenFastEnd,
@@ -287,6 +291,7 @@ export function ZmanimPanel() {
   const tDetail = useTranslations('zmanim.descriptions');
   const tBaseDesc = useTranslations('zmanim.baseDescriptions');
   const tGroup = useTranslations('zmanim.groups');
+  const tZmanim = useTranslations('zmanim');
   const tCat = useTranslations('categories');
   const tPanel = useTranslations('panel');
   const tEvents = useTranslations('events');
@@ -394,7 +399,12 @@ export function ZmanimPanel() {
                       </Badge>
                     )}
                   </span>
-                  <time className="font-mono font-medium tabular-nums">{formatTime(event.time, locale)}</time>
+                  <span className="flex items-center gap-1">
+                    {event.approximate && (
+                      <WarningHint detail={tZmanim('approximateNote')} label={tEvents(event.type)} />
+                    )}
+                    <time className="font-mono font-medium tabular-nums">{formatTime(event.time, locale)}</time>
+                  </span>
                 </div>
               );
             })}
@@ -410,7 +420,12 @@ export function ZmanimPanel() {
                   {fastEndEvents.map((event) => (
                     <div key={event.zmanKey} className="flex items-center justify-between gap-3">
                       <span className="text-muted-foreground text-xs">{event.zmanKey ? tFastEnd(event.zmanKey) : ''}</span>
-                      <time className="font-mono text-sm tabular-nums">{formatTime(event.time, locale)}</time>
+                      <span className="flex items-center gap-1">
+                        {event.approximate && (
+                          <WarningHint detail={tZmanim('approximateNote')} label={tEvents('fastEnd')} />
+                        )}
+                        <time className="font-mono text-sm tabular-nums">{formatTime(event.time, locale)}</time>
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -425,6 +440,7 @@ export function ZmanimPanel() {
         <ZmanimList
           groups={groups}
           locale={locale}
+          approxNote={tZmanim('approximateNote')}
           footnote={
             <>
               {lehumra && (

@@ -11,6 +11,8 @@ export interface ZmanRow {
   time: DateTime | null;
   /** Set (possibly null) only for duration zmanim — rendered as h:mm:ss instead of a clock time. */
   durationMillis?: number | null;
+  /** True when `time` is a short-night seasonal-hour approximation (see calculator). */
+  approximate?: boolean;
 }
 
 /** A base zman and its one-or-more shitot (e.g. "Misheyakir" → 11.5° / 11° / 10.2°). */
@@ -72,6 +74,7 @@ export function buildZmanimGroups(zmanim: ComputedZman[], t: ZmanTranslators): Z
       detail: t.detail(z.key),
       time: z.time,
       ...(z.duration ? { durationMillis: z.durationMillis ?? null } : {}),
+      ...(z.approximate ? { approximate: true } : {}),
     });
     bases.set(z.base, group);
   }

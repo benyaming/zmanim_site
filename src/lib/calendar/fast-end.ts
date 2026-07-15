@@ -62,6 +62,16 @@ export const DEFAULT_HIDDEN_FAST_END: readonly string[] = FAST_END_OPINIONS.filt
   (o) => !DEFAULT_VISIBLE_FAST_END.has(o.key),
 ).map((o) => o.key);
 
+const DEFAULT_HIDDEN_FAST_END_SET = new Set(DEFAULT_HIDDEN_FAST_END);
+
+/** True when a fast-end hide-list is exactly the curated default (as a set). */
+export function isDefaultHiddenFastEnd(hidden: readonly string[]): boolean {
+  const set = new Set(hidden);
+  if (set.size !== DEFAULT_HIDDEN_FAST_END_SET.size) return false;
+  for (const key of set) if (!DEFAULT_HIDDEN_FAST_END_SET.has(key)) return false;
+  return true;
+}
+
 /** Validate a persisted hidden-fast-end preference; drop unknown/malformed keys. */
 export function sanitizeHiddenFastEnd(value: unknown): string[] {
   if (!Array.isArray(value)) return [];

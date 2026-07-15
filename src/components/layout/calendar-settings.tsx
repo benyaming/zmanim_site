@@ -11,9 +11,15 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { ZMAN_PICKER_SECTIONS, ZmanBaseControl } from '@/components/zmanim/zman-picker';
-import { FAST_END_OPINIONS, type FastEndKind } from '@/lib/calendar';
+import { FAST_END_OPINIONS, type FastEndKind, isDefaultHiddenFastEnd } from '@/lib/calendar';
 import { LEARNING_CYCLE_KEYS } from '@/lib/learning';
-import { HAVDALAH_OPINIONS, havdalahZmanKey, type HavdalahOpinion, isHavdalahOpinion } from '@/lib/zmanim';
+import {
+  HAVDALAH_OPINIONS,
+  havdalahZmanKey,
+  type HavdalahOpinion,
+  isDefaultHiddenZmanim,
+  isHavdalahOpinion,
+} from '@/lib/zmanim';
 
 import { SettingsDialogShell } from './settings-shell';
 
@@ -72,12 +78,14 @@ export function CalendarSettings() {
     hiddenZmanim,
     setZmanVisible,
     showAllZmanim,
+    restoreDefaultZmanim,
     hiddenLearning,
     setLearningVisible,
     showAllLearning,
     hiddenFastEnd,
     setFastEndVisible,
     showAllFastEnd,
+    restoreDefaultFastEnd,
   } = useAppState();
   const opinionLabel = (opinion: HavdalahOpinion) => {
     const key = havdalahZmanKey(opinion);
@@ -218,11 +226,18 @@ export function CalendarSettings() {
       <div className="space-y-2">
         <div className="flex min-h-8 items-center justify-between gap-2">
           <span className="text-sm font-medium">{t('fastEndDisplay')}</span>
-          {hiddenFastEnd.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={showAllFastEnd}>
-              {t('zmanimShowAll')}
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {!isDefaultHiddenFastEnd(hiddenFastEnd) && (
+              <Button variant="ghost" size="sm" onClick={restoreDefaultFastEnd}>
+                {t('zmanimRestoreDefaults')}
+              </Button>
+            )}
+            {hiddenFastEnd.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={showAllFastEnd}>
+                {t('zmanimShowAll')}
+              </Button>
+            )}
+          </div>
         </div>
         <div className="space-y-2.5 rounded-lg border p-3">
           {FAST_END_GROUPS.map(({ kind, keys }) => (
@@ -250,11 +265,18 @@ export function CalendarSettings() {
       <div className="space-y-2 lg:col-span-2">
         <div className="flex min-h-8 items-center justify-between gap-2">
           <span className="text-sm font-medium">{t('zmanimDisplay')}</span>
-          {hiddenZmanim.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={showAllZmanim}>
-              {t('zmanimShowAll')}
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {!isDefaultHiddenZmanim(hiddenZmanim) && (
+              <Button variant="ghost" size="sm" onClick={restoreDefaultZmanim}>
+                {t('zmanimRestoreDefaults')}
+              </Button>
+            )}
+            {hiddenZmanim.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={showAllZmanim}>
+                {t('zmanimShowAll')}
+              </Button>
+            )}
+          </div>
         </div>
         {/* The dialog body is the single scroll context (see SettingsDialogShell),
             so this list no longer scrolls on its own. */}

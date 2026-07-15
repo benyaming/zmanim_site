@@ -13,7 +13,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ZMAN_PICKER_SECTIONS, ZmanBaseControl } from '@/components/zmanim/zman-picker';
 import { dirForLocale } from '@/i18n/routing';
+import { cn } from '@/lib/utils';
 import { SITE_HOST } from '@/lib/site';
 import { type CalendarMode, monthAnchor } from '@/lib/calendar';
 import {
@@ -25,6 +27,7 @@ import {
   PAGE_WIDTH_PX,
   pagesToPdf,
 } from '@/lib/export';
+import { LEARNING_CYCLE_KEYS } from '@/lib/learning';
 
 import {
   buildExportMonth,
@@ -32,6 +35,8 @@ import {
   type ExportGridTheme,
   type ExportMonthCfg,
   ExportMonthPage,
+  MAX_CELL_ITEMS,
+  orderCellItems,
 } from './export-month';
 import { reportTranslator } from './export-i18n';
 import { renderExportPages } from './export-render';
@@ -62,7 +67,7 @@ function MonthField({
     const month = jd.getJewishMonth();
     return (
       <div className="flex items-center gap-2">
-        <span className="text-muted-foreground w-10 shrink-0 text-xs">{label}</span>
+        <span className="text-muted-foreground min-w-[3.75rem] shrink-0 text-xs">{label}</span>
         <Select value={String(month)} onValueChange={(v) => onChange(hebrewMonthAnchor(year, Number(v)))}>
           <SelectTrigger className="flex-1">
             <SelectValue />
@@ -94,7 +99,7 @@ function MonthField({
   const months = LuxonInfo.months('long', { locale });
   return (
     <div className="flex items-center gap-2">
-      <span className="text-muted-foreground w-10 shrink-0 text-xs">{label}</span>
+      <span className="text-muted-foreground min-w-[3.75rem] shrink-0 text-xs">{label}</span>
       <Select
         value={String(value.month)}
         onValueChange={(v) => onChange(DateTime.fromObject({ year: value.year, month: Number(v), day: 15 }))}
@@ -128,17 +133,29 @@ function MonthField({
   );
 }
 
-/** Fit the fixed-size preview page to the dialog width. */
+/**
+ * Fit the fixed-size preview page to the available width, but capped by the
+ * viewport height (and never scaled past 1×) so the preview never grows tall
+ * enough to make the dialog scroll. Measures a full-width wrapper — not the
+ * framed page — so the width read is independent of the scale it produces.
+ */
 function usePreviewScale(ref: RefObject<HTMLDivElement | null>): number {
-  const [scale, setScale] = useState(0.35);
+  const [scale, setScale] = useState(0.5);
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => {
-      if (el.clientWidth > 0) setScale(el.clientWidth / PAGE_WIDTH_PX);
-    });
+    const measure = () => {
+      if (el.clientWidth <= 0) return;
+      const maxHeight = Math.max(240, window.innerHeight - 260);
+      setScale(Math.min(el.clientWidth / PAGE_WIDTH_PX, maxHeight / PAGE_HEIGHT_PX, 1));
+    };
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    return () => ro.disconnect();
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
   }, [ref]);
   return scale;
 }
@@ -148,10 +165,32 @@ export function ExportCalendarTool() {
   const t = useTranslations('export');
   const tCal = useTranslations('calendar');
   const tSettings = useTranslations('settings');
+  const tName = useTranslations('zmanim.names');
+  const tShita = useTranslations('zmanim.shitot');
+  const tGroup = useTranslations('zmanim.groups');
+  const tLearning = useTranslations('learning');
   const locale = useLocale();
   const { monthDate, mode, candleLightingOffset, havdalahOpinion, customDates } = useAppState();
   const { fontScale: appFontScale } = useAccessibility();
   const [includeCustomDates, setIncludeCustomDates] = useState(true);
+  // Zmanim and/or learnings shown inside each day cell — up to MAX_CELL_ITEMS,
+  // any opinion; kept in canonical order (zmanim first, then learnings).
+  const [cellItems, setCellItems] = useState<string[]>([]);
+  const [openBases, setOpenBases] = useState<Set<string>>(new Set());
+  const capReached = cellItems.length >= MAX_CELL_ITEMS;
+  const setCellItem = (key: string, selected: boolean) =>
+    setCellItems((prev) => {
+      if (!selected) return prev.filter((k) => k !== key);
+      if (prev.includes(key) || prev.length >= MAX_CELL_ITEMS) return prev;
+      return orderCellItems([...prev, key]);
+    });
+  const toggleBase = (base: string) =>
+    setOpenBases((prev) => {
+      const next = new Set(prev);
+      if (next.has(base)) next.delete(base);
+      else next.add(base);
+      return next;
+    });
 
   const { location, field: locationField } = useExportLocation();
   const { reportLocale, field: languageField } = useReportLocale();
@@ -170,12 +209,24 @@ export function ExportCalendarTool() {
     useElevation,
     lehumra,
     customDates: includeCustomDates ? customDates : [],
+    cellItemKeys: cellItems,
     labels: {
       roshChodesh: tr('categories.roshChodesh'),
       mevarchim: tr('panel.shabbatMevarchim'),
       omer: (day: number) => tr('panel.omer', { day }),
       specialShabbat: (name: string) => tr('panel.specialShabbat', { name }),
       customDate: (kind) => tr(`customDates.kind${kind[0].toUpperCase()}${kind.slice(1)}`),
+      zmanAbbr: (base: string) => tr(`zmanim.abbr.${base}`),
+      learningAbbr: (key: string) => tr(`learning.abbr.${key}`),
+      // Full name plus the shita, so the legend disambiguates a short cell label.
+      zmanLegend: (key: string) => {
+        const shita = tr(`zmanim.shitot.${key}`);
+        return shita ? `${tr(`zmanim.names.${key}`)}, ${shita}` : tr(`zmanim.names.${key}`);
+      },
+      learningName: (key: string) => tr(`learning.${key}`),
+      approxNote: tr('export.cellApproxNote'),
+      noteElevation: (meters: number) => tr('export.noteElevation', { meters }),
+      noteLehumra: tr('export.noteLehumra'),
     },
   };
 
@@ -255,7 +306,7 @@ export function ExportCalendarTool() {
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-muted-foreground w-10 shrink-0 text-xs">{t('theme')}</span>
+        <span className="text-muted-foreground min-w-[3.75rem] shrink-0 text-xs">{t('theme')}</span>
         <ToggleGroup
           type="single"
           value={theme}
@@ -272,7 +323,7 @@ export function ExportCalendarTool() {
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-muted-foreground w-10 shrink-0 text-xs">{tSettings('textSize')}</span>
+        <span className="text-muted-foreground min-w-[3.75rem] shrink-0 text-xs">{tSettings('textSize')}</span>
         <Select value={fontScale} onValueChange={(v) => setFontScale(v as FontScale)}>
           <SelectTrigger className="flex-1">
             <SelectValue />
@@ -289,6 +340,58 @@ export function ExportCalendarTool() {
 
       {computeField}
 
+      <div className="space-y-1.5">
+        <span className="text-sm font-medium">
+          {t('cellZmanim')}{' '}
+          <span className="text-muted-foreground font-normal">
+            {cellItems.length}/{MAX_CELL_ITEMS}
+          </span>
+        </span>
+        <div className="max-h-72 space-y-3 overflow-y-auto rounded-lg border p-3">
+          {ZMAN_PICKER_SECTIONS.map((section) => (
+            <section key={section.category} className="space-y-1.5">
+              <h4 className="text-muted-foreground/70 text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
+                {tGroup(section.category)}
+              </h4>
+              {section.bases.map(({ base, keys }) => (
+                <ZmanBaseControl
+                  key={base}
+                  base={base}
+                  name={tName(keys[0])}
+                  keys={keys}
+                  shitaLabel={tShita}
+                  isSelected={(k) => cellItems.includes(k)}
+                  setSelected={setCellItem}
+                  open={openBases.has(base)}
+                  onToggleOpen={() => toggleBase(base)}
+                  idPrefix="cell-zman"
+                  capReached={capReached}
+                />
+              ))}
+            </section>
+          ))}
+          <section className="space-y-1.5">
+            <h4 className="text-muted-foreground/70 text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
+              {tLearning('title')}
+            </h4>
+            {LEARNING_CYCLE_KEYS.map((key) => {
+              const checked = cellItems.includes(key);
+              const disabled = capReached && !checked;
+              return (
+                <label
+                  key={key}
+                  className={cn('flex items-center gap-2', disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer')}
+                >
+                  <Checkbox checked={checked} disabled={disabled} onCheckedChange={(v) => setCellItem(key, v === true)} />
+                  <span className="text-sm">{tLearning(key)}</span>
+                </label>
+              );
+            })}
+          </section>
+        </div>
+        <p className="text-muted-foreground text-xs">{t('cellZmanimHint')}</p>
+      </div>
+
       {customDates.length > 0 && (
         <label className="flex cursor-pointer items-center gap-2">
           <Checkbox checked={includeCustomDates} onCheckedChange={(v) => setIncludeCustomDates(v === true)} />
@@ -296,26 +399,34 @@ export function ExportCalendarTool() {
         </label>
       )}
 
-      {error && <p className="text-destructive text-xs">{error}</p>}
-      <Button onClick={exportGrid} disabled={busy} className="w-full">
-        <FileDown className="size-4" />
-        {busy ? t('generating') : t('download')}
-      </Button>
       </div>
 
-      {/* Live preview: the real page component, scaled to its column width. */}
-      <div className="mt-3 space-y-1 lg:mt-0">
-        <span className="text-muted-foreground text-xs">{t('preview')}</span>
-        <div ref={previewRef} className="overflow-hidden rounded-md border shadow-sm">
-          {/* The page overflows the wrapper toward the inline-end before
-              scaling, so the origin must be the top inline-START corner — the
-              scaled width then fills the wrapper exactly in both directions. */}
-          <div style={{ height: PAGE_HEIGHT_PX * previewScale }}>
+      {/* Live preview + the download button live on the right and stay pinned,
+          so both remain visible while the (taller) controls column scrolls. */}
+      <div className="mt-3 space-y-2 lg:mt-0 lg:sticky lg:top-0 lg:self-start">
+        {/* previewRef spans the full column so the measured width is independent
+            of the scale it drives; the framed page is sized explicitly below. */}
+        <div ref={previewRef} className="space-y-1">
+          <span className="text-muted-foreground text-xs">{t('preview')}</span>
+          <div
+            className="overflow-hidden rounded-md border shadow-sm"
+            style={{ width: PAGE_WIDTH_PX * previewScale, height: PAGE_HEIGHT_PX * previewScale }}
+          >
             <div className="origin-top-left rtl:origin-top-right" style={{ transform: `scale(${previewScale})` }}>
               <ExportMonthPage data={previewData} theme={theme} dir={reportDir} textScale={TEXT_SCALES[fontScale]} footer={footer} />
             </div>
           </div>
         </div>
+        {error && <p className="text-destructive text-xs">{error}</p>}
+        <Button
+          onClick={exportGrid}
+          disabled={busy}
+          className="w-full"
+          style={{ maxWidth: PAGE_WIDTH_PX * previewScale }}
+        >
+          <FileDown className="size-4" />
+          {busy ? t('generating') : t('download')}
+        </Button>
       </div>
     </div>
   );

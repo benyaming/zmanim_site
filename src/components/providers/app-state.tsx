@@ -76,6 +76,8 @@ interface AppStateValue {
   hiddenZmanim: string[];
   setZmanVisible: (key: string, visible: boolean) => void;
   showAllZmanim: () => void;
+  /** Reset the day panel's zmanim to the everyday default set. */
+  restoreDefaultZmanim: () => void;
   /** Learning-cycle keys the user chose to hide from the day panel (empty = show all). */
   hiddenLearning: string[];
   setLearningVisible: (key: string, visible: boolean) => void;
@@ -84,6 +86,8 @@ interface AppStateValue {
   hiddenFastEnd: string[];
   setFastEndVisible: (key: string, visible: boolean) => void;
   showAllFastEnd: () => void;
+  /** Reset the fast-end opinions to the curated default set. */
+  restoreDefaultFastEnd: () => void;
   /** Personal recurring dates (birthdays, bar/bat mitzvahs, yahrzeits). */
   customDates: CustomDate[];
   /** Add an entry; a no-op once MAX_CUSTOM_DATES is reached. Returns the new id, or null if full. */
@@ -249,6 +253,10 @@ export function AppStateProvider({
     setZmanimCustomized(true);
     setHiddenZmanim([]);
   };
+  const restoreDefaultZmanim = () => {
+    setZmanimCustomized(true);
+    setHiddenZmanim([...DEFAULT_HIDDEN_ZMANIM]);
+  };
   const [hiddenLearning, setHiddenLearning] = useState<string[]>([]);
   const setLearningVisible = (key: string, visible: boolean) =>
     setHiddenLearning((prev) => {
@@ -273,6 +281,10 @@ export function AppStateProvider({
   const showAllFastEnd = () => {
     setFastEndCustomized(true);
     setHiddenFastEnd([]);
+  };
+  const restoreDefaultFastEnd = () => {
+    setFastEndCustomized(true);
+    setHiddenFastEnd([...DEFAULT_HIDDEN_FAST_END]);
   };
 
   const [customDates, setCustomDates] = useState<CustomDate[]>([]);
@@ -524,12 +536,14 @@ export function AppStateProvider({
     hiddenZmanim,
     setZmanVisible,
     showAllZmanim,
+    restoreDefaultZmanim,
     hiddenLearning,
     setLearningVisible,
     showAllLearning,
     hiddenFastEnd,
     setFastEndVisible,
     showAllFastEnd,
+    restoreDefaultFastEnd,
     customDates,
     addCustomDate,
     updateCustomDate,

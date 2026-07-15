@@ -37,6 +37,22 @@
     "nameLabel": "שם"
   },
   "zmanim": {
+    "approximateNote": "זמן משוער. השמש אינה מגיעה לזווית שקיעה זו במקום ובתאריך זה (לילה קצר), ולכן זהו אומדן לפי שעה זמנית קבועה במקום החישוב לפי מעלות.",
+    "abbr": {
+      "alos": "עלות",
+      "misheyakir": "משיכיר",
+      "sunrise": "נץ",
+      "sofZmanShma": "ק״ש",
+      "sofZmanTfila": "תפילה",
+      "chatzos": "חצות",
+      "minchaGedola": "מנחה ג׳",
+      "minchaKetana": "מנחה ק׳",
+      "plagHamincha": "פלג",
+      "sunset": "שקיעה",
+      "tzais": "צאת",
+      "chatzosLaila": "חצות לילה",
+      "shaahZmanis": "שעה זמנית"
+    },
     "groups": {
       "dawn": "שחר",
       "morning": "בוקר",
@@ -275,6 +291,7 @@
     "molad": "המולד: {weekday}, {time} ו־{chalakim} חלקים",
     "parasha": "פרשת {name}",
     "detailsAria": "{label} — פרטים",
+    "warningAria": "הערה על {label}",
     "zmanimSettingsHint": "אפשר להציג זמנים ושיטות נוספים בהגדרות לוח השנה.",
     "lehumraChip": "לחומרא",
     "lehumraNote": "הזמנים מעוגלים לדקה שלמה לצד המחמיר (לחומרא).",
@@ -283,6 +300,15 @@
     "observedAdvanced": "הוקדם השנה בשל שבת."
   },
   "learning": {
+    "abbr": {
+      "dafYomi": "דף",
+      "yerushalmiYomi": "ירושלמי",
+      "mishnaYomit": "משנה",
+      "nachYomi": "נ״ך",
+      "tehillim": "תהילים",
+      "rambam": "רמב״ם",
+      "pirkeiAvot": "אבות"
+    },
     "title": "לימוד יומי",
     "dafYomi": "דף היומי",
     "dafYomiInfo": "דף גמרא מהתלמוד הבבלי בכל יום; המחזור העולמי מסיים את הש״ס בכ־7.5 שנים.",
@@ -328,6 +354,7 @@
     "zmanimDisplay": "זמנים מוצגים",
     "zmanimDisplayHint": "אילו זמנים ושיטות יוצגו בלוח היומי.",
     "zmanimShowAll": "הצג הכול",
+    "zmanimRestoreDefaults": "שחזר ברירת מחדל",
     "appearanceTitle": "מראה",
     "appearanceOpen": "הגדרות מראה",
     "calendarTitle": "לוח שנה",
@@ -377,6 +404,14 @@
     "includeFasts": "זמני צום",
     "includeCustomDates": "תאריכים אישיים",
     "noZmanim": "יש לבחור לפחות זמן אחד.",
+    "noColumns": "יש לבחור לפחות עמודה אחת או זמן אחד.",
+    "transpose": "היפוך הטבלה",
+    "transposeHint": "השדות יופיעו בצד ועמודה לכל יום (מתאים לטווח קצר).",
+    "cellZmanim": "בכל תא של יום",
+    "cellZmanimHint": "עד 5 זמנים או לימודים יומיים בכל יום.",
+    "cellApproxNote": "* אומדן לפי שעה זמנית קבועה בלילה קצר",
+    "noteElevation": "מותאם לגובה ({meters} מ׳)",
+    "noteLehumra": "מעוגל לדקה המחמירה (לחומרא)",
     "colDate": "תאריך",
     "colWeekday": "יום",
     "colHebrewDate": "תאריך עברי",
