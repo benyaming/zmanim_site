@@ -7,6 +7,7 @@ export {
   type FastEndOpinionDef,
   type FastEndOpinionKey,
   fastEndOpinionsFor,
+  isDefaultHiddenFastEnd,
   sanitizeHiddenFastEnd,
 } from './fast-end';
 export { getMolad, type MoladInfo } from './molad';

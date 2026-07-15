@@ -18,8 +18,17 @@ import {
 /** Hard cap on table-export size (two years, leap-safe). */
 export const MAX_TABLE_DAYS = 732;
 
-/** The optional per-day columns beyond the zmanim themselves. */
+/**
+ * Every per-day column the export can render, beyond the zmanim themselves.
+ * The four leading identity columns (date / weekday / Hebrew date / holiday)
+ * are toggleable columns like any other — each maps to a same-named field on
+ * `ZmanimTableRow`, so a single column model drives all three writers.
+ */
 export type DayColumnKey =
+  | 'dateLabel'
+  | 'weekday'
+  | 'hebrewDate'
+  | 'holiday'
   | 'parsha'
   | 'candleLighting'
   | 'havdalah'
@@ -30,8 +39,39 @@ export type DayColumnKey =
   // Daily-learning cycles (Daf Yomi, Mishna Yomit, …) render as text columns.
   | LearningCycleKey;
 
-/** Day-column keys that hold free text (not clock times) — left-aligned, wider. */
-export const TEXT_DAY_COLUMNS: ReadonlySet<DayColumnKey> = new Set<DayColumnKey>(['parsha', ...LEARNING_CYCLE_KEYS]);
+/** Day-column keys that hold free text (not clock times) — start-aligned, not tabular. */
+export const TEXT_DAY_COLUMNS: ReadonlySet<DayColumnKey> = new Set<DayColumnKey>([
+  'weekday',
+  'hebrewDate',
+  'holiday',
+  'parsha',
+  ...LEARNING_CYCLE_KEYS,
+]);
+
+/**
+ * Relative print width per day-column kind (zmanim columns are the 1.0 unit).
+ * Free-text columns (holiday, parsha, readings) need more room than a clock
+ * time; short markers (omer, mevarchim) need less. Used to proportion the PDF
+ * columns so headers wrap cleanly and no column is starved.
+ */
+const DAY_COLUMN_WEIGHT: Partial<Record<DayColumnKey, number>> = {
+  dateLabel: 1.7,
+  weekday: 1.1,
+  hebrewDate: 1.8,
+  holiday: 2.6,
+  parsha: 2.6,
+  candleLighting: 1,
+  havdalah: 1,
+  fastStart: 1,
+  fastEnd: 1,
+  mevarchim: 0.8,
+  omer: 0.8,
+};
+
+/** Relative print width for a day column (learning readings are text → wide). */
+export function dayColumnWeight(key: DayColumnKey): number {
+  return DAY_COLUMN_WEIGHT[key] ?? (LEARNING_CYCLE_KEYS.includes(key as LearningCycleKey) ? 2.6 : 1);
+}
 
 export interface ZmanimTableOptions {
   /** First day, inclusive. Only the calendar date is used. */

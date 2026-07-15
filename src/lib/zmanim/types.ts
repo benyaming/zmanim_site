@@ -12,6 +12,27 @@ export type ZmanCategory = 'dawn' | 'morning' | 'midday' | 'afternoon' | 'evenin
 export type ZmanMethod = Extract<keyof ComplexZmanimCalendar, string>;
 
 /**
+ * Short-night fallback for a degree-based zman. At high latitudes the sun may
+ * never reach a given depression angle (a short summer night), so the primary
+ * `method` returns null. Rather than show nothing, we fall back to a fixed
+ * seasonal-hour (shaah zmanit) approximation — flagged in the UI so the user
+ * knows it isn't the real degree-based time. Only used when `method` is null;
+ * a real degree time is never overridden.
+ *
+ * Two forms, both anchored on the (always-available-when-there-is-a-day)
+ * sunrise/sunset:
+ * - `method` — call another calendar method that is itself proportional
+ *   (a `*Zmanis` method), e.g. `getAlos72Zmanis` as the equivalent of 16.1°.
+ * - `anchor` + `zmaniyosMinutes` — offset that many SEASONAL minutes from
+ *   sunrise (before) or sunset (after), matching KosherJava's convention
+ *   (`sunrise − minutes × shaahZmanisGra / 60`). The minute figure is the
+ *   documented Jerusalem-equinox anchor of the degree (see docs/zmanim.md).
+ */
+export type ZmanFallback =
+  | { method: ZmanMethod }
+  | { anchor: 'sunrise' | 'sunset'; zmaniyosMinutes: number };
+
+/**
  * A single zman definition. This is the SINGLE SOURCE OF TRUTH that binds a
  * displayed time (`key`) to the exact kosher-zmanim calculation (`method`).
  * Name, shita label and description are looked up by `key` in the message
@@ -45,6 +66,12 @@ export interface ZmanDefinition {
    * (`time` stays null and the UI renders an h:mm:ss duration).
    */
   duration?: boolean;
+  /**
+   * Fallback for a short night, when the degree-based `method` yields no time
+   * (the sun never reaches its depression angle). A seasonal-hour approximation
+   * used ONLY when `method` is null, surfaced with `ComputedZman.approximate`.
+   */
+  fallback?: ZmanFallback;
 }
 
 /** A computed zman: the definition plus its resolved time (null if undefined that day). */
@@ -53,6 +80,12 @@ export interface ComputedZman extends ZmanDefinition {
   time: DateTime | null;
   /** For `duration` zmanim only: the length in ms, or null when the day is undefined. */
   durationMillis?: number | null;
+  /**
+   * True when `time` came from the short-night `fallback` (a seasonal-hour
+   * approximation) because the degree-based method had no time. The UI marks
+   * these with a warning so they're never mistaken for the exact degree time.
+   */
+  approximate?: boolean;
 }
 
 export interface ComputeZmanimInput {

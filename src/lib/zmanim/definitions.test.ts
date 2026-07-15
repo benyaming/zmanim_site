@@ -98,6 +98,39 @@ describe('ZMANIM definitions integrity', () => {
     });
   });
 
+  /**
+   * LOCKED short-night fallbacks. Each degree-based dawn/night zman that can go
+   * null at high latitude falls back to a seasonal-hour approximation; the exact
+   * mapping is pinned so a fallback can't silently change or disappear. Method
+   * fallbacks must resolve to a real (proportional) calendar method.
+   */
+  it('locks the degree → seasonal-hour fallback mapping', () => {
+    const fallbacks = Object.fromEntries(ZMANIM.filter((z) => z.fallback).map((z) => [z.key, z.fallback]));
+    expect(fallbacks).toEqual({
+      alos198: { method: 'getAlos90Zmanis' },
+      alosHashachar: { method: 'getAlos72Zmanis' },
+      misheyakir115: { anchor: 'sunrise', zmaniyosMinutes: 50 },
+      misheyakir11: { anchor: 'sunrise', zmaniyosMinutes: 48 },
+      misheyakir102: { anchor: 'sunrise', zmaniyosMinutes: 44 },
+      misheyakir95: { anchor: 'sunrise', zmaniyosMinutes: 41 },
+      misheyakir765: { anchor: 'sunrise', zmaniyosMinutes: 32 },
+      tzaisGeonim: { anchor: 'sunset', zmaniyosMinutes: 24 },
+      tzaisGeonim645: { anchor: 'sunset', zmaniyosMinutes: 26 },
+      tzaisGeonim7083: { anchor: 'sunset', zmaniyosMinutes: 29 },
+      tzais: { anchor: 'sunset', zmaniyosMinutes: 36 },
+      tzais161: { method: 'getTzais72Zmanis' },
+    });
+  });
+
+  it('binds every method fallback to a real calendar method', () => {
+    const proto = ComplexZmanimCalendar.prototype as unknown as Record<string, unknown>;
+    for (const z of ZMANIM) {
+      if (z.fallback && 'method' in z.fallback) {
+        expect(typeof proto[z.fallback.method], `${z.key} fallback -> ${z.fallback.method}`).toBe('function');
+      }
+    }
+  });
+
   it('marks exactly the astronomical hours as durations', () => {
     const durations = ZMANIM.filter((z) => z.duration).map((z) => z.key);
     expect(durations).toEqual(['shaahZmanisMGA', 'shaahZmanisGRA']);

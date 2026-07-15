@@ -37,6 +37,22 @@
     "nameLabel": "Название"
   },
   "zmanim": {
+    "approximateNote": "Приблизительное время. В этом месте и в эту дату солнце не опускается до нужного угла (короткая ночь), поэтому это оценка по постоянному временно́му часу (шаа зманит), а не расчёт по градусам.",
+    "abbr": {
+      "alos": "Алот",
+      "misheyakir": "Мишеякир",
+      "sunrise": "Нец",
+      "sofZmanShma": "Шма",
+      "sofZmanTfila": "Тфила",
+      "chatzos": "Хацот",
+      "minchaGedola": "Минха г.",
+      "minchaKetana": "Минха к.",
+      "plagHamincha": "Плаг",
+      "sunset": "Шкия",
+      "tzais": "Цет",
+      "chatzosLaila": "Полночь",
+      "shaahZmanis": "Шаа"
+    },
     "groups": {
       "dawn": "Рассвет",
       "morning": "Утро",
@@ -275,6 +291,7 @@
     "molad": "Молад: {weekday}, {time} и {chalakim} халаким",
     "parasha": "Недельная глава: {name}",
     "detailsAria": "{label} — подробнее",
+    "warningAria": "Примечание о {label}",
     "zmanimSettingsHint": "Больше зманим и мнений можно включить в настройках календаря.",
     "lehumraChip": "лехумра",
     "lehumraNote": "Времена округлены до целой минуты в строгую сторону (лехумра).",
@@ -283,6 +300,15 @@
     "observedAdvanced": "В этом году отмечается раньше обычного из-за шаббата."
   },
   "learning": {
+    "abbr": {
+      "dafYomi": "Даф",
+      "yerushalmiYomi": "Йеру.",
+      "mishnaYomit": "Мишна",
+      "nachYomi": "Нах",
+      "tehillim": "Теилим",
+      "rambam": "Рамбам",
+      "pirkeiAvot": "Авот"
+    },
     "title": "Ежедневное изучение",
     "dafYomi": "Даф йоми",
     "dafYomiInfo": "Лист (даф) Вавилонского Талмуда каждый день; всемирный цикл завершает весь Талмуд примерно за 7,5 лет.",
@@ -328,6 +354,7 @@
     "zmanimDisplay": "Отображаемые зманим",
     "zmanimDisplayHint": "Какие зманим и мнения показывать в панели дня.",
     "zmanimShowAll": "Показать все",
+    "zmanimRestoreDefaults": "Сбросить к стандартным",
     "appearanceTitle": "Внешний вид",
     "appearanceOpen": "Настройки внешнего вида",
     "calendarTitle": "Календарь",
@@ -377,6 +404,14 @@
     "includeFasts": "Времена постов",
     "includeCustomDates": "Личные даты",
     "noZmanim": "Выберите хотя бы один зман.",
+    "noColumns": "Выберите хотя бы один столбец или зман.",
+    "transpose": "Транспонировать таблицу",
+    "transposeHint": "Поля — сбоку, по столбцу на каждый день (лучше для короткого диапазона).",
+    "cellZmanim": "В каждой ячейке дня",
+    "cellZmanimHint": "До 5 зманим или ежедневных уроков в каждом дне.",
+    "cellApproxNote": "* оценка по постоянному временно́му часу в короткую ночь",
+    "noteElevation": "С учётом высоты ({meters} м)",
+    "noteLehumra": "Округление до строгой минуты (лехумра)",
     "colDate": "Дата",
     "colWeekday": "День",
     "colHebrewDate": "Еврейская дата",

@@ -73,7 +73,10 @@ const CASES: GoldenCase[] = [
     lng: -0.1278,
     date: '2024-06-21',
     expected: {
-      alosHashachar: null, // 16.1° dawn never reached at this latitude/season
+      // 16.1° dawn is never reached here mid-summer, so the degree method is
+      // null and computeZmanim falls back to the seasonal-hour equivalent
+      // (getAlos72Zmanis), flagged `approximate` — see calculator.fallback.test.ts.
+      alosHashachar: '03:03:20',
       sunrise: '04:43:10',
       sofZmanShmaGRA: '08:52:48',
       chatzos: '13:02:19',

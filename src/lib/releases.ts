@@ -21,6 +21,27 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.18',
+    date: '2026-07-12',
+    notes: {
+      en: [
+        'Short-night locations now show a flagged seasonal-hour estimate for zmanim the degree method can’t reach.',
+        'Settings: a Restore defaults option for the displayed zmanim and fast-end times.',
+        'Exports: pick any columns & transpose the zmanim table, and add zmanim or learnings to each calendar-grid day.',
+      ],
+      he: [
+        'מיקומים עם לילה קצר: זמנים שאין להם חישוב לפי מעלות מוצגים כאומדן לפי שעה זמנית, עם סימון.',
+        'הגדרות: אפשרות שחזור ברירת מחדל לזמנים המוצגים ולזמני סיום התענית.',
+        'ייצוא: בחירת עמודות והיפוך טבלת הזמנים, והוספת זמנים או לימודים לכל יום בלוח.',
+      ],
+      ru: [
+        'Места с короткой ночью: зманим, недоступные для расчёта по градусам, показываются как оценка по временно́му часу с пометкой.',
+        'Настройки: сброс к стандартным для отображаемых зманим и времён окончания поста.',
+        'Экспорт: выбор столбцов и транспонирование таблицы зманим, плюс зманим или уроки в каждом дне календаря.',
+      ],
+    },
+  },
+  {
     version: '1.17',
     date: '2026-07-09',
     notes: {

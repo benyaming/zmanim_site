@@ -6,14 +6,27 @@ import type { ZmanBaseGroup, ZmanGroup, ZmanRow } from '@/lib/zmanim';
 
 import { InfoHint } from './info-hint';
 import { SectionHeading } from './section-heading';
+import { WarningHint } from './warning-hint';
 
-function Time({ time, durationMillis, locale }: Pick<ZmanRow, 'time' | 'durationMillis'> & { locale: string }) {
+function Time({
+  time,
+  durationMillis,
+  approximate,
+  locale,
+  approxNote,
+  label,
+}: Pick<ZmanRow, 'time' | 'durationMillis' | 'approximate'> & {
+  locale: string;
+  approxNote: string;
+  label: string;
+}) {
   // Duration zmanim (shaah zmanis) carry a length, not a moment — render h:mm:ss.
   const text = durationMillis !== undefined ? formatDuration(durationMillis) : formatTime(time, locale);
   return (
-    <time className={cn('shrink-0 font-mono text-sm tabular-nums', text === '—' && 'text-muted-foreground')}>
-      {text}
-    </time>
+    <span className="flex shrink-0 items-center gap-1">
+      {approximate && approxNote && <WarningHint detail={approxNote} label={label} />}
+      <time className={cn('font-mono text-sm tabular-nums', text === '—' && 'text-muted-foreground')}>{text}</time>
+    </span>
   );
 }
 
@@ -27,7 +40,7 @@ function ZmanName({ name, description }: { name: string; description?: string })
   );
 }
 
-function BaseItem({ item, locale }: { item: ZmanBaseGroup; locale: string }) {
+function BaseItem({ item, locale, approxNote }: { item: ZmanBaseGroup; locale: string; approxNote: string }) {
   // Single opinion → flat row, with the shita inline next to the name (an
   // indented one-row block would waste a line). flex-wrap drops the shita
   // under the name when the row is too narrow to fit everything.
@@ -39,7 +52,14 @@ function BaseItem({ item, locale }: { item: ZmanBaseGroup; locale: string }) {
           <ZmanName name={item.name} description={item.description} />
           {row.shita && <span className="text-muted-foreground text-xs">{row.shita}</span>}
         </div>
-        <Time time={row.time} durationMillis={row.durationMillis} locale={locale} />
+        <Time
+          time={row.time}
+          durationMillis={row.durationMillis}
+          approximate={row.approximate}
+          locale={locale}
+          approxNote={approxNote}
+          label={item.name}
+        />
       </li>
     );
   }
@@ -57,7 +77,14 @@ function BaseItem({ item, locale }: { item: ZmanBaseGroup; locale: string }) {
               {row.shita}
               {row.detail && <InfoHint detail={row.detail} label={row.shita} />}
             </span>
-            <Time time={row.time} durationMillis={row.durationMillis} locale={locale} />
+            <Time
+              time={row.time}
+              durationMillis={row.durationMillis}
+              approximate={row.approximate}
+              locale={locale}
+              approxNote={approxNote}
+              label={row.shita || item.name}
+            />
           </div>
         ))}
       </div>
@@ -70,11 +97,14 @@ export function ZmanimList({
   groups,
   locale = 'en',
   footnote,
+  approxNote = '',
 }: {
   groups: ZmanGroup[];
   locale?: string;
   /** Small muted note(s) under the list (e.g. "more zmanim in settings"). */
   footnote?: ReactNode;
+  /** Tooltip text for the short-night approximation warning; omitted = no warning shown. */
+  approxNote?: string;
 }) {
   return (
     <div>
@@ -84,7 +114,7 @@ export function ZmanimList({
             <SectionHeading>{group.label}</SectionHeading>
             <ul className="space-y-1.5">
               {group.items.map((item) => (
-                <BaseItem key={item.base} item={item} locale={locale} />
+                <BaseItem key={item.base} item={item} locale={locale} approxNote={approxNote} />
               ))}
             </ul>
           </section>

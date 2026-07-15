@@ -17,4 +17,10 @@ export {
   zmanLehumraDirection,
 } from './lehumra';
 export type { ComputedZman, ComputeZmanimInput, ZmanCategory, ZmanDefinition } from './types';
-export { CONFIGURABLE_ZMANIM, DEFAULT_HIDDEN_ZMANIM, OPT_IN_ZMANIM, sanitizeHiddenZmanim } from './visibility';
+export {
+  CONFIGURABLE_ZMANIM,
+  DEFAULT_HIDDEN_ZMANIM,
+  isDefaultHiddenZmanim,
+  OPT_IN_ZMANIM,
+  sanitizeHiddenZmanim,
+} from './visibility';

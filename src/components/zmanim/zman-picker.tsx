@@ -56,6 +56,7 @@ export function ZmanBaseControl({
   open,
   onToggleOpen,
   idPrefix,
+  capReached = false,
 }: {
   base: string;
   /** Display name of the base zman (e.g. "Tzeit ha-Kochavim"). */
@@ -69,13 +70,16 @@ export function ZmanBaseControl({
   onToggleOpen: () => void;
   /** DOM id namespace so the settings and export pickers don't collide. */
   idPrefix: string;
+  /** When a selection cap is in force and reached, unchecked options are disabled. */
+  capReached?: boolean;
 }) {
   if (keys.length === 1) {
     const key = keys[0];
     const id = `${idPrefix}-${key}`;
+    const disabled = capReached && !isSelected(key);
     return (
-      <label htmlFor={id} className="flex cursor-pointer items-center gap-2">
-        <Checkbox id={id} checked={isSelected(key)} onCheckedChange={(v) => setSelected(key, v === true)} />
+      <label htmlFor={id} className={cn('flex items-center gap-2', disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer')}>
+        <Checkbox id={id} checked={isSelected(key)} disabled={disabled} onCheckedChange={(v) => setSelected(key, v === true)} />
         <span className="text-sm">{name}</span>
       </label>
     );
@@ -90,6 +94,8 @@ export function ZmanBaseControl({
           id={`${idPrefix}-base-${base}`}
           aria-label={name}
           checked={selectedCount === keys.length ? true : selectedCount === 0 ? false : 'indeterminate'}
+          // At the cap, "select all" would overshoot — disable it (clearing stays allowed).
+          disabled={capReached && selectedCount < keys.length}
           // Anything less than all selected → select all; fully selected → clear.
           onCheckedChange={() => {
             const selectAll = selectedCount < keys.length;
@@ -120,9 +126,14 @@ export function ZmanBaseControl({
         <div id={panelId} className="space-y-1 ps-6">
           {keys.map((key) => {
             const id = `${idPrefix}-${key}`;
+            const disabled = capReached && !isSelected(key);
             return (
-              <label key={key} htmlFor={id} className="flex cursor-pointer items-center gap-2">
-                <Checkbox id={id} checked={isSelected(key)} onCheckedChange={(v) => setSelected(key, v === true)} />
+              <label
+                key={key}
+                htmlFor={id}
+                className={cn('flex items-center gap-2', disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer')}
+              >
+                <Checkbox id={id} checked={isSelected(key)} disabled={disabled} onCheckedChange={(v) => setSelected(key, v === true)} />
                 <span className="text-muted-foreground text-xs">{shitaLabel(key)}</span>
               </label>
             );

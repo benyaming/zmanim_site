@@ -37,6 +37,22 @@
     "nameLabel": "Name"
   },
   "zmanim": {
+    "approximateNote": "Approximate time. The sun never reaches this depression angle here on this date (a short night), so this is a fixed seasonal-hour (shaah zmanit) estimate rather than the degree-based calculation.",
+    "abbr": {
+      "alos": "Alot",
+      "misheyakir": "Misheyakir",
+      "sunrise": "Netz",
+      "sofZmanShma": "Shema",
+      "sofZmanTfila": "Tefila",
+      "chatzos": "Chatzot",
+      "minchaGedola": "Mincha G.",
+      "minchaKetana": "Mincha K.",
+      "plagHamincha": "Plag",
+      "sunset": "Shkia",
+      "tzais": "Tzeit",
+      "chatzosLaila": "Midnight",
+      "shaahZmanis": "Sha'ah"
+    },
     "groups": {
       "dawn": "Dawn",
       "morning": "Morning",
@@ -275,6 +291,7 @@
     "molad": "Molad: {weekday}, {time} and {chalakim} chalakim",
     "parasha": "Parashat {name}",
     "detailsAria": "{label} — details",
+    "warningAria": "Note about {label}",
     "zmanimSettingsHint": "More zmanim and opinions can be shown via the calendar settings.",
     "lehumraChip": "lehumra",
     "lehumraNote": "Times are rounded to the stringent whole minute (lehumra).",
@@ -283,6 +300,15 @@
     "observedAdvanced": "Observed earlier this year because of Shabbat."
   },
   "learning": {
+    "abbr": {
+      "dafYomi": "Daf",
+      "yerushalmiYomi": "Yeru.",
+      "mishnaYomit": "Mishna",
+      "nachYomi": "Nach",
+      "tehillim": "Tehillim",
+      "rambam": "Rambam",
+      "pirkeiAvot": "Avot"
+    },
     "title": "Daily learning",
     "dafYomi": "Daf Yomi",
     "dafYomiInfo": "One page (daf) of the Babylonian Talmud a day; the worldwide cycle completes the entire Talmud in about 7½ years.",
@@ -328,6 +354,7 @@
     "zmanimDisplay": "Displayed zmanim",
     "zmanimDisplayHint": "Choose which zmanim and opinions appear in the day panel.",
     "zmanimShowAll": "Show all",
+    "zmanimRestoreDefaults": "Restore defaults",
     "appearanceTitle": "Appearance",
     "appearanceOpen": "Appearance settings",
     "calendarTitle": "Calendar",
@@ -377,6 +404,14 @@
     "includeFasts": "Fast times",
     "includeCustomDates": "Personal dates",
     "noZmanim": "Pick at least one zman.",
+    "noColumns": "Pick at least one column or zman.",
+    "transpose": "Transpose table",
+    "transposeHint": "Put the fields down the side and one column per day (best for a short range).",
+    "cellZmanim": "In each day cell",
+    "cellZmanimHint": "Up to 5 zmanim or daily-learning readings in each day.",
+    "cellApproxNote": "* fixed seasonal-hour estimate on a short night",
+    "noteElevation": "Elevation-adjusted ({meters} m)",
+    "noteLehumra": "Rounded to the stringent minute (lehumra)",
     "colDate": "Date",
     "colWeekday": "Day",
     "colHebrewDate": "Hebrew date",

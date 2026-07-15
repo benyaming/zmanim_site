@@ -20,20 +20,21 @@ export const ZMANIM: readonly ZmanDefinition[] = [
   // Alot ha-Shachar — dawn. Earliest (most stringent) to latest, mixing
   // degree-based opinions (location-independent) and fixed/proportional minutes.
   { key: 'alos90', base: 'alos', method: 'getAlos90', category: 'dawn', order: 10 }, // fixed 90 min (4 mil × 22.5)
-  { key: 'alos198', base: 'alos', method: 'getAlos19Point8Degrees', category: 'dawn', order: 12 }, // 19.8° ≈ 90 min
+  { key: 'alos198', base: 'alos', method: 'getAlos19Point8Degrees', category: 'dawn', order: 12, fallback: { method: 'getAlos90Zmanis' } }, // 19.8° ≈ 90 min
   { key: 'alos18', base: 'alos', method: 'getAlos18Degrees', category: 'dawn', order: 14 }, // 18° astronomical twilight
   { key: 'alosBaalHatanya', base: 'alos', method: 'getAlosBaalHatanya', category: 'dawn', order: 16 }, // 16.9°
   { key: 'alos72Zmanis', base: 'alos', method: 'getAlos72Zmanis', category: 'dawn', order: 18 }, // 72 proportional min
-  { key: 'alosHashachar', base: 'alos', method: 'getAlosHashachar', category: 'dawn', order: 20 }, // 16.1° ≈ 72 min
+  { key: 'alosHashachar', base: 'alos', method: 'getAlosHashachar', category: 'dawn', order: 20, fallback: { method: 'getAlos72Zmanis' } }, // 16.1° ≈ 72 min
   { key: 'alos72', base: 'alos', method: 'getAlos72', category: 'dawn', order: 22 }, // fixed 72 min (MGA day)
   { key: 'alos60', base: 'alos', method: 'getAlos60', category: 'dawn', order: 24 }, // fixed 60 min
 
   // Misheyakir — earliest tallit & tefillin. Earliest (11.5°) to latest (7.65°).
-  { key: 'misheyakir115', base: 'misheyakir', method: 'getMisheyakir11Point5Degrees', category: 'dawn', order: 30 },
-  { key: 'misheyakir11', base: 'misheyakir', method: 'getMisheyakir11Degrees', category: 'dawn', order: 32 },
-  { key: 'misheyakir102', base: 'misheyakir', method: 'getMisheyakir10Point2Degrees', category: 'dawn', order: 34 },
-  { key: 'misheyakir95', base: 'misheyakir', method: 'getMisheyakir9Point5Degrees', category: 'dawn', order: 36 },
-  { key: 'misheyakir765', base: 'misheyakir', method: 'getMisheyakir7Point65Degrees', category: 'dawn', order: 38 },
+  // Short-night fallbacks offset the documented equinox anchor as seasonal minutes.
+  { key: 'misheyakir115', base: 'misheyakir', method: 'getMisheyakir11Point5Degrees', category: 'dawn', order: 30, fallback: { anchor: 'sunrise', zmaniyosMinutes: 50 } },
+  { key: 'misheyakir11', base: 'misheyakir', method: 'getMisheyakir11Degrees', category: 'dawn', order: 32, fallback: { anchor: 'sunrise', zmaniyosMinutes: 48 } },
+  { key: 'misheyakir102', base: 'misheyakir', method: 'getMisheyakir10Point2Degrees', category: 'dawn', order: 34, fallback: { anchor: 'sunrise', zmaniyosMinutes: 44 } },
+  { key: 'misheyakir95', base: 'misheyakir', method: 'getMisheyakir9Point5Degrees', category: 'dawn', order: 36, fallback: { anchor: 'sunrise', zmaniyosMinutes: 41 } },
+  { key: 'misheyakir765', base: 'misheyakir', method: 'getMisheyakir7Point65Degrees', category: 'dawn', order: 38, fallback: { anchor: 'sunrise', zmaniyosMinutes: 32 } },
 
   // ── Morning ───────────────────────────────────────────────────────────
   { key: 'sunrise', base: 'sunrise', method: 'getSunrise', category: 'morning', order: 50 },
@@ -92,10 +93,11 @@ export const ZMANIM: readonly ZmanDefinition[] = [
   // latitude/season (the invariants test deliberately does not pin it).
   // 5.95° — the Baal HaTanya's nightfall (Siddur Admur haZaken); matches myzmanim
   // to the second. Supersedes the 6° getTzaisBaalHatanya, which was 16s later.
-  { key: 'tzaisGeonim', base: 'tzais', method: 'getTzaisGeonim5Point95Degrees', category: 'evening', order: 160 },
-  { key: 'tzaisGeonim645', base: 'tzais', method: 'getTzaisGeonim6Point45Degrees', category: 'evening', order: 164 }, // R' Tukachinsky 6.45°
-  { key: 'tzaisGeonim7083', base: 'tzais', method: 'getTzaisGeonim7Point083Degrees', category: 'evening', order: 166 }, // R' Moshe Feinstein 7.083°
-  { key: 'tzais', base: 'tzais', method: 'getTzais', category: 'evening', order: 168 }, // 8.5° — 3 small stars
+  // Short-night fallbacks offset the documented equinox anchor as seasonal minutes.
+  { key: 'tzaisGeonim', base: 'tzais', method: 'getTzaisGeonim5Point95Degrees', category: 'evening', order: 160, fallback: { anchor: 'sunset', zmaniyosMinutes: 24 } },
+  { key: 'tzaisGeonim645', base: 'tzais', method: 'getTzaisGeonim6Point45Degrees', category: 'evening', order: 164, fallback: { anchor: 'sunset', zmaniyosMinutes: 26 } }, // R' Tukachinsky 6.45°
+  { key: 'tzaisGeonim7083', base: 'tzais', method: 'getTzaisGeonim7Point083Degrees', category: 'evening', order: 166, fallback: { anchor: 'sunset', zmaniyosMinutes: 29 } }, // R' Moshe Feinstein 7.083°
+  { key: 'tzais', base: 'tzais', method: 'getTzais', category: 'evening', order: 168, fallback: { anchor: 'sunset', zmaniyosMinutes: 36 } }, // 8.5° — 3 small stars
   { key: 'tzaisAteretTorah', base: 'tzais', method: 'getTzaisAteretTorah', category: 'evening', order: 170 }, // 40 min
   // 42 fixed minutes after sunset. kosher-zmanim has no getTzais42 (only 50/60/72…),
   // so it's expressed as getSunset + 42. Matches zmanim_api/zmanim_bot's tzeis_42_minutes.
@@ -103,7 +105,7 @@ export const ZMANIM: readonly ZmanDefinition[] = [
   { key: 'tzais50', base: 'tzais', method: 'getTzais50', category: 'evening', order: 174 }, // Igros Moshe
   { key: 'tzais60', base: 'tzais', method: 'getTzais60', category: 'evening', order: 176 }, // fixed 60 min
   { key: 'tzais72', base: 'tzais', method: 'getTzais72', category: 'evening', order: 178 }, // Rabbeinu Tam, fixed 72 min
-  { key: 'tzais161', base: 'tzais', method: 'getTzais16Point1Degrees', category: 'evening', order: 180 }, // Rabbeinu Tam, 16.1°
+  { key: 'tzais161', base: 'tzais', method: 'getTzais16Point1Degrees', category: 'evening', order: 180, fallback: { method: 'getTzais72Zmanis' } }, // Rabbeinu Tam, 16.1°
   { key: 'tzais72Zmanis', base: 'tzais', method: 'getTzais72Zmanis', category: 'evening', order: 182 }, // 72 proportional min
   { key: 'tzais18', base: 'tzais', method: 'getTzais18Degrees', category: 'evening', order: 184 }, // 18°
   { key: 'tzais90', base: 'tzais', method: 'getTzais90', category: 'evening', order: 186 }, // fixed 90 min

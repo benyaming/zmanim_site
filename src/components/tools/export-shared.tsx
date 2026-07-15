@@ -22,10 +22,10 @@ export function useReportLocale(): { reportLocale: string; field: ReactNode } {
   const [reportLocale, setReportLocale] = useState(uiLocale);
 
   const field = (
-    <div className="flex items-center gap-2">
-      <span className="text-muted-foreground w-10 shrink-0 text-xs">{tLang('label')}</span>
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+      <span className="text-muted-foreground min-w-[3.75rem] text-xs">{tLang('label')}</span>
       <Select value={reportLocale} onValueChange={setReportLocale}>
-        <SelectTrigger className="flex-1">
+        <SelectTrigger className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -59,10 +59,10 @@ export function useExportLocation(): { location: AppLocation; field: ReactNode }
 
   const field =
     savedLocations.length > 0 ? (
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground w-10 shrink-0 text-xs">{t('location')}</span>
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+        <span className="text-muted-foreground min-w-[3.75rem] text-xs">{t('location')}</span>
         <Select value={selectedId} onValueChange={setSelectedId}>
-          <SelectTrigger className="flex-1">
+          <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -79,8 +79,8 @@ export function useExportLocation(): { location: AppLocation; field: ReactNode }
       </div>
     ) : (
       <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground w-10 shrink-0 text-xs">{t('location')}</span>
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+          <span className="text-muted-foreground min-w-[3.75rem] text-xs">{t('location')}</span>
           <span className="flex min-w-0 items-center gap-1.5 text-sm">
             <MapPin className="text-muted-foreground size-3.5 shrink-0" />
             <span className="truncate">{currentLabel}</span>

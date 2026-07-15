@@ -42,6 +42,20 @@ export const DEFAULT_HIDDEN_ZMANIM: readonly string[] = CONFIGURABLE_ZMANIM.filt
   (z) => !DEFAULT_VISIBLE_KEYS.has(z.key),
 ).map((z) => z.key);
 
+const DEFAULT_HIDDEN_ZMANIM_SET = new Set(DEFAULT_HIDDEN_ZMANIM);
+
+/**
+ * True when a hide-list is exactly the everyday default (as a set). Drives the
+ * "restore defaults" affordance: shown only when the current selection differs
+ * — i.e. after "show all" or any hand-picked deviation.
+ */
+export function isDefaultHiddenZmanim(hidden: readonly string[]): boolean {
+  const set = new Set(hidden);
+  if (set.size !== DEFAULT_HIDDEN_ZMANIM_SET.size) return false;
+  for (const key of set) if (!DEFAULT_HIDDEN_ZMANIM_SET.has(key)) return false;
+  return true;
+}
+
 /**
  * Zmanim introduced as strictly OPT-IN: hidden by default for everyone,
  * including users whose persisted hide list predates them. The hide-list
