@@ -37,7 +37,7 @@
     "nameLabel": "Name"
   },
   "zmanim": {
-    "noDegreeTimeNote": "A blank time means the sun never gets that low here on a short summer night.",
+    "noDegreeTimeNote": "A dash means the sun never dips far enough below the horizon here on a short summer night.",
     "abbr": {
       "alos": "Alot",
       "misheyakir": "Misheyakir",
