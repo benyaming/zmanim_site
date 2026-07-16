@@ -37,7 +37,7 @@
     "nameLabel": "Name"
   },
   "zmanim": {
-    "noDegreeTimeNote": "This opinion has no time here today: the sun never reaches the angle below the horizon that it depends on, which happens at high latitudes when the night is short. Other opinions of the same zman are computed differently and still have a time — see the rows nearby.",
+    "noDegreeTimeNote": "A blank time means the sun never gets that low here on a short summer night.",
     "abbr": {
       "alos": "Alot",
       "misheyakir": "Misheyakir",

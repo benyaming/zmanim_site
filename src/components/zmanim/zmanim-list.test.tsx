@@ -163,52 +163,49 @@ describe('ZmanimList', () => {
     expect(screen.getByRole('button', { name: 'fam:seasonalMinutes — details' })).toBeInTheDocument();
   });
 
-  it('explains an all-blank degrees family once on its heading, not per row', () => {
+  const NOTE = 'The sun never gets that low here.';
+
+  it('shows the blank caption once per family when the family has any blank', () => {
     render(
       <ZmanimList
         groups={alot([
-          // Short night: the sun reaches neither angle, so both degree rows are
-          // blank for the same reason. The two fixed rows make the base group.
+          // Short night: both degree rows blank; the two fixed rows make it group.
           { key: 'alosHashachar', shita: '16.1°', family: 'degrees', detail: '', time: null },
           { key: 'alos18', shita: '18°', family: 'degrees', detail: '', time: null },
           { key: 'alos90', shita: '90 min', family: 'fixedMinutes', detail: '', time: at('03:52') },
           { key: 'alos72', shita: '72 min', family: 'fixedMinutes', detail: '', time: at('04:10') },
         ])}
-        noDegreeTimeNote="The sun never gets that low here."
+        noDegreeTimeNote={NOTE}
       />,
     );
-    // The explanation replaces the family's own description on the heading...
+    // One visible caption for the blank degrees family — not per row, and not on
+    // the fixed-minute family (which has times).
+    expect(screen.getAllByText(NOTE)).toHaveLength(1);
+    // The family headings still carry their method description.
     expect(screen.getByRole('button', { name: 'fam:degrees — details' })).toBeInTheDocument();
-    // ...and is not repeated on either blank row.
-    expect(screen.queryByRole('button', { name: '16.1° — details' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '18° — details' })).not.toBeInTheDocument();
   });
 
-  it('explains a partially-blank degrees family per row, where the blank distinguishes them', () => {
+  it('shows the caption for a partially-blank family too (some rows have times)', () => {
     render(
       <ZmanimList
         groups={alot([
-          // The sun reaches 19.8° but not 16.1° — a partially-blank degrees
-          // family. Here the blank is what tells the rows apart, so the hint
-          // belongs on the blank row, not the heading.
           { key: 'alos198', shita: '19.8°', family: 'degrees', detail: '', time: at('03:20') },
           { key: 'alosHashachar', shita: '16.1°', family: 'degrees', detail: '', time: null },
           { key: 'alos90', shita: '90 min', family: 'fixedMinutes', detail: '', time: at('03:52') },
           { key: 'alos72', shita: '72 min', family: 'fixedMinutes', detail: '', time: at('04:10') },
         ])}
-        noDegreeTimeNote="The sun never gets that low here."
+        noDegreeTimeNote={NOTE}
       />,
     );
-    // The blank 16.1° row carries the explanation; the real 19.8° row needs none.
-    expect(screen.getByRole('button', { name: '16.1° — details' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '19.8° — details' })).not.toBeInTheDocument();
+    // The degrees family has one blank (16.1°) → one caption; the real 19.8° and
+    // the fixed family need none.
+    expect(screen.getAllByText(NOTE)).toHaveLength(1);
   });
 
-  it('explains a blank day-fraction opinion whose degree boundary is unreached', () => {
+  it('captions a blank day-fraction opinion whose degree boundary is unreached', () => {
     // Sof zman Shma's Magen Avraham variants measure from a degree-based dawn, so
     // on a short night they go null too — despite being family `dawnToNightfall`,
-    // not `degrees`. The whole MGA family is blank while the GRA day resolves, so
-    // the explanation sits once on the dawn-to-nightfall heading.
+    // not `degrees`. The caption still appears for that family.
     render(
       <ZmanimList
         groups={[
@@ -230,20 +227,17 @@ describe('ZmanimList', () => {
             ],
           },
         ]}
-        noDegreeTimeNote="The sun never gets that low here."
+        noDegreeTimeNote={NOTE}
       />,
     );
-    // The dawn-to-nightfall heading explains the two blanks once...
-    expect(screen.getByRole('button', { name: 'fam:dawnToNightfall — details' })).toBeInTheDocument();
-    // ...not repeated on the MGA rows, and the resolving GRA day is untouched.
-    expect(screen.queryByRole('button', { name: 'MGA 18° — details' })).not.toBeInTheDocument();
+    // One caption for the blank dawn-to-nightfall family; the GRA day resolves.
+    expect(screen.getAllByText(NOTE)).toHaveLength(1);
     expect(screen.getByText(/8:44/)).toBeInTheDocument();
   });
 
-  it('explains an all-blank flat (non-grouped) base once beside the name, not per row', () => {
+  it('captions an all-blank flat (non-grouped) base once, not per row', () => {
     // Misheyakir is single-family (all degrees) so it never groups. At a very
-    // high latitude every opinion is blank; the explanation belongs once on the
-    // name, not stamped on all five rows.
+    // high latitude every opinion is blank; one caption for the base, not five.
     render(
       <ZmanimList
         groups={[
@@ -264,15 +258,50 @@ describe('ZmanimList', () => {
             ],
           },
         ]}
-        noDegreeTimeNote="The sun never gets that low here."
+        noDegreeTimeNote={NOTE}
       />,
     );
-    // Exactly one no-time explanation (on the name), plus the base's own
-    // description hint — never one per blank row.
-    expect(screen.getByRole('button', { name: 'Misheyakir — details' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '11.5° — details' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '10.2° — details' })).not.toBeInTheDocument();
+    expect(screen.getAllByText(NOTE)).toHaveLength(1);
     expect(screen.getAllByText('—')).toHaveLength(3);
+    // The base keeps its own description hint (the caption is separate inline text).
+    expect(screen.getByRole('button', { name: 'Misheyakir — details' })).toBeInTheDocument();
+  });
+
+  it('captions the everyday single-opinion default when it is blank', () => {
+    // The default panel shows one Alot (16.1°). At Düsseldorf it is null, so the
+    // one-line row must still explain its own dash — the case a default user hits.
+    render(
+      <ZmanimList
+        groups={[
+          {
+            category: 'dawn',
+            label: 'Dawn',
+            items: [
+              withFamilies({
+                base: 'alos',
+                name: 'Alot ha-Shachar',
+                description: 'Dawn.',
+                rows: [{ key: 'alosHashachar', shita: '16.1°', family: 'degrees', detail: '', time: null }],
+              }),
+            ],
+          },
+        ]}
+        noDegreeTimeNote={NOTE}
+      />,
+    );
+    expect(screen.getByText(NOTE)).toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('suppresses the caption entirely when the note is empty (polar day)', () => {
+    render(
+      <ZmanimList
+        groups={alot([{ key: 'alosHashachar', shita: '16.1°', family: 'degrees', detail: '', time: null }])}
+        noDegreeTimeNote=""
+      />,
+    );
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.queryByText(NOTE)).not.toBeInTheDocument();
   });
 
   it('groups Sof zman Shma by day-definition, where the arithmetic is identical', () => {
