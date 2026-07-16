@@ -99,36 +99,86 @@ describe('ZMANIM definitions integrity', () => {
   });
 
   /**
-   * LOCKED short-night fallbacks. Each degree-based dawn/night zman that can go
-   * null at high latitude falls back to a seasonal-hour approximation; the exact
-   * mapping is pinned so a fallback can't silently change or disappear. Method
-   * fallbacks must resolve to a real (proportional) calendar method.
+   * LOCKED key → family mapping. `family` drives how the UI groups and explains
+   * opinions — in particular which blanks get the "the sun never reaches this
+   * angle" explanation — so a wrong tag mislabels the method behind a time.
+   * Grouped by family (not listed key-by-key) so the shape stays readable and a
+   * new zman lands in a deliberate bucket.
    */
-  it('locks the degree → seasonal-hour fallback mapping', () => {
-    const fallbacks = Object.fromEntries(ZMANIM.filter((z) => z.fallback).map((z) => [z.key, z.fallback]));
-    expect(fallbacks).toEqual({
-      alos198: { method: 'getAlos90Zmanis' },
-      alosHashachar: { method: 'getAlos72Zmanis' },
-      misheyakir115: { anchor: 'sunrise', zmaniyosMinutes: 50 },
-      misheyakir11: { anchor: 'sunrise', zmaniyosMinutes: 48 },
-      misheyakir102: { anchor: 'sunrise', zmaniyosMinutes: 44 },
-      misheyakir95: { anchor: 'sunrise', zmaniyosMinutes: 41 },
-      misheyakir765: { anchor: 'sunrise', zmaniyosMinutes: 32 },
-      tzaisGeonim: { anchor: 'sunset', zmaniyosMinutes: 24 },
-      tzaisGeonim645: { anchor: 'sunset', zmaniyosMinutes: 26 },
-      tzaisGeonim7083: { anchor: 'sunset', zmaniyosMinutes: 29 },
-      tzais: { anchor: 'sunset', zmaniyosMinutes: 36 },
-      tzais161: { method: 'getTzais72Zmanis' },
+  it('locks the exact key -> family mapping', () => {
+    const byFamily: Record<string, string[]> = {};
+    for (const z of ZMANIM) (byFamily[z.family] ??= []).push(z.key);
+    expect(byFamily).toEqual({
+      // The sun reaches a depression angle — the only family that can be
+      // undefined on a short night.
+      degrees: [
+        'alos198',
+        'alos18',
+        'alosBaalHatanya',
+        'alosHashachar',
+        'misheyakir115',
+        'misheyakir11',
+        'misheyakir102',
+        'misheyakir95',
+        'misheyakir765',
+        'tzaisGeonim',
+        'tzaisGeonim645',
+        'tzaisGeonim7083',
+        'tzais',
+        'tzais161',
+        'tzais18',
+      ],
+      // A fixed clock-minute offset from sunrise/sunset (or chatzot).
+      fixedMinutes: [
+        'alos90',
+        'alos72',
+        'alos60',
+        'minchaGedola30',
+        'candleLighting',
+        'tzaisAteretTorah',
+        'tzais42',
+        'tzais50',
+        'tzais60',
+        'tzais72',
+        'tzais90',
+      ],
+      // A proportional (zmaniyos) minute offset — stretches with the day.
+      seasonalMinutes: ['alos72Zmanis', 'tzais72Zmanis'],
+      // A fraction of the day measured dawn → nightfall (the Magen Avraham day).
+      dawnToNightfall: [
+        'sofZmanShmaMGA90',
+        'sofZmanShmaMGA18',
+        'sofZmanShmaMGA161',
+        'sofZmanShmaMGA',
+        'sofZmanTfilaMGA90',
+        'sofZmanTfilaMGA18',
+        'sofZmanTfilaMGA161',
+        'sofZmanTfilaMGA',
+        'sofZmanAchilasChametzMGA',
+        'sofZmanBiurChametzMGA',
+        'minchaGedola161',
+        'minchaKetana161',
+        'shaahZmanisMGA',
+      ],
+      // A fraction of the day measured sunrise → sunset (Vilna Gaon / Baal HaTanya).
+      sunriseToSunset: [
+        'sofZmanShmaBaalHatanya',
+        'sofZmanShmaGRA',
+        'sofZmanTfilaBaalHatanya',
+        'sofZmanTfilaGRA',
+        'sofZmanAchilasChametzGRA',
+        'sofZmanBiurChametzGRA',
+        'minchaGedola',
+        'minchaGedolaBaalHatanya',
+        'minchaKetana',
+        'minchaKetanaBaalHatanya',
+        'plagHamincha',
+        'plagBaalHatanya',
+        'shaahZmanisGRA',
+      ],
+      // The sun's own position.
+      solar: ['sunrise', 'chatzos', 'sunset', 'chatzosLaila'],
     });
-  });
-
-  it('binds every method fallback to a real calendar method', () => {
-    const proto = ComplexZmanimCalendar.prototype as unknown as Record<string, unknown>;
-    for (const z of ZMANIM) {
-      if (z.fallback && 'method' in z.fallback) {
-        expect(typeof proto[z.fallback.method], `${z.key} fallback -> ${z.fallback.method}`).toBe('function');
-      }
-    }
   });
 
   it('marks exactly the astronomical hours as durations', () => {

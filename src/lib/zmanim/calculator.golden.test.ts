@@ -73,10 +73,14 @@ const CASES: GoldenCase[] = [
     lng: -0.1278,
     date: '2024-06-21',
     expected: {
-      // 16.1° dawn is never reached here mid-summer, so the degree method is
-      // null and computeZmanim falls back to the seasonal-hour equivalent
-      // (getAlos72Zmanis), flagged `approximate` — see calculator.fallback.test.ts.
-      alosHashachar: '03:03:20',
+      // 16.1° dawn is never reached here mid-summer: the opinion has no time and
+      // that null is what we show — no minute-based stand-in is substituted under
+      // its label. Its two minute-based counterparts DO have times, and are
+      // pinned beside it so the contrast stays visible in the fixture.
+      // See calculator.shortnight.test.ts.
+      alosHashachar: null,
+      alos72: '03:31:10',
+      alos72Zmanis: '03:03:20',
       sunrise: '04:43:10',
       sofZmanShmaGRA: '08:52:48',
       chatzos: '13:02:19',

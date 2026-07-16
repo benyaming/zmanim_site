@@ -21,6 +21,27 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.19',
+    date: '2026-07-16',
+    notes: {
+      en: [
+        'Short-night fix: a zman the sun never reaches is shown as having no time, with an explanation — never an estimate under another opinion’s name.',
+        'Fasts at such locations begin AND end at a labelled fixed-minute time, so an end always shows — even on Tisha B’Av.',
+        'Opinions are now grouped by how they are calculated — Alot/Tzeit by sun angle or minutes, Shma/Tfila by the day used — each explained.',
+      ],
+      he: [
+        'תיקון ללילה קצר: זמן שהשמש אינה מגיעה אליו מוצג כחסר, עם הסבר — ולא כאומדן בשם שיטה אחרת.',
+        'במקומות אלו התענית מתחילה ומסתיימת בזמן קבוע מסומן — כך שסוף התענית תמיד מוצג, גם בתשעה באב.',
+        'השיטות מקובצות לפי אופן החישוב — עלות/צאת לפי זווית השמש או דקות, וזמן שמע/תפילה לפי אורך היום — עם הסבר לכל אחד.',
+      ],
+      ru: [
+        'Исправление для короткой ночи: зман, до которого солнце не опускается, показывается как отсутствующий с пояснением, а не оценкой от имени другого мнения.',
+        'В таких местах пост начинается и завершается по фиксированным минутам с указанием мнения — конец всегда показан.',
+        'Мнения сгруппированы по способу расчёта — заря/выход звёзд по углу солнца или минутам, Шма/Тфила по длине дня — с пояснением каждого.',
+      ],
+    },
+  },
+  {
     version: '1.18',
     date: '2026-07-12',
     notes: {

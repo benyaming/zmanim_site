@@ -27,7 +27,7 @@ function cfg(over: Partial<ExportMonthCfg>): ExportMonthCfg {
       learningAbbr: (key) => key,
       zmanLegend: (key) => `legend:${key}`,
       learningName: (key) => `learn:${key}`,
-      approxNote: 'APPROX',
+      noTimeNote: 'NOTIME',
       noteElevation: (m) => `elev:${m}`,
       noteLehumra: 'LEHUMRA',
     },
@@ -44,9 +44,7 @@ describe('buildExportMonth cell items', () => {
     );
     const cell = data.cells.find((c) => c.iso === '2024-03-20')!; // equinox, in-month
     expect(cell.items.map((i) => i.label)).toEqual(['sunrise', 'sunset']); // canonical order
-    expect(cell.items.every((i) => !i.approximate)).toBe(true);
     expect(cell.items.every((i) => /\d/.test(i.value))).toBe(true);
-    expect(data.approxNote).toBeNull();
     expect(data.legend.map((l) => l.label)).toEqual(['sunrise', 'sunset']);
   });
 
@@ -56,7 +54,7 @@ describe('buildExportMonth cell items', () => {
     expect(data.legend).toEqual([]);
   });
 
-  it('flags a short-night seasonal-hour fallback and surfaces the footnote', () => {
+  it('renders a short-night degree zman as an empty cell value, never a substitute', () => {
     const helsinki = { ...DEFAULT_LOCATION, lat: 60, lng: 25, timeZoneId: 'Europe/Helsinki', inIsrael: false };
     const data = buildExportMonth(
       DateTime.fromISO('2024-06-15'),
@@ -66,9 +64,10 @@ describe('buildExportMonth cell items', () => {
     const cell = data.cells.find((c) => c.iso === '2024-06-21')!;
     const alos = cell.items.find((i) => i.label === 'alos')!; // labelled by base
     const shkia = cell.items.find((i) => i.label === 'sunset')!;
-    expect(alos.approximate).toBe(true); // 16.1° dawn unreachable → seasonal-hour estimate
-    expect(shkia.approximate).toBe(false);
-    expect(data.approxNote).toBe('APPROX');
+    // The 16.1° dawn is unreachable at 60°N in June: no time, and no minute-based
+    // stand-in silently printed under the degree opinion's label.
+    expect(alos.value).toBe('—');
+    expect(/\d/.test(shkia.value)).toBe(true);
   });
 
   it('supports learning cycles as cell items, after the zmanim', () => {

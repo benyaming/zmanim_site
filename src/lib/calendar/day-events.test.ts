@@ -3,8 +3,10 @@ import { describe, expect, it } from 'vitest';
 
 import { getDayEvents } from './day-events';
 
-// Distinct sentinel times so we can assert which zman each fast-end references.
-const TZEIT = {
+// Distinct sentinel times so we can assert which zman each fast bookend references.
+const ZMANIM = {
+  alosHashachar: DateTime.fromISO('2024-01-01T04:00'),
+  alos72: DateTime.fromISO('2024-01-01T03:50'),
   tzaisGeonim: DateTime.fromISO('2024-01-01T18:40'),
   tzaisGeonim645: DateTime.fromISO('2024-01-01T18:41'),
   tzaisGeonim7083: DateTime.fromISO('2024-01-01T18:42'),
@@ -14,11 +16,10 @@ const TZEIT = {
 };
 const TIMES = {
   candleLighting: DateTime.fromISO('2024-01-01T18:00'),
-  alos: DateTime.fromISO('2024-01-01T04:00'),
   sunset: DateTime.fromISO('2024-01-01T17:30'),
   // Distinct from tzais, so we can assert havdalah uses the chosen-opinion time.
   havdalah: DateTime.fromISO('2024-01-01T19:05'),
-  tzeitByKey: TZEIT,
+  zmanimByKey: ZMANIM,
 };
 
 function events(iso: string) {
@@ -40,11 +41,26 @@ describe('getDayEvents', () => {
     const e = getDayEvents(DateTime.fromISO('2024-07-23'), TIMES); // 17 Tammuz
     // Default-visible: Geonim 5.95°, medium-stars 7.083°, small-stars 8.5°.
     expect(e).toEqual([
-      { type: 'fastStart', time: TIMES.alos },
-      { type: 'fastEnd', time: TZEIT.tzaisGeonim, zmanKey: 'tzaisGeonim' },
-      { type: 'fastEnd', time: TZEIT.tzaisGeonim7083, zmanKey: 'tzaisGeonim7083' },
-      { type: 'fastEnd', time: TZEIT.tzais, zmanKey: 'tzais' },
+      { type: 'fastStart', time: ZMANIM.alosHashachar, zmanKey: 'alosHashachar' },
+      { type: 'fastEnd', time: ZMANIM.tzaisGeonim, zmanKey: 'tzaisGeonim' },
+      { type: 'fastEnd', time: ZMANIM.tzaisGeonim7083, zmanKey: 'tzaisGeonim7083' },
+      { type: 'fastEnd', time: ZMANIM.tzais, zmanKey: 'tzais' },
     ]);
+  });
+
+  it('starts a fast at the fixed-72-minute dawn when the degree dawn has no time', () => {
+    // A short night: the sun never reaches 16.1°, so alosHashachar is null. The
+    // fast still needs a start, so the next opinion supplies it — and the event
+    // NAMES that opinion, so the time is never shown under a 16.1° label.
+    const shortNight = { ...TIMES, zmanimByKey: { ...ZMANIM, alosHashachar: null } };
+    const start = getDayEvents(DateTime.fromISO('2024-07-23'), shortNight).find((e) => e.type === 'fastStart');
+    expect(start).toEqual({ type: 'fastStart', time: ZMANIM.alos72, zmanKey: 'alos72' });
+  });
+
+  it('reports a null fast start when no dawn opinion has a time (polar day)', () => {
+    const polar = { ...TIMES, zmanimByKey: { ...ZMANIM, alosHashachar: null, alos72: null } };
+    const start = getDayEvents(DateTime.fromISO('2024-07-23'), polar).find((e) => e.type === 'fastStart');
+    expect(start).toEqual({ type: 'fastStart', time: null, zmanKey: 'alosHashachar' });
   });
 
   it('honors a custom hiddenFastEnd for a minor fast', () => {
@@ -52,10 +68,69 @@ describe('getDayEvents', () => {
     const hidden = ['tzaisGeonim', 'tzaisGeonim7083', 'tzais', 'tzais72'];
     const e = getDayEvents(DateTime.fromISO('2024-07-23'), TIMES, false, hidden);
     expect(e).toEqual([
-      { type: 'fastStart', time: TIMES.alos },
-      { type: 'fastEnd', time: TZEIT.tzaisGeonim645, zmanKey: 'tzaisGeonim645' },
-      { type: 'fastEnd', time: TZEIT.tzais42, zmanKey: 'tzais42' },
+      { type: 'fastStart', time: ZMANIM.alosHashachar, zmanKey: 'alosHashachar' },
+      { type: 'fastEnd', time: ZMANIM.tzaisGeonim645, zmanKey: 'tzaisGeonim645' },
+      { type: 'fastEnd', time: ZMANIM.tzais42, zmanKey: 'tzais42' },
     ]);
+  });
+
+  it('falls through to the fixed-72 nightfall when every visible fast-end is null (minor fast)', () => {
+    // A short night: all default (degree) nightfall opinions are undefined. The
+    // fast must still show an end, so tzais72 is appended, labelled — the same
+    // fall-through the fast START uses. The blank degree rows stay, so the user
+    // still sees which opinions had no time.
+    const shortNight = {
+      ...TIMES,
+      zmanimByKey: { ...ZMANIM, tzaisGeonim: null, tzaisGeonim7083: null, tzais: null },
+    };
+    const ends = getDayEvents(DateTime.fromISO('2024-07-23'), shortNight).filter((e) => e.type === 'fastEnd');
+    expect(ends).toEqual([
+      { type: 'fastEnd', time: null, zmanKey: 'tzaisGeonim' },
+      { type: 'fastEnd', time: null, zmanKey: 'tzaisGeonim7083' },
+      { type: 'fastEnd', time: null, zmanKey: 'tzais' },
+      { type: 'fastEnd', time: ZMANIM.tzais72, zmanKey: 'tzais72' },
+    ]);
+  });
+
+  it('falls through for Tisha B\'Av, whose only default nightfall (8.5°) can be null', () => {
+    // Tisha B'Av 5784 (2024-08-13). Its single default end is tzais 8.5°; when
+    // that is unreachable a major fast would otherwise show no end at all.
+    const shortNight = { ...TIMES, zmanimByKey: { ...ZMANIM, tzais: null } };
+    const ends = getDayEvents(DateTime.fromISO('2024-08-13'), shortNight).filter((e) => e.type === 'fastEnd');
+    expect(ends).toEqual([
+      { type: 'fastEnd', time: null, zmanKey: 'tzais' },
+      { type: 'fastEnd', time: ZMANIM.tzais72, zmanKey: 'tzais72' },
+    ]);
+  });
+
+  it('does not append the fallback when a visible opinion already has a time', () => {
+    // Only the earliest degree opinion is null; the rest resolve, so no fall-through.
+    const partial = { ...TIMES, zmanimByKey: { ...ZMANIM, tzaisGeonim: null } };
+    const ends = getDayEvents(DateTime.fromISO('2024-07-23'), partial).filter((e) => e.type === 'fastEnd');
+    expect(ends.map((e) => e.zmanKey)).toEqual(['tzaisGeonim', 'tzaisGeonim7083', 'tzais']);
+  });
+
+  it('does not append the fallback when tzais72 itself is undefined (polar day)', () => {
+    const polar = {
+      ...TIMES,
+      zmanimByKey: { ...ZMANIM, tzaisGeonim: null, tzaisGeonim7083: null, tzais: null, tzais72: null },
+    };
+    const ends = getDayEvents(DateTime.fromISO('2024-07-23'), polar).filter((e) => e.type === 'fastEnd');
+    // Three blank rows, no invented fallback.
+    expect(ends.map((e) => e.zmanKey)).toEqual(['tzaisGeonim', 'tzaisGeonim7083', 'tzais']);
+  });
+
+  it('does not double-append when tzais72 is already visible', () => {
+    // tzais72 shown (not hidden) and resolving → it satisfies "has a time", no append.
+    const hidden = ['tzaisGeonim645', 'tzais42', 'tzais50', 'tzais60', 'tzais90'];
+    const shortNight = {
+      ...TIMES,
+      zmanimByKey: { ...ZMANIM, tzaisGeonim: null, tzaisGeonim7083: null, tzais: null },
+    };
+    const ends = getDayEvents(DateTime.fromISO('2024-07-23'), shortNight, false, hidden).filter(
+      (e) => e.type === 'fastEnd',
+    );
+    expect(ends.filter((e) => e.zmanKey === 'tzais72')).toHaveLength(1);
   });
 
   it('shows candle lighting on Erev Yom Tov', () => {
@@ -99,15 +174,15 @@ describe('getDayEvents', () => {
     expect(events('2024-08-12')).toEqual(['fastStart']); // erev → sunset onset
     // A major fast offers only nightfall opinions; the default shows 8.5°.
     const day = getDayEvents(DateTime.fromISO('2024-08-13'), TIMES);
-    expect(day).toEqual([{ type: 'fastEnd', time: TZEIT.tzais, zmanKey: 'tzais' }]);
+    expect(day).toEqual([{ type: 'fastEnd', time: ZMANIM.tzais, zmanKey: 'tzais' }]);
   });
 
   it('offers all three nightfall opinions for Tisha B’Av when enabled, and no medium-stars', () => {
     const day = getDayEvents(DateTime.fromISO('2024-08-13'), TIMES, false, []); // show all
     expect(day).toEqual([
-      { type: 'fastEnd', time: TZEIT.tzais, zmanKey: 'tzais' },
-      { type: 'fastEnd', time: TZEIT.tzais42, zmanKey: 'tzais42' },
-      { type: 'fastEnd', time: TZEIT.tzais72, zmanKey: 'tzais72' },
+      { type: 'fastEnd', time: ZMANIM.tzais, zmanKey: 'tzais' },
+      { type: 'fastEnd', time: ZMANIM.tzais42, zmanKey: 'tzais42' },
+      { type: 'fastEnd', time: ZMANIM.tzais72, zmanKey: 'tzais72' },
     ]);
   });
 

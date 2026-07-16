@@ -37,7 +37,7 @@
     "nameLabel": "Name"
   },
   "zmanim": {
-    "approximateNote": "Approximate time. The sun never reaches this depression angle here on this date (a short night), so this is a fixed seasonal-hour (shaah zmanit) estimate rather than the degree-based calculation.",
+    "noDegreeTimeNote": "This opinion has no time here today: the sun never reaches the angle below the horizon that it depends on, which happens at high latitudes when the night is short. Other opinions of the same zman are computed differently and still have a time — see the rows nearby.",
     "abbr": {
       "alos": "Alot",
       "misheyakir": "Misheyakir",
@@ -252,6 +252,22 @@
       "plagHamincha": "10¾ seasonal hours into the day — 1¼ seasonal hours before its end; the earliest one may pray Maariv or accept Shabbat.",
       "tzais": "Nightfall (tzeit ha-kochavim) — the stars come out and the new halachic day begins. Opinions run from an early few-stars nightfall to Rabbeinu Tam's stringent 72-minute one used to end Shabbat and Yom Tov.",
       "shaahZmanis": "The length of one seasonal (halachic) hour — a twelfth of the halachic day; zmanim like Sof zman Shema are counted in these hours. Shown as a duration (h:mm:ss), not a clock time."
+    },
+    "families": {
+      "degrees": "By sun angle",
+      "fixedMinutes": "By fixed minutes",
+      "seasonalMinutes": "By seasonal minutes",
+      "dawnToNightfall": "By the dawn-to-nightfall day",
+      "sunriseToSunset": "By the sunrise-to-sunset day",
+      "solar": "By the sun’s position"
+    },
+    "familyDescriptions": {
+      "degrees": "The sun reaches a set angle below the horizon. The same angle everywhere — but at high latitudes in summer the sun may never get that low, and then the opinion simply has no time that day.",
+      "fixedMinutes": "A fixed count of clock minutes before sunrise or after sunset. Always defined wherever the sun rises and sets, but it takes no account of twilight lasting longer in summer.",
+      "seasonalMinutes": "A count of seasonal (zmaniyos) minutes, where one minute is a sixtieth of a halachic hour — and one halachic hour is a twelfth of the daylight. So the “minute” stretches in summer and shrinks in winter.",
+      "dawnToNightfall": "The halachic hours are twelfths of a day measured from dawn to nightfall — the longer day of the Magen Avraham. Its hours begin earlier and run longer, so this time falls earlier.",
+      "sunriseToSunset": "The halachic hours are twelfths of a day measured from sunrise to sunset — the day of the Vilna Gaon, and, from his own true sunrise, the Baal HaTanya.",
+      "solar": "The position of the sun itself."
     }
   },
   "categories": {
@@ -291,7 +307,6 @@
     "molad": "Molad: {weekday}, {time} and {chalakim} chalakim",
     "parasha": "Parashat {name}",
     "detailsAria": "{label} — details",
-    "warningAria": "Note about {label}",
     "zmanimSettingsHint": "More zmanim and opinions can be shown via the calendar settings.",
     "lehumraChip": "lehumra",
     "lehumraNote": "Times are rounded to the stringent whole minute (lehumra).",
@@ -409,7 +424,7 @@
     "transposeHint": "Put the fields down the side and one column per day (best for a short range).",
     "cellZmanim": "In each day cell",
     "cellZmanimHint": "Up to 5 zmanim or daily-learning readings in each day.",
-    "cellApproxNote": "* fixed seasonal-hour estimate on a short night",
+    "noTimeNote": "Blank dawn/nightfall cells: the sun never reaches that angle here on a short summer night.",
     "noteElevation": "Elevation-adjusted ({meters} m)",
     "noteLehumra": "Rounded to the stringent minute (lehumra)",
     "colDate": "Date",

@@ -224,7 +224,7 @@ export function ExportCalendarTool() {
         return shita ? `${tr(`zmanim.names.${key}`)}, ${shita}` : tr(`zmanim.names.${key}`);
       },
       learningName: (key: string) => tr(`learning.${key}`),
-      approxNote: tr('export.cellApproxNote'),
+      noTimeNote: tr('export.noTimeNote'),
       noteElevation: (meters: number) => tr('export.noteElevation', { meters }),
       noteLehumra: tr('export.noteLehumra'),
     },

@@ -3,31 +3,7 @@ import { DateTime } from 'luxon';
 
 import { tzFromLatLng } from '../geo/timezone';
 import { ZMANIM } from './definitions';
-import type { ComputedZman, ComputeZmanimInput, ZmanFallback } from './types';
-
-/**
- * Compute a degree-based zman's short-night fallback (see `ZmanFallback`).
- * Returns null when even the fallback is undefined (no sunrise/sunset at all —
- * a true polar day/night), so a genuinely undefined day still shows nothing.
- */
-function computeFallback(calendar: ComplexZmanimCalendar, fb: ZmanFallback): DateTime | null {
-  if ('method' in fb) {
-    // A proportional (*Zmanis) method; itself null without a sunrise/sunset.
-    return (calendar[fb.method] as () => DateTime | null)() ?? null;
-  }
-  // Offset `zmaniyosMinutes` seasonal minutes from sunrise (before) or sunset
-  // (after): sunrise − minutes × shaahZmanisGra / 60, per KosherJava's
-  // getTimeOffset convention. shaahZmanisGra needs a real sunrise AND sunset.
-  const shaahMs = calendar.getShaahZmanisGra() as unknown as number;
-  if (!Number.isFinite(shaahMs) || shaahMs <= 0) return null;
-  const offsetMs = (fb.zmaniyosMinutes / 60) * shaahMs;
-  if (fb.anchor === 'sunrise') {
-    const sunrise = calendar.getSunrise();
-    return sunrise ? sunrise.minus({ milliseconds: offsetMs }) : null;
-  }
-  const sunset = calendar.getSunset();
-  return sunset ? sunset.plus({ milliseconds: offsetMs }) : null;
-}
+import type { ComputedZman, ComputeZmanimInput } from './types';
 
 /**
  * Compute the full set of zmanim for a location and date.
@@ -81,16 +57,25 @@ export function computeZmanim(input: ComputeZmanimInput): ComputedZman[] {
     }
     const base = (calendar[def.method] as () => DateTime | null)();
     const raw = base && def.offsetMinutes != null ? base.plus({ minutes: def.offsetMinutes }) : base;
-    // Short night: the degree-based method reached no time. Fall back to a
-    // seasonal-hour approximation (flagged `approximate`) rather than showing
-    // nothing — but never override a real degree time.
-    if (!raw && def.fallback) {
-      const fb = computeFallback(calendar, def.fallback);
-      if (fb) return { ...def, time: fb.setZone(timeZoneId), approximate: true };
-    }
+    // A null here is a real answer: this opinion has no time today. Most often a
+    // `degrees` zman on a short night, where the sun never reaches the angle. It
+    // is reported as null and never filled from another family — see ComputedZman.
     const time = raw ? raw.setZone(timeZoneId) : null;
     return { ...def, time };
   });
+}
+
+/**
+ * True when the day has no sunrise or no sunset — a polar day/night, where the
+ * sun never crosses the horizon at all. On such a day EVERY sun-dependent zman
+ * is null (not just the degree-based ones), so the short-night "the sun never
+ * reaches this angle, but other opinions still have a time" explanation would
+ * be false: there are no other times to point to. Callers use this to suppress
+ * that explanation, leaving the bare dashes to speak for the (rare) polar case.
+ */
+export function isPolarDay(zmanim: ComputedZman[]): boolean {
+  const timeOf = (key: string) => zmanim.find((z) => z.key === key)?.time ?? null;
+  return !timeOf('sunrise') || !timeOf('sunset');
 }
 
 /**

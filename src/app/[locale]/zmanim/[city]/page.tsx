@@ -16,7 +16,7 @@ import { getDayInfo, localizedHolidayLabel } from '@/lib/calendar';
 import { CITIES, getCity } from '@/lib/cities';
 import { isIsraelTimezone } from '@/lib/location';
 import { appLink, SITE_NAME } from '@/lib/site';
-import { buildZmanimGroups, computeZmanim } from '@/lib/zmanim';
+import { buildZmanimGroups, computeZmanim, isPolarDay } from '@/lib/zmanim';
 
 // Regenerate at most every 30 minutes so "today" stays fresh without rebuilds.
 export const revalidate = 1800;
@@ -61,6 +61,8 @@ export default async function CityZmanimPage({ params }: { params: Promise<{ loc
   const tDetail = await getTranslations({ locale, namespace: 'zmanim.descriptions' });
   const tBaseDesc = await getTranslations({ locale, namespace: 'zmanim.baseDescriptions' });
   const tGroup = await getTranslations({ locale, namespace: 'zmanim.groups' });
+  const tFamily = await getTranslations({ locale, namespace: 'zmanim.families' });
+  const tFamilyDesc = await getTranslations({ locale, namespace: 'zmanim.familyDescriptions' });
   const tZmanim = await getTranslations({ locale, namespace: 'zmanim' });
 
   const today = DateTime.now().setZone(city.timeZoneId);
@@ -76,7 +78,15 @@ export default async function CityZmanimPage({ params }: { params: Promise<{ loc
   const isErev = today.weekday === 5 || info.category === 'erevYomTov';
   const groups = buildZmanimGroups(
     zmanim.filter((z) => !z.erevOnly || isErev),
-    { name: tName, shita: tShita, detail: tDetail, baseDescription: tBaseDesc, group: tGroup },
+    {
+      name: tName,
+      shita: tShita,
+      detail: tDetail,
+      baseDescription: tBaseDesc,
+      familyLabel: tFamily,
+      familyDescription: tFamilyDesc,
+      group: tGroup,
+    },
   );
 
   const otherCities = CITIES.filter((c) => c.slug !== city.slug);
@@ -130,7 +140,11 @@ export default async function CityZmanimPage({ params }: { params: Promise<{ loc
           </CardHeader>
           <Separator />
           <CardContent className="px-5 py-3">
-            <ZmanimList groups={groups} locale={locale} approxNote={tZmanim('approximateNote')} />
+            <ZmanimList
+              groups={groups}
+              locale={locale}
+              noDegreeTimeNote={isPolarDay(zmanim) ? '' : tZmanim('noDegreeTimeNote')}
+            />
           </CardContent>
         </Card>
 

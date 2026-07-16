@@ -12,6 +12,7 @@ import {
   createHebrewFormatter,
   type DayCategory,
   type DayEventType,
+  DEFAULT_HIDDEN_FAST_END,
   dayEventZmanKeys,
   getDayEvents,
   getDayInfo,
@@ -25,6 +26,7 @@ import type { AppLocation } from '@/lib/location';
 import {
   applyLehumraToEvents,
   computeZmanim,
+  isPolarDay,
   type HavdalahOpinion,
   havdalahTime,
   havdalahZmanKey,
@@ -82,8 +84,8 @@ export interface ExportMonthCfg {
     zmanLegend: (key: string) => string;
     /** Full name of a learning cycle (for the legend). */
     learningName: (key: string) => string;
-    /** Footnote shown when any cell holds a short-night seasonal-hour estimate. */
-    approxNote: string;
+    /** Footnote when a chosen cell zman is blank on a short night. */
+    noTimeNote: string;
     /** Footnote when elevation adjustment is on ({meters}). */
     noteElevation: (meters: number) => string;
     /** Footnote when lehumra rounding is on. */
@@ -95,8 +97,6 @@ export interface ExportMonthCfg {
 interface CellItem {
   label: string;
   value: string;
-  /** True only for a zman shown as a short-night seasonal-hour estimate. */
-  approximate: boolean;
 }
 
 interface ExportCell {
@@ -122,8 +122,8 @@ export interface ExportMonthData {
   cells: ExportCell[];
   /** Short-label → full name (+ shita) key for the cell items, shown under the grid. */
   legend: { label: string; full: string }[];
-  /** Footnote text when any cell holds a seasonal-hour estimate, else null. */
-  approxNote: string | null;
+  /** Footnote when any cell holds a short-night blank, else null. */
+  noTimeNote: string | null;
   /** Elevation / lehumra conditions applied to the times, joined; null if none. */
   conditions: string | null;
 }
@@ -141,7 +141,10 @@ export function buildExportMonth(monthDate: DateTime, mode: CalendarMode, cfg: E
   const orderedItems = orderCellItems(cfg.cellItemKeys);
   const cellZmanKeys = orderedItems.filter((k) => !LEARNING_KEY_SET.has(k));
   const cellLearningKeys = orderedItems.filter((k): k is LearningCycleKey => LEARNING_KEY_SET.has(k));
-  let anyApproximate = false;
+  // Track whether any chosen cell zman is a short-night blank (null while the
+  // day still has a sunrise/sunset), so a footnote can explain the empty cells
+  // the way the day panel's info hint does on screen.
+  let anyShortNightBlank = false;
 
   const cells = grid.cells.map((cell) => {
     const date = cell.date;
@@ -174,16 +177,18 @@ export function buildExportMonth(monthDate: DateTime, mode: CalendarMode, cfg: E
       date,
       {
         candleLighting: byKey.candleLighting,
-        alos: byKey.alosHashachar,
         sunset: byKey.sunset,
         havdalah: havdalahTime(cfg.havdalahOpinion, byKey),
-        tzeitByKey: byKey,
+        zmanimByKey: byKey,
       },
       location.inIsrael,
-      [],
+      DEFAULT_HIDDEN_FAST_END,
     );
-    const firstFastEnd = allEvents.find((e) => e.type === 'fastEnd');
-    const rawEvents = allEvents.filter((e) => e.type !== 'fastEnd' || e === firstFastEnd);
+    // One fast-end slot: the earliest opinion that HAS a time (on a short
+    // night the degree opinions are null and the fixed-minute fallback wins).
+    const fastEnds = allEvents.filter((e) => e.type === 'fastEnd');
+    const chosenFastEnd = fastEnds.find((e) => e.time) ?? fastEnds[0];
+    const rawEvents = allEvents.filter((e) => e.type !== 'fastEnd' || e === chosenFastEnd);
     const events = (cfg.lehumra ? applyLehumraToEvents(rawEvents) : rawEvents).map((e) => ({
       type: e.type,
       time: formatTime(e.time, locale),
@@ -191,17 +196,16 @@ export function buildExportMonth(monthDate: DateTime, mode: CalendarMode, cfg: E
 
     // Cell items, zmanim first (chronological) then learnings — pinned to the
     // bottom of the cell. Lehumra rounds each zman per its own direction (a
-    // deadline down, an onset up). A short-night fallback is flagged so the cell
-    // can mark it and the page can footnote it. Durations render as h:mm:ss.
+    // deadline down, an onset up). Durations render as h:mm:ss.
     const zmanItems: CellItem[] = cellZmanKeys.flatMap((key) => {
       const z = zByKey.get(key);
       if (!z) return [];
       const def = ZMAN_BY_KEY.get(key);
       const label = cfg.labels.zmanAbbr(def?.base ?? key);
-      if (z.duration) return [{ label, value: formatDuration(z.durationMillis), approximate: false }];
+      if (z.duration) return [{ label, value: formatDuration(z.durationMillis) }];
+      if (z.time === null && !isPolarDay(zmanim)) anyShortNightBlank = true;
       const time = cfg.lehumra ? roundTimeLehumra(z.time, zmanLehumraDirection(key)) : z.time;
-      if (z.approximate) anyApproximate = true;
-      return [{ label, value: formatTime(time, locale), approximate: Boolean(z.approximate) }];
+      return [{ label, value: formatTime(time, locale) }];
     });
     let learningItems: CellItem[] = [];
     if (cellLearningKeys.length > 0) {
@@ -209,7 +213,6 @@ export function buildExportMonth(monthDate: DateTime, mode: CalendarMode, cfg: E
       learningItems = cellLearningKeys.map((key) => ({
         label: cfg.labels.learningAbbr(key),
         value: readings.get(key) ?? '',
-        approximate: false,
       }));
     }
 
@@ -254,7 +257,7 @@ export function buildExportMonth(monthDate: DateTime, mode: CalendarMode, cfg: E
     weeks: grid.weeks,
     cells,
     legend,
-    approxNote: anyApproximate ? cfg.labels.approxNote : null,
+    noTimeNote: anyShortNightBlank ? cfg.labels.noTimeNote : null,
     conditions: conditionParts.length > 0 ? conditionParts.join(' · ') : null,
   };
 }
@@ -436,7 +439,7 @@ export function ExportMonthPage({
               )}
             </div>
             {/* Chosen zmanim/learnings, bottom-aligned across the grid, above a
-                thin separator. "*" flags a short-night seasonal-hour estimate. */}
+                thin separator. */}
             {cell.items.length > 0 && (
               <div className={cn('mt-[2px] flex shrink-0 flex-col gap-px border-t pt-[2px]', border)}>
                 {cell.items.map((it, i) => (
@@ -445,10 +448,7 @@ export function ExportMonthPage({
                     className={cn('flex items-baseline justify-between gap-[4px] text-[0.833em] leading-none', muted)}
                   >
                     <span className="truncate">{it.label}</span>
-                    <span className="shrink-0 tabular-nums">
-                      {it.value}
-                      {it.approximate ? '*' : ''}
-                    </span>
+                    <span className="shrink-0 tabular-nums">{it.value}</span>
                   </span>
                 ))}
               </div>
@@ -469,8 +469,8 @@ export function ExportMonthPage({
             ))}
           </p>
         )}
+        {data.noTimeNote && <p className={cn('text-[0.75em] leading-tight', muted)}>{data.noTimeNote}</p>}
         {data.conditions && <p className={cn('text-[0.75em] leading-tight', muted)}>{data.conditions}</p>}
-        {data.approxNote && <p className={cn('text-[0.75em] leading-tight', muted)}>{data.approxNote}</p>}
         {/* Fixed px, not em: the attribution shouldn't grow with the text-size choice. */}
         <p className={cn('text-center text-[10px]', theme === 'dark' ? 'text-neutral-500' : 'text-neutral-400')}>
           {footer}

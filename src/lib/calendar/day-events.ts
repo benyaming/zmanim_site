@@ -1,9 +1,24 @@
 import { JewishCalendar } from 'kosher-zmanim';
 import type { DateTime } from 'luxon';
 
-import { DEFAULT_HIDDEN_FAST_END, FAST_END_ZMAN_KEYS, fastEndOpinionsFor } from './fast-end';
+import { DEFAULT_HIDDEN_FAST_END, FAST_END_FALLBACK, FAST_END_ZMAN_KEYS, fastEndOpinionsFor } from './fast-end';
 
 export type DayEventType = 'candle' | 'havdalah' | 'fastStart' | 'fastEnd';
+
+/**
+ * The fast-START opinions, in preference order.
+ *
+ * A minor fast begins at dawn — but WHICH dawn matters at high latitude, where
+ * the 16.1° dawn can have no time at all (the sun never reaches that angle on a
+ * short summer night). We then offer the fixed-72-minute dawn, the opinion
+ * myzmanim publishes as "dawn fixed minutes" in exactly this situation.
+ *
+ * The emitted event names the opinion that produced its time (`zmanKey`), so a
+ * fixed-minute number is never displayed under a degree-based label. Which dawn
+ * a short-night location should actually keep is an open machloket — the app
+ * reports what each shita says and does not rule between them.
+ */
+const FAST_START_ZMAN_KEYS = ['alosHashachar', 'alos72'] as const;
 
 /**
  * The minimal set of zman keys getDayEvents reads, for callers that only need
@@ -12,16 +27,27 @@ export type DayEventType = 'candle' | 'havdalah' | 'fastStart' | 'fastEnd';
  * is the chosen havdalah opinion's zman key (`havdalahZmanKey(opinion)`).
  */
 export function dayEventZmanKeys(havdalahKey: string): Set<string> {
-  return new Set(['candleLighting', 'alosHashachar', 'sunset', ...FAST_END_ZMAN_KEYS, havdalahKey]);
+  return new Set([
+    'candleLighting',
+    'sunset',
+    ...FAST_START_ZMAN_KEYS,
+    ...FAST_END_ZMAN_KEYS,
+    havdalahKey,
+  ]);
 }
 
 export interface DayEvent {
   type: DayEventType;
   time: DateTime | null;
   /**
-   * The fast-end opinion this time uses — set on fastEnd events only, which are
-   * emitted once per visible opinion for the fast's severity. Translatable via
-   * `events.fastEndOpinions`.
+   * The opinion this time comes from.
+   *
+   * On `fastEnd` — emitted once per visible opinion for the fast's severity —
+   * it is the fast-end opinion key, translatable via `events.fastEndOpinions`.
+   * On `fastStart` it is the zman key that supplied the time (see
+   * FAST_START_ZMAN_KEYS), translatable via `zmanim.shitot`, so the row always
+   * says which dawn it is showing. Absent on Tisha B'Av's sunset onset, and on
+   * candle/havdalah events.
    */
   zmanKey?: string;
   /**
@@ -31,18 +57,11 @@ export interface DayEvent {
    * lehumra rounds it UP, unlike a regular pre-sunset lighting.
    */
   afterNightfall?: boolean;
-  /**
-   * The fast-start (alot) or fast-end (tzeit) time is a short-night seasonal-hour
-   * approximation because its degree-based zman was undefined (see calculator).
-   * Set on fastStart / fastEnd events only.
-   */
-  approximate?: boolean;
 }
 
 /** The zmanim a day's events can reference. */
 export interface DayEventTimes {
   candleLighting: DateTime | null;
-  alos: DateTime | null;
   /** Sunset — Tisha B'Av onset, and the base for fixed-minute fast-end poskim. */
   sunset: DateTime | null;
   /**
@@ -52,18 +71,11 @@ export interface DayEventTimes {
    */
   havdalah: DateTime | null;
   /**
-   * Computed zman times keyed by zman key — degree-based fast-end opinions
-   * (tzaisGeonim, tzaisGeonim645, tzaisGeonim7083, tzais, tzais42, tzais72) read
-   * their time from here. Pass the full `byKey` map.
+   * Computed zman times keyed by zman key. Both fast bookends read from here —
+   * the start via FAST_START_ZMAN_KEYS, each end opinion via its `zmanKey`.
+   * Pass the full `byKey` map (at least `dayEventZmanKeys(...)`'s worth).
    */
-  tzeitByKey: Record<string, DateTime | null>;
-  /** True when the fast START (alot 16.1°) is a short-night approximation. */
-  alosApproximate?: boolean;
-  /**
-   * Which fast-end zman keys are short-night approximations (same keys as
-   * `tzeitByKey`). Absent = none. Surfaces on the emitted fastEnd events.
-   */
-  tzeitApproximateByKey?: Record<string, boolean>;
+  zmanimByKey: Record<string, DateTime | null>;
 }
 
 /**
@@ -132,24 +144,39 @@ export function getDayEvents(
   // Fast begins/ends on the fast day itself.
   if (jc.isTaanis()) {
     if (idx !== YOM_KIPPUR && idx !== TISHA_BEAV) {
-      events.push({ type: 'fastStart', time: times.alos, approximate: times.alosApproximate });
+      // The first dawn opinion that has a time today, named on the event. At
+      // most latitudes that is the 16.1° dawn; on a short night it is the
+      // fixed-72-minute one. Both null (a polar day) emits a null-time row, as
+      // every other event does.
+      const zmanKey =
+        FAST_START_ZMAN_KEYS.find((k) => times.zmanimByKey[k]) ?? FAST_START_ZMAN_KEYS[0];
+      events.push({ type: 'fastStart', time: times.zmanimByKey[zmanKey] ?? null, zmanKey });
     }
     // Yom Kippur's end is already shown as havdalah; avoid a duplicate nightfall.
     // Tisha B'Av (a major fast) ends only at nightfall (three small stars); a
     // minor fast may also end at the lenient gmar-taanis (three medium stars).
     // Each visible opinion is emitted; a display with room for one (the grid)
-    // keeps the earliest.
+    // keeps the earliest that has a time.
     if (!endsTonight) {
       const hidden = new Set(hiddenFastEnd);
+      const ends: DayEvent[] = [];
       for (const op of fastEndOpinionsFor(idx === TISHA_BEAV)) {
         if (hidden.has(op.key)) continue;
-        events.push({
-          type: 'fastEnd',
-          time: times.tzeitByKey[op.zmanKey] ?? null,
-          zmanKey: op.key,
-          approximate: times.tzeitApproximateByKey?.[op.zmanKey],
-        });
+        ends.push({ type: 'fastEnd', time: times.zmanimByKey[op.zmanKey] ?? null, zmanKey: op.key });
       }
+      // Short night: every visible nightfall opinion is degree-based and
+      // unreached, so the fast would show no end time at all (worst on Tisha
+      // B'Av, whose only default is 8.5°). Fall through to the fixed-minute
+      // Rabbeinu Tam nightfall, labelled, so a real end always appears — the
+      // same choice made for the fast start. Skipped if it's already visible,
+      // or itself undefined (a true polar day, where nothing can anchor it).
+      if (ends.length > 0 && !ends.some((e) => e.time)) {
+        const fbTime = times.zmanimByKey[FAST_END_FALLBACK.zmanKey] ?? null;
+        if (fbTime && !ends.some((e) => e.zmanKey === FAST_END_FALLBACK.key)) {
+          ends.push({ type: 'fastEnd', time: fbTime, zmanKey: FAST_END_FALLBACK.key });
+        }
+      }
+      events.push(...ends);
     }
   }
 
