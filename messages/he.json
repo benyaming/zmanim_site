@@ -434,7 +434,9 @@
     "colParsha": "פרשה",
     "colOmer": "עומר",
     "failed": "הייצוא נכשל. נסו שוב.",
-    "generatedBy": "הופק על ידי {site}"
+    "generatedBy": "הופק על ידי {site}",
+    "sentToBot": "הקובץ נשלח אליך בצ׳אט עם הבוט",
+    "sendToBotFailed": "שליחת הקובץ לצ׳אט נכשלה — מנסה הורדה רגילה"
   },
   "customDates": {
     "kindBirthday": "יום הולדת",

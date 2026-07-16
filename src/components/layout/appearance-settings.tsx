@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { isIosFamily, promptInstall, useInstallPrompt } from '@/hooks/use-install-prompt';
+import { useIsMiniApp } from '@/hooks/use-mini-app';
 
 import { SettingsDialogShell } from './settings-shell';
 
@@ -53,6 +54,8 @@ export function AppearanceSettings() {
   const t = useTranslations('settings');
   const { theme, setTheme } = useTheme();
   const { fontScale, setFontScale, reduceMotion, setReduceMotion, highContrast, setHighContrast } = useAccessibility();
+  // Telegram's webview can't install a PWA — the whole section is noise there.
+  const isMiniApp = useIsMiniApp();
 
   return (
     <SettingsDialogShell icon={Palette} label={t('appearanceOpen')} title={t('appearanceTitle')}>
@@ -126,9 +129,12 @@ export function AppearanceSettings() {
         </div>
       </div>
 
-      <Separator />
-
-      <InstallAppSection />
+      {!isMiniApp && (
+        <>
+          <Separator />
+          <InstallAppSection />
+        </>
+      )}
     </SettingsDialogShell>
   );
 }

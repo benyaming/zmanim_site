@@ -13,6 +13,7 @@ import { ipGeolocate } from '@/lib/geo/ip-location';
 import { normalizeIsraelAreaTimezone } from '@/lib/geo/timezone';
 import { sanitizeHiddenLearning } from '@/lib/learning';
 import { type AppLocation, DEFAULT_LOCATION, isDefaultLocation, isIsraelTimezone, makeLocation } from '@/lib/location';
+import { isTelegramMiniApp } from '@/lib/telegram/mini-app';
 import {
   newSavedLocationId,
   resolveSavedLocation,
@@ -88,6 +89,25 @@ interface AppStateValue {
   showAllFastEnd: () => void;
   /** Reset the fast-end opinions to the curated default set. */
   restoreDefaultFastEnd: () => void;
+  /**
+   * Apply the bot-side profile when running as a Telegram Mini App. Each value
+   * lands only if the user hasn't explicitly changed it this session, so a
+   * slow profile response can't undo a fresh in-app choice (see the
+   * TelegramMiniApp provider component). `botLocations` always applies — it's
+   * a display list, not a choice.
+   */
+  applyBotProfile: (profile: {
+    location?: AppLocation;
+    candleLightingOffset?: number;
+    havdalahOpinion?: HavdalahOpinion;
+    botLocations?: SavedLocation[];
+  }) => void;
+  /**
+   * Locations saved in the companion Telegram bot (mini app only, empty
+   * elsewhere). Shown alongside the local bookmarks but managed in the bot —
+   * not persisted here and not editable from the picker.
+   */
+  botLocations: SavedLocation[];
   /** Personal recurring dates (birthdays, bar/bat mitzvahs, yahrzeits). */
   customDates: CustomDate[];
   /** Add an entry; a no-op once MAX_CUSTOM_DATES is reached. Returns the new id, or null if full. */
@@ -172,7 +192,12 @@ export function AppStateProvider({
   // True once the location is explicitly chosen (URL deep link, saved pref, or a
   // user action). Guards the async IP soft-default from overwriting that choice.
   const locationLocked = useRef(urlProvided);
+  // What the user explicitly changed *this session* — the Telegram bot profile
+  // must not override these (unlike locationLocked, a restored save or URL
+  // param doesn't count: the bot profile is fresher than both).
+  const sessionTouched = useRef({ location: false, candleOffset: false, havdalah: false });
   const setLocation = (loc: AppLocation) => {
+    sessionTouched.current.location = true;
     locationLocked.current = true;
     setLocationState(loc);
   };
@@ -236,9 +261,41 @@ export function AppStateProvider({
     // setMode fires alongside other setMonthDate updates before a re-render.
     setMonthDate((prev) => monthAnchor(prev, m));
   };
-  const [candleLightingOffset, setCandleLightingOffset] = useState(DEFAULT_CANDLE_OFFSET);
+  const [candleLightingOffset, setCandleLightingOffsetState] = useState(DEFAULT_CANDLE_OFFSET);
+  const setCandleLightingOffset = (m: number) => {
+    sessionTouched.current.candleOffset = true;
+    setCandleLightingOffsetState(m);
+  };
   const [useElevation, setUseElevation] = useState(false);
-  const [havdalahOpinion, setHavdalahOpinion] = useState<HavdalahOpinion>(DEFAULT_HAVDALAH_OPINION);
+  const [havdalahOpinion, setHavdalahOpinionState] = useState<HavdalahOpinion>(DEFAULT_HAVDALAH_OPINION);
+  const setHavdalahOpinion = (o: HavdalahOpinion) => {
+    sessionTouched.current.havdalah = true;
+    setHavdalahOpinionState(o);
+  };
+
+  // Telegram Mini App: mirror the bot-side profile (see the interface doc).
+  // The location counts as an explicit choice (locked against the IP
+  // soft-default) but not as a session touch, so the relabel/elevation
+  // effects may still patch it.
+  const [botLocations, setBotLocations] = useState<SavedLocation[]>([]);
+  const applyBotProfile = (profile: {
+    location?: AppLocation;
+    candleLightingOffset?: number;
+    havdalahOpinion?: HavdalahOpinion;
+    botLocations?: SavedLocation[];
+  }) => {
+    if (profile.location && !sessionTouched.current.location) {
+      locationLocked.current = true;
+      setLocationState(profile.location);
+    }
+    if (profile.candleLightingOffset !== undefined && !sessionTouched.current.candleOffset) {
+      setCandleLightingOffsetState(profile.candleLightingOffset);
+    }
+    if (profile.havdalahOpinion !== undefined && !sessionTouched.current.havdalah) {
+      setHavdalahOpinionState(profile.havdalahOpinion);
+    }
+    if (profile.botLocations) setBotLocations(profile.botLocations);
+  };
   const [lehumra, setLehumra] = useState(false);
   const [hiddenZmanim, setHiddenZmanim] = useState<string[]>([...DEFAULT_HIDDEN_ZMANIM]);
   const [zmanimCustomized, setZmanimCustomized] = useState(false);
@@ -308,10 +365,10 @@ export function AppStateProvider({
     const savedOffset = prefs.candleLightingOffset;
     if (typeof savedOffset === 'number' && Number.isFinite(savedOffset) && savedOffset >= CANDLE_OFFSET_MIN) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCandleLightingOffset(Math.min(CANDLE_OFFSET_MAX, Math.round(savedOffset)));
+      setCandleLightingOffsetState(Math.min(CANDLE_OFFSET_MAX, Math.round(savedOffset)));
     }
     if (prefs.useElevation === true) setUseElevation(true);
-    if (isHavdalahOpinion(prefs.havdalahOpinion)) setHavdalahOpinion(prefs.havdalahOpinion);
+    if (isHavdalahOpinion(prefs.havdalahOpinion)) setHavdalahOpinionState(prefs.havdalahOpinion);
     if (prefs.lehumra === true) setLehumra(true);
     // Unknown/stale keys are dropped, so a save from an old version self-heals.
     // The saved hide list only overrides the default set when it's an explicit
@@ -374,11 +431,17 @@ export function AppStateProvider({
     ipGeolocate(controller.signal, localeRef.current, fallbackLabelRef.current).then((loc) => {
       if (loc && !locationLocked.current) setLocationState(loc); // soft, unlocked
     });
-    browserGeolocate(fallbackLabelRef.current, localeRef.current).then((loc) => {
-      if (!loc || locationLocked.current) return;
-      locationLocked.current = true; // precise fix wins; a late IP can't clobber it
-      setLocationState(loc);
-    });
+    // Inside Telegram's webview the GPS permission flow is unreliable (iOS
+    // never prompts) and the bot profile is the better source — keep the soft
+    // IP guess but don't auto-prompt; the location dialog's GPS button still
+    // works on demand.
+    if (!isTelegramMiniApp()) {
+      browserGeolocate(fallbackLabelRef.current, localeRef.current).then((loc) => {
+        if (!loc || locationLocked.current) return;
+        locationLocked.current = true; // precise fix wins; a late IP can't clobber it
+        setLocationState(loc);
+      });
+    }
 
     return () => controller.abort();
   }, [urlProvided]);
@@ -544,6 +607,8 @@ export function AppStateProvider({
     setFastEndVisible,
     showAllFastEnd,
     restoreDefaultFastEnd,
+    applyBotProfile,
+    botLocations,
     customDates,
     addCustomDate,
     updateCustomDate,

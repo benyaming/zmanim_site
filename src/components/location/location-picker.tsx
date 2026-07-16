@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { useGeolocation } from '@/hooks/use-geolocation';
 import { searchCities } from '@/lib/geo/geocoding';
-import { type SavedLocation, savedLocationDisplayName, savedLocationMatches } from '@/lib/saved-locations';
+import { resolveSavedLocation, type SavedLocation, savedLocationDisplayName, savedLocationMatches } from '@/lib/saved-locations';
 
 function useDebounced<T>(value: T, delay = 300): T {
   const [debounced, setDebounced] = useState(value);
@@ -102,6 +102,7 @@ export function LocationPicker() {
     setLocation,
     useElevation,
     savedLocations,
+    botLocations,
     addSavedLocation,
     updateSavedLocation,
     removeSavedLocation,
@@ -120,7 +121,11 @@ export function LocationPicker() {
     enabled: debouncedQuery.trim().length >= 2,
   });
 
-  const currentSaved = savedLocations.some((e) => savedLocationMatches(e, location));
+  // Bot-saved locations (Telegram mini app) join the list, minus the ones a
+  // local bookmark already covers. They're managed in the bot, so the rows
+  // are select-only — no rename/delete here.
+  const botEntries = botLocations.filter((b) => !savedLocations.some((e) => savedLocationMatches(e, b.location)));
+  const currentSaved = [...savedLocations, ...botEntries].some((e) => savedLocationMatches(e, location));
   const headerLabel = location.customLabel ?? location.label;
 
   const setDialogOpen = (next: boolean) => {
@@ -131,8 +136,8 @@ export function LocationPicker() {
     }
   };
 
-  const renderEntry = (entry: SavedLocation) => {
-    if (editingId === entry.id) {
+  const renderEntry = (entry: SavedLocation, readOnly = false) => {
+    if (!readOnly && editingId === entry.id) {
       return (
         <li key={entry.id}>
           <SavedLocationForm
@@ -159,7 +164,8 @@ export function LocationPicker() {
           type="button"
           className="hover:bg-accent hover:text-accent-foreground flex min-w-0 flex-1 flex-col rounded-md px-2 py-1.5 text-start"
           onClick={() => {
-            selectSavedLocation(entry.id);
+            if (readOnly) setLocation(resolveSavedLocation(entry));
+            else selectSavedLocation(entry.id);
             setDialogOpen(false);
           }}
         >
@@ -168,26 +174,30 @@ export function LocationPicker() {
             <span className="text-muted-foreground w-full truncate text-xs">{detailParts.join(' · ')}</span>
           )}
         </button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground size-7 shrink-0"
-          aria-label={t('edit')}
-          onClick={() => setEditingId(entry.id)}
-        >
-          <Pencil className="size-3.5" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-destructive size-7 shrink-0"
-          aria-label={t('delete')}
-          onClick={() => removeSavedLocation(entry.id)}
-        >
-          <Trash2 className="size-3.5" />
-        </Button>
+        {!readOnly && (
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground size-7 shrink-0"
+              aria-label={t('edit')}
+              onClick={() => setEditingId(entry.id)}
+            >
+              <Pencil className="size-3.5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-destructive size-7 shrink-0"
+              aria-label={t('delete')}
+              onClick={() => removeSavedLocation(entry.id)}
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </>
+        )}
       </li>
     );
   };
@@ -233,10 +243,13 @@ export function LocationPicker() {
         </div>
 
         <div className="px-4 pt-3">
-          {savedLocations.length > 0 && (
+          {(savedLocations.length > 0 || botEntries.length > 0) && (
             <>
               <p className="text-muted-foreground text-xs font-medium">{t('savedTitle')}</p>
-              <ul className="mt-1 max-h-48 space-y-0.5 overflow-y-auto">{savedLocations.map(renderEntry)}</ul>
+              <ul className="mt-1 max-h-48 space-y-0.5 overflow-y-auto">
+                {savedLocations.map((entry) => renderEntry(entry))}
+                {botEntries.map((entry) => renderEntry(entry, true))}
+              </ul>
             </>
           )}
           {editingId === 'new' ? (

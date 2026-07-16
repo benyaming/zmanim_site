@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import type { ReactNode, SVGProps } from 'react';
 
+import { useIsMiniApp } from '@/hooks/use-mini-app';
+
 import { ReleaseNotesPane } from './release-notes';
 
 const TELEGRAM_URL = 'https://t.me/benyomin';
@@ -61,6 +63,21 @@ function GithubIcon(props: SVGProps<SVGSVGElement>) {
 
 export function SiteFooter() {
   const t = useTranslations('footer');
+  // Inside Telegram the credits/links are clutter on a small sheet (and
+  // external links open awkwardly in the webview) — keep only the version
+  // button, which still opens the release notes.
+  const isMiniApp = useIsMiniApp();
+
+  if (isMiniApp) {
+    return (
+      <footer className="text-muted-foreground bg-card/80 supports-[backdrop-filter]:bg-card/60 sticky bottom-0 z-30 shrink-0 border-t py-2.5 text-center text-[0.6875rem] leading-tight backdrop-blur">
+        <div className="flex items-center justify-center">
+          <ReleaseNotesPane />
+        </div>
+      </footer>
+    );
+  }
+
   return (
     // Pinned to the viewport bottom like the header is to the top. Only mobile
     // actually scrolls (the lg+ shell is a fixed viewport), so there sticky

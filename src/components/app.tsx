@@ -10,10 +10,12 @@ import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { ToolsMenu } from '@/components/layout/tools-menu';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
+import { Toaster } from '@/components/layout/toaster';
 import { WhatsNewDialog } from '@/components/layout/whats-new';
 import { LocationPicker } from '@/components/location/location-picker';
 import { AppStateProvider, type AppLocation } from '@/components/providers/app-state';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { TelegramMiniApp } from '@/components/providers/telegram-mini-app';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ZmanimPanel } from '@/components/zmanim/zmanim-panel';
 
@@ -48,6 +50,8 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
   return (
     <QueryProvider>
       <AppStateProvider initialLocation={initialLocation}>
+        {/* No-op outside Telegram; inside it, sets up the webview and syncs the bot profile. */}
+        <TelegramMiniApp />
         {/* Desktop (lg+): a fixed-viewport shell that never scrolls — the
             calendar grid flexes to fill the height and only the zmanim panel
             scrolls internally. Mobile: a normal scrolling page so the stacked
@@ -83,6 +87,7 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
           </main>
           {/* Mount-gated: it reads localStorage synchronously, so it must never render on the server. */}
           {mounted && <WhatsNewDialog />}
+          <Toaster />
           <SiteFooter />
         </div>
       </AppStateProvider>
