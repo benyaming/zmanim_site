@@ -34,6 +34,13 @@ export interface ZmanFamilyGroup {
 export interface ZmanBaseGroup {
   base: string;
   name: string;
+  /**
+   * The base's canonical position in the day — the smallest definition `order`
+   * among its opinions. Bases are laid out by THIS, not by their earliest
+   * computed time, so the fixed sequence (Alot ha-Shachar → Misheyakir →
+   * sunrise) holds at every latitude. See buildZmanimGroups.
+   */
+  order: number;
   /** Short, general description of the zman (shown behind the name's info popover). */
   description: string;
   /** Every shita, in chronological order, whatever its family. */
@@ -106,11 +113,19 @@ const rowTimeMs = (row: ZmanRow): number => (row.time ? row.time.toMillis() : Nu
  * several opinions of one zman are shown together under a single name. The base
  * description and each per-opinion detail are tucked behind info popovers.
  *
- * Rows are ordered by their ACTUAL time, not the definition order: the latter is
- * the Jerusalem-equinox order, but degree- vs fixed-minute opinions cross over
- * by latitude and season (e.g. alos 19.8° is well before fixed-90 in summer),
- * so a fixed order would read out of sequence elsewhere. Bases within a section
- * are likewise ordered by their earliest time, so each section flows top-to-bottom.
+ * ROWS within a base are ordered by their ACTUAL time, not the definition order:
+ * the latter is the Jerusalem-equinox order, but degree- vs fixed-minute opinions
+ * cross over by latitude and season (e.g. alos 19.8° is well before fixed-90 in
+ * summer), so a fixed order would read out of sequence elsewhere.
+ *
+ * BASES within a section, by contrast, keep their FIXED canonical order (their
+ * definition `order`), NOT their earliest time. Time-ordering the bases would
+ * let them swap at high latitude: at Düsseldorf midsummer Alot's steep degree
+ * opinions (16.1–19.8°) are all null, so its earliest surviving time is a
+ * fixed/seasonal minute later than Misheyakir's shallow 11.5° — which would
+ * float Misheyakir above Alot ha-Shachar, i.e. before dawn itself. The base
+ * sequence is conceptual (alot is by definition the start of dawn) and must not
+ * move with the sun; only the opinions inside a base compete on time.
  *
  * Each base additionally carries its rows partitioned by calculation `family`,
  * for the renderer to show as sub-headings where a base spans more than one.
@@ -128,11 +143,14 @@ export function buildZmanimGroups(zmanim: ComputedZman[], t: ZmanTranslators): Z
     const group = bases.get(z.base) ?? {
       base: z.base,
       name: t.name(z.key),
+      order: z.order,
       description: '',
       rows: [],
       families: [],
       grouped: false,
     };
+    // The base's canonical position is its earliest-defined opinion.
+    group.order = Math.min(group.order, z.order);
     group.rows.push({
       key: z.key,
       shita: t.shita(z.key),
@@ -167,7 +185,8 @@ export function buildZmanimGroups(zmanim: ComputedZman[], t: ZmanTranslators): Z
         description: rows.length > 1 ? t.baseDescription(group.base) : rows[0].detail,
       };
     });
-    items.sort((a, b) => rowTimeMs(a.rows[0]) - rowTimeMs(b.rows[0]));
+    // Bases by their fixed canonical position — never by computed time (see above).
+    items.sort((a, b) => a.order - b.order);
     return { category, label: t.group(category), items };
   });
 }

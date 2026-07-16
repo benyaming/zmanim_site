@@ -23,14 +23,16 @@ const FAMILY_ORDER: ZmanFamily[] = [
   'sunriseToSunset',
   'solar',
 ];
-const withFamilies = (item: Omit<ZmanBaseGroup, 'families' | 'grouped'>): ZmanBaseGroup => {
+const withFamilies = (item: Omit<ZmanBaseGroup, 'families' | 'grouped' | 'order'>): ZmanBaseGroup => {
   const families = FAMILY_ORDER.filter((f) => item.rows.some((r: ZmanRow) => r.family === f)).map((family) => ({
     family,
     label: `fam:${family}`,
     description: `famDesc:${family}`,
     rows: item.rows.filter((r: ZmanRow) => r.family === family),
   }));
-  return { ...item, families, grouped: families.filter((f) => f.rows.length > 1).length >= 2 };
+  // `order` drives base layout in buildZmanimGroups, not the rendered list, so a
+  // fixed placeholder is fine for these render fixtures.
+  return { ...item, order: 0, families, grouped: families.filter((f) => f.rows.length > 1).length >= 2 };
 };
 
 // InfoHint reads its aria-label translation, so the tree needs intl context.

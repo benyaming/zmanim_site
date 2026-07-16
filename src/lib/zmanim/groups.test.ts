@@ -35,27 +35,45 @@ describe('buildZmanimGroups ordering', () => {
     expect(alos.rows.map((r) => r.key)).toEqual(['alosDeg', 'alos18', 'alosFixed90', 'alos60']);
   });
 
-  it('orders bases within a section by their earliest time', () => {
+  it('orders bases by their canonical position, not their earliest time', () => {
+    // Alot is defined before Misheyakir (lower order), and must stay first even
+    // when its earliest opinion falls LATER than Misheyakir's — as at Düsseldorf
+    // midsummer, where Alot's steep degrees are null and its surviving times slip
+    // behind the shallow-angle Misheyakir. The base sequence is conceptual (alot
+    // is the start of dawn) and must not swap with the sun.
     const zmanim = [
-      // Misheyakir defined before Alos, but Alos is earlier — Alos must come first.
-      zman({ key: 'mish', base: 'misheyakir', category: 'dawn', order: 10, time: at('04:40') }),
-      zman({ key: 'alosA', base: 'alos', category: 'dawn', order: 20, time: at('04:30') }),
-      zman({ key: 'alosB', base: 'alos', category: 'dawn', order: 22, time: at('03:50') }),
+      zman({ key: 'alosA', base: 'alos', category: 'dawn', order: 12, time: at('03:52') }),
+      zman({ key: 'alosB', base: 'alos', category: 'dawn', order: 18, time: at('03:43') }),
+      zman({ key: 'mish', base: 'misheyakir', category: 'dawn', order: 30, time: at('03:32') }),
     ];
     const [dawn] = buildZmanimGroups(zmanim, t);
     expect(dawn.items.map((i) => i.base)).toEqual(['alos', 'misheyakir']);
+    // The base's canonical order is its smallest opinion order.
+    expect(dawn.items.find((i) => i.base === 'alos')!.order).toBe(12);
   });
 
-  it('sorts null-time / duration rows last, keeping their definition order (stable)', () => {
+  it('still orders the OPINIONS inside a base by their actual time', () => {
+    // Base ordering is canonical; row ordering inside a base stays chronological.
     const zmanim = [
-      zman({ key: 'shaahMGA', base: 'shaahZmanis', category: 'evening', order: 10, time: null, duration: true, durationMillis: 4_000_000 }),
-      zman({ key: 'shaahGRA', base: 'shaahZmanis', category: 'evening', order: 12, time: null, duration: true, durationMillis: 3_600_000 }),
-      zman({ key: 'tzaisEarly', base: 'tzais', category: 'evening', order: 20, time: at('20:20') }),
-      zman({ key: 'tzaisLate', base: 'tzais', category: 'evening', order: 22, time: at('21:02') }),
+      zman({ key: 'alosLate', base: 'alos', category: 'dawn', order: 10, time: at('04:07') }),
+      zman({ key: 'alosEarly', base: 'alos', category: 'dawn', order: 12, time: at('03:46') }),
+    ];
+    const [dawn] = buildZmanimGroups(zmanim, t);
+    expect(dawn.items[0].rows.map((r) => r.key)).toEqual(['alosEarly', 'alosLate']);
+  });
+
+  it('keeps all-null (duration) rows in stable definition order inside their base', () => {
+    const zmanim = [
+      zman({ key: 'shaahMGA', base: 'shaahZmanis', category: 'evening', order: 200, time: null, duration: true, durationMillis: 4_000_000 }),
+      zman({ key: 'shaahGRA', base: 'shaahZmanis', category: 'evening', order: 202, time: null, duration: true, durationMillis: 3_600_000 }),
+      zman({ key: 'tzaisEarly', base: 'tzais', category: 'evening', order: 160, time: at('20:20') }),
+      zman({ key: 'tzaisLate', base: 'tzais', category: 'evening', order: 168, time: at('21:02') }),
     ];
     const [evening] = buildZmanimGroups(zmanim, t);
-    // Real-time base (tzais) before the duration base (all null → last).
+    // Bases by canonical order: tzais (160) before shaah zmanis (200).
     expect(evening.items.map((i) => i.base)).toEqual(['tzais', 'shaahZmanis']);
+    // Both shaah-zmanis rows are null (time-less durations); a stable sort keeps
+    // their definition order rather than reshuffling them.
     const shaah = evening.items.find((i) => i.base === 'shaahZmanis')!;
     expect(shaah.rows.map((r) => r.key)).toEqual(['shaahMGA', 'shaahGRA']);
   });
