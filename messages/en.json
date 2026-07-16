@@ -37,7 +37,7 @@
     "nameLabel": "Name"
   },
   "zmanim": {
-    "noDegreeTimeNote": "A dash means the sun never dips far enough below the horizon here on a short summer night.",
+    "noDegreeTimeNote": "This calculation is based on the sun reaching a set angle below the horizon, which never happens here on a short summer night — so fixed-minute opinions are used instead.",
     "abbr": {
       "alos": "Alot",
       "misheyakir": "Misheyakir",
