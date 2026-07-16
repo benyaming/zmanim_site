@@ -43,6 +43,7 @@ import {
   applyLehumraToEvents,
   buildZmanimGroups,
   computeZmanim,
+  isPolarDay,
   havdalahTime,
   havdalahZmanKey,
   type HavdalahOpinion,
@@ -50,7 +51,6 @@ import {
 
 import { DailyLearning } from './daily-learning';
 import { InfoHint } from './info-hint';
-import { WarningHint } from './warning-hint';
 import { ZmanimList } from './zmanim-list';
 
 const EVENT_META: Record<DayEventType, { Icon: ComponentType<{ className?: string }>; className: string }> = {
@@ -89,17 +89,13 @@ function dayEventsFor(
     keys: dayEventZmanKeys(havdalahZmanKey(havdalahOpinion)),
   });
   const byKey = Object.fromEntries(z.map((x) => [x.key, x.time]));
-  const approxByKey = Object.fromEntries(z.map((x) => [x.key, Boolean(x.approximate)]));
   return getDayEvents(
     date,
     {
       candleLighting: byKey.candleLighting,
-      alos: byKey.alosHashachar,
       sunset: byKey.sunset,
       havdalah: havdalahTime(havdalahOpinion, byKey),
-      tzeitByKey: byKey,
-      alosApproximate: approxByKey.alosHashachar,
-      tzeitApproximateByKey: approxByKey,
+      zmanimByKey: byKey,
     },
     location.inIsrael,
     hiddenFastEnd,
@@ -291,6 +287,8 @@ export function ZmanimPanel() {
   const tDetail = useTranslations('zmanim.descriptions');
   const tBaseDesc = useTranslations('zmanim.baseDescriptions');
   const tGroup = useTranslations('zmanim.groups');
+  const tFamily = useTranslations('zmanim.families');
+  const tFamilyDesc = useTranslations('zmanim.familyDescriptions');
   const tZmanim = useTranslations('zmanim');
   const tCat = useTranslations('categories');
   const tPanel = useTranslations('panel');
@@ -331,7 +329,15 @@ export function ZmanimPanel() {
     zmanim.filter(
       (z) => z.key !== 'candleLighting' && !hidden.has(z.key) && (!z.erevPesachOnly || erevPesach),
     ),
-    { name: tName, shita: tShita, detail: tDetail, baseDescription: tBaseDesc, group: tGroup },
+    {
+      name: tName,
+      shita: tShita,
+      detail: tDetail,
+      baseDescription: tBaseDesc,
+      familyLabel: tFamily,
+      familyDescription: tFamilyDesc,
+      group: tGroup,
+    },
   );
 
   return (
@@ -398,13 +404,15 @@ export function ZmanimPanel() {
                         {tShita(havdalahZmanKey(havdalahOpinion))}
                       </Badge>
                     )}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    {event.approximate && (
-                      <WarningHint detail={tZmanim('approximateNote')} label={tEvents(event.type)} />
+                    {/* Which dawn the fast starts at — usually 16.1°, but the
+                        fixed-72-minute one where the sun never reaches 16.1°. */}
+                    {event.type === 'fastStart' && event.zmanKey && (
+                      <Badge variant="secondary" className="font-normal tabular-nums">
+                        {tShita(event.zmanKey)}
+                      </Badge>
                     )}
-                    <time className="font-mono font-medium tabular-nums">{formatTime(event.time, locale)}</time>
                   </span>
+                  <time className="font-mono font-medium tabular-nums">{formatTime(event.time, locale)}</time>
                 </div>
               );
             })}
@@ -420,12 +428,7 @@ export function ZmanimPanel() {
                   {fastEndEvents.map((event) => (
                     <div key={event.zmanKey} className="flex items-center justify-between gap-3">
                       <span className="text-muted-foreground text-xs">{event.zmanKey ? tFastEnd(event.zmanKey) : ''}</span>
-                      <span className="flex items-center gap-1">
-                        {event.approximate && (
-                          <WarningHint detail={tZmanim('approximateNote')} label={tEvents('fastEnd')} />
-                        )}
-                        <time className="font-mono text-sm tabular-nums">{formatTime(event.time, locale)}</time>
-                      </span>
+                      <time className="font-mono text-sm tabular-nums">{formatTime(event.time, locale)}</time>
                     </div>
                   ))}
                 </div>
@@ -440,7 +443,7 @@ export function ZmanimPanel() {
         <ZmanimList
           groups={groups}
           locale={locale}
-          approxNote={tZmanim('approximateNote')}
+          noDegreeTimeNote={isPolarDay(zmanim) ? '' : tZmanim('noDegreeTimeNote')}
           footnote={
             <>
               {lehumra && (

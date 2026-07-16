@@ -41,6 +41,16 @@ export const FAST_END_OPINIONS: readonly FastEndOpinionDef[] = [
 
 export type FastEndOpinionKey = (typeof FAST_END_OPINIONS)[number]['key'];
 
+/**
+ * The nightfall shown when every VISIBLE fast-end opinion is undefined on a
+ * short summer night (all the default opinions are degree-based, and the sun
+ * never reaches those angles). Rabbeinu Tam's fixed 72-minute nightfall — a
+ * `nightfall`-kind opinion valid for every fast, including Tisha B'Av, and
+ * defined wherever the sun sets. getDayEvents falls through to it, labelled, so
+ * a fast never shows an all-blank end — mirroring the fast-START fall-through.
+ */
+export const FAST_END_FALLBACK: FastEndOpinionDef = FAST_END_OPINIONS.find((o) => o.key === 'tzais72')!;
+
 const FAST_END_KEYS = new Set(FAST_END_OPINIONS.map((o) => o.key));
 
 /** The computed-zman keys the fast-end opinions read their time from. */

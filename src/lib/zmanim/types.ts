@@ -12,25 +12,44 @@ export type ZmanCategory = 'dawn' | 'morning' | 'midday' | 'afternoon' | 'evenin
 export type ZmanMethod = Extract<keyof ComplexZmanimCalendar, string>;
 
 /**
- * Short-night fallback for a degree-based zman. At high latitudes the sun may
- * never reach a given depression angle (a short summer night), so the primary
- * `method` returns null. Rather than show nothing, we fall back to a fixed
- * seasonal-hour (shaah zmanit) approximation — flagged in the UI so the user
- * knows it isn't the real degree-based time. Only used when `method` is null;
- * a real degree time is never overridden.
+ * HOW a zman is calculated — the axis that distinguishes opinions answering the
+ * same question in fundamentally different ways. Every Alot / Misheyakir / Tzeit
+ * opinion is one of `degrees`, `fixedMinutes` or `seasonalMinutes`; the three
+ * disagree about what dawn or nightfall even IS, not merely about a parameter.
  *
- * Two forms, both anchored on the (always-available-when-there-is-a-day)
- * sunrise/sunset:
- * - `method` — call another calendar method that is itself proportional
- *   (a `*Zmanis` method), e.g. `getAlos72Zmanis` as the equivalent of 16.1°.
- * - `anchor` + `zmaniyosMinutes` — offset that many SEASONAL minutes from
- *   sunrise (before) or sunset (after), matching KosherJava's convention
- *   (`sunrise − minutes × shaahZmanisGra / 60`). The minute figure is the
- *   documented Jerusalem-equinox anchor of the degree (see docs/zmanim.md).
+ * Modeling it as data (rather than leaving it implicit in a translated shita
+ * label like "8.5°" or "72 min fix") is what lets the UI group and explain
+ * opinions by family — in particular, why a `degrees` zman can have no time at
+ * all at high latitude while its minute-based neighbours still resolve.
+ *
+ * A zman that is a MOMENT of twilight (alot, misheyakir, tzeit) is one of the
+ * first three. A zman that is a FRACTION of the halachic day (sof zman Shma /
+ * Tfila, chametz deadlines, mincha, plag, the shaah-zmanis durations) is one of
+ * the two day-definition families — because for those opinions the fundamental
+ * disagreement is over when the day begins and ends, not the arithmetic. (One
+ * exception: mincha gedola 30 is a fixed 30-minute offset from chatzot, so it is
+ * `fixedMinutes`, not a day-fraction at all.)
+ *
+ * - `degrees` — the sun reaches a depression angle below the horizon. The only
+ *   family that can be UNDEFINED on a short night: at high latitude in summer
+ *   the sun may never get that low, and no amount of arithmetic invents a time.
+ * - `fixedMinutes` — a fixed clock-minute offset from sunrise/sunset (or from
+ *   chatzot). Always defined whenever there is a sunrise and sunset.
+ * - `seasonalMinutes` — a proportional (zmaniyos) minute offset, where a minute
+ *   is 1/60 of a shaah zmanis and so stretches with the length of the day.
+ * - `dawnToNightfall` — a fraction of the day measured dawn → nightfall (the
+ *   longer day of the Magen Avraham). Its hours start earlier and run longer.
+ * - `sunriseToSunset` — a fraction of the day measured sunrise → sunset (the
+ *   day of the Vilna Gaon, and — from his own true sunrise — the Baal HaTanya).
+ * - `solar` — the sun's own position: sunrise, sunset, chatzot, solar midnight.
  */
-export type ZmanFallback =
-  | { method: ZmanMethod }
-  | { anchor: 'sunrise' | 'sunset'; zmaniyosMinutes: number };
+export type ZmanFamily =
+  | 'degrees'
+  | 'fixedMinutes'
+  | 'seasonalMinutes'
+  | 'dawnToNightfall'
+  | 'sunriseToSunset'
+  | 'solar';
 
 /**
  * A single zman definition. This is the SINGLE SOURCE OF TRUTH that binds a
@@ -46,6 +65,12 @@ export interface ZmanDefinition {
   base: string;
   /** The exact `ComplexZmanimCalendar` method that computes this time. */
   method: ZmanMethod;
+  /**
+   * How this zman is calculated. Pure metadata — it never affects the computed
+   * time, only how the UI groups, filters and explains the row. Locked in
+   * definitions.test.ts alongside the key→method mapping.
+   */
+  family: ZmanFamily;
   /**
    * Fixed minutes to add to `method`'s result. For tzeitim with no dedicated
    * kosher-zmanim method (e.g. tzeit 42 = sunset + 42 min). Omitted = use the
@@ -66,26 +91,24 @@ export interface ZmanDefinition {
    * (`time` stays null and the UI renders an h:mm:ss duration).
    */
   duration?: boolean;
-  /**
-   * Fallback for a short night, when the degree-based `method` yields no time
-   * (the sun never reaches its depression angle). A seasonal-hour approximation
-   * used ONLY when `method` is null, surfaced with `ComputedZman.approximate`.
-   */
-  fallback?: ZmanFallback;
 }
 
-/** A computed zman: the definition plus its resolved time (null if undefined that day). */
+/**
+ * A computed zman: the definition plus its resolved time.
+ *
+ * `time` is null when this opinion genuinely has no answer for the day — most
+ * often a `degrees` zman on a short night, where the sun never reaches the
+ * depression angle. That null is REPORTED, never filled in from another family:
+ * substituting a minute-based time into a degree-based row would attribute a
+ * number to a shita that did not produce it, and would quietly take a side in
+ * an open machloket about what to do at high latitude. The UI explains the gap
+ * and shows the neighbouring families instead (see `ZmanFamily`).
+ */
 export interface ComputedZman extends ZmanDefinition {
-  /** The time in the location's timezone, or null (e.g. polar day with no sunrise). */
+  /** The time in the location's timezone, or null when this opinion has no time that day. */
   time: DateTime | null;
   /** For `duration` zmanim only: the length in ms, or null when the day is undefined. */
   durationMillis?: number | null;
-  /**
-   * True when `time` came from the short-night `fallback` (a seasonal-hour
-   * approximation) because the degree-based method had no time. The UI marks
-   * these with a warning so they're never mistaken for the exact degree time.
-   */
-  approximate?: boolean;
 }
 
 export interface ComputeZmanimInput {

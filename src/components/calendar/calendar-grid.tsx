@@ -13,6 +13,7 @@ import {
   buildMonthGrid,
   type CalendarMode,
   createHebrewFormatter,
+  DEFAULT_HIDDEN_FAST_END,
   dayEventZmanKeys,
   getDayEvents,
   getDayInfo,
@@ -139,16 +140,18 @@ function computeDayRender(date: DateTime, cfg: DayRenderCfg) {
     date,
     {
       candleLighting: byKey.candleLighting,
-      alos: byKey.alosHashachar,
       sunset: byKey.sunset,
       havdalah: havdalahTime(cfg.havdalahOpinion, byKey),
-      tzeitByKey: byKey,
+      zmanimByKey: byKey,
     },
     location.inIsrael,
-    [],
+    DEFAULT_HIDDEN_FAST_END,
   );
-  const firstFastEnd = allEvents.find((e) => e.type === 'fastEnd');
-  const rawEvents = allEvents.filter((e) => e.type !== 'fastEnd' || e === firstFastEnd);
+  // One fast-end slot: the earliest opinion that HAS a time (on a short
+  // night the degree opinions are null and the fixed-minute fallback wins).
+  const fastEnds = allEvents.filter((e) => e.type === 'fastEnd');
+  const chosenFastEnd = fastEnds.find((e) => e.time) ?? fastEnds[0];
+  const rawEvents = allEvents.filter((e) => e.type !== 'fastEnd' || e === chosenFastEnd);
   const events = cfg.lehumra ? applyLehumraToEvents(rawEvents) : rawEvents;
 
   // Personal dates: one teal chip each. Cells are tight, so show only the

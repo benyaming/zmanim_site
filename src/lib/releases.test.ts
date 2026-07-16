@@ -35,7 +35,7 @@ describe('releasesSince', () => {
 
   it('returns only the releases newer than the last seen version', () => {
     const unseen = releasesSince('1.12');
-    expect(unseen.map((r) => r.version)).toEqual(['1.18', '1.17', '1.16', '1.15', '1.14', '1.13']);
+    expect(unseen.map((r) => r.version)).toEqual(['1.19', '1.18', '1.17', '1.16', '1.15', '1.14', '1.13']);
   });
 
   it('treats a corrupted stored version as older than everything', () => {

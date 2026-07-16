@@ -20,10 +20,9 @@ function eventsFor(date: DateTime, havdalah: (typeof HAVDALAH_OPINIONS)[number],
     date,
     {
       candleLighting: byKey.candleLighting,
-      alos: byKey.alosHashachar,
       sunset: byKey.sunset,
       havdalah: havdalahTime(havdalah, byKey),
-      tzeitByKey: byKey,
+      zmanimByKey: byKey,
     },
     true, // Israel
     [], // show every fast-end opinion, exercising all the keys

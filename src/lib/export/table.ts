@@ -1,6 +1,13 @@
 import type { DateTime } from 'luxon';
 
-import { createHebrewFormatter, dayEventZmanKeys, getDayEvents, getDayInfo, localizedHolidayLabel } from '@/lib/calendar';
+import {
+  createHebrewFormatter,
+  DEFAULT_HIDDEN_FAST_END,
+  dayEventZmanKeys,
+  getDayEvents,
+  getDayInfo,
+  localizedHolidayLabel,
+} from '@/lib/calendar';
 import { formatDuration, formatTime } from '@/lib/format';
 import { getDailyLearning, LEARNING_CYCLE_KEYS, type LearningCycleKey } from '@/lib/learning';
 import type { AppLocation } from '@/lib/location';
@@ -183,16 +190,18 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       date,
       {
         candleLighting: timeByKey.candleLighting,
-        alos: timeByKey.alosHashachar,
         sunset: timeByKey.sunset,
         havdalah: havdalahTime(havdalahOpinion, timeByKey),
-        tzeitByKey: timeByKey,
+        zmanimByKey: timeByKey,
       },
       o.location.inIsrael,
-      [],
+      DEFAULT_HIDDEN_FAST_END,
     );
-    const firstFastEnd = allEvents.find((e) => e.type === 'fastEnd');
-    const rawEvents = allEvents.filter((e) => e.type !== 'fastEnd' || e === firstFastEnd);
+    // One fast-end slot: the earliest opinion that HAS a time (on a short
+    // night the degree opinions are null and the fixed-minute fallback wins).
+    const fastEnds = allEvents.filter((e) => e.type === 'fastEnd');
+    const chosenFastEnd = fastEnds.find((e) => e.time) ?? fastEnds[0];
+    const rawEvents = allEvents.filter((e) => e.type !== 'fastEnd' || e === chosenFastEnd);
     const events = o.lehumra ? applyLehumraToEvents(rawEvents) : rawEvents;
     const eventTime = (type: string) => {
       const e = events.find((ev) => ev.type === type);
