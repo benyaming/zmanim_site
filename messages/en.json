@@ -472,7 +472,11 @@
     "chipBatMitzvah": "{label} · bat mitzvah",
     "chipYahrzeit": "{label} · {n, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} yahrzeit"
   },
-  "footer": {
+  "browser": {
+  "unsupported": "Your browser is too old to display this site correctly — please update your browser or system.",
+  "dismiss": "Dismiss"
+ },
+ "footer": {
     "disclaimer": "Zmanim times computed with <link>kosher-zmanim</link>, daily learning with <hebcal>Hebcal</hebcal>. For halachic decisions, consult your local rabbinic authority.",
     "madeBy": "Made by Benyamin Ginzburg",
     "source": "Source"

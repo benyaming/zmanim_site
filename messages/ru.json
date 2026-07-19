@@ -472,7 +472,11 @@
     "chipBatMitzvah": "{label} · бат-мицва",
     "chipYahrzeit": "{label} · {n}-й йорцайт"
   },
-  "footer": {
+  "browser": {
+  "unsupported": "Ваш браузер устарел и не может корректно отобразить сайт — пожалуйста, обновите браузер или систему.",
+  "dismiss": "Закрыть"
+ },
+ "footer": {
     "disclaimer": "Зманим рассчитаны с помощью <link>kosher-zmanim</link>, ежедневное изучение — с помощью <hebcal>Hebcal</hebcal>. Для алахических решений обратитесь к местному раввину.",
     "madeBy": "Сделал Benyamin Ginzburg",
     "source": "Код"

@@ -10,6 +10,7 @@ import '../globals.css';
 import { AccessibilityProvider } from '@/components/providers/accessibility-provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { dirForLocale, routing } from '@/i18n/routing';
+import { browserSupportScript } from '@/lib/browser-support';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { themeInitScript } from '@/lib/theme';
 
@@ -69,6 +70,7 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
+  const tBrowser = await getTranslations('browser');
 
   return (
     <html
@@ -89,11 +91,15 @@ export default async function LocaleLayout({
             The beforeinstallprompt stash must also live here: Chrome fires the
             event as soon as installability is validated, which can beat the
             React bundle — use-install-prompt picks the event up from
-            window.__zmanimBip at module load. */}
+            window.__zmanimBip at module load.
+            The last block warns on browsers below the stylesheet's CSS
+            baseline (see src/lib/browser-support.ts) — on those the page
+            renders unstyled, so the notice must come from this inline
+            script, not from React. */}
         <div
           hidden
           dangerouslySetInnerHTML={{
-            __html: `<script>${themeInitScript}(function(){try{var p=JSON.parse(localStorage.getItem('zmanim:a11y:v1')||'{}');var e=document.documentElement;if(p.fontScale&&p.fontScale!=='default')e.classList.add('text-scale-'+p.fontScale);if(p.reduceMotion)e.classList.add('reduce-motion');if(p.highContrast)e.classList.add('high-contrast');}catch(e){}})();window.addEventListener('beforeinstallprompt',function(e){window.__zmanimBip=e},{once:true});</script>`,
+            __html: `<script>${themeInitScript}(function(){try{var p=JSON.parse(localStorage.getItem('zmanim:a11y:v1')||'{}');var e=document.documentElement;if(p.fontScale&&p.fontScale!=='default')e.classList.add('text-scale-'+p.fontScale);if(p.reduceMotion)e.classList.add('reduce-motion');if(p.highContrast)e.classList.add('high-contrast');}catch(e){}})();window.addEventListener('beforeinstallprompt',function(e){window.__zmanimBip=e},{once:true});${browserSupportScript(tBrowser('unsupported'), tBrowser('dismiss'))}</script>`,
           }}
         />
         <ThemeProvider>

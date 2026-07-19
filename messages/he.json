@@ -472,7 +472,11 @@
     "chipBatMitzvah": "{label} · בת מצווה",
     "chipYahrzeit": "{label} · יום השנה ה־{n}"
   },
-  "footer": {
+  "browser": {
+  "unsupported": "הדפדפן שלך ישן מדי להצגה תקינה של האתר — נא לעדכן את הדפדפן או את מערכת ההפעלה.",
+  "dismiss": "סגירה"
+ },
+ "footer": {
     "disclaimer": "הזמנים מחושבים באמצעות <link>kosher-zmanim</link> והלימוד היומי באמצעות <hebcal>Hebcal</hebcal>. להכרעות הלכתיות יש להתייעץ עם רב מוסמך.",
     "madeBy": "מאת Benyamin Ginzburg",
     "source": "קוד"
