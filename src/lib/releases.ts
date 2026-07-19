@@ -21,6 +21,15 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.21',
+    date: '2026-07-19',
+    notes: {
+      en: ['Very old browsers that can’t render the site now get a clear update notice instead of a broken page.'],
+      he: ['דפדפנים ישנים שאינם יכולים להציג את האתר מקבלים כעת הודעת עדכון ברורה במקום עמוד שבור.'],
+      ru: ['Устаревшие браузеры, не способные отобразить сайт, теперь видят понятное предложение обновиться вместо сломанной страницы.'],
+    },
+  },
+  {
     version: '1.20',
     date: '2026-07-16',
     notes: {
