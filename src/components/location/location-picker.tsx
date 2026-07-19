@@ -155,7 +155,9 @@ export function LocationPicker() {
     }
     const display = savedLocationDisplayName(entry);
     const detailParts = [
-      entry.name.trim() ? entry.location.label : null,
+      // Skip the geocoded label when it just repeats the display name (bot
+      // entries arrive with name === label).
+      entry.name.trim() && entry.location.label !== entry.name.trim() ? entry.location.label : null,
       typeof entry.location.elevation === 'number' ? `${entry.location.elevation} ${tSettings('meters')}` : null,
     ].filter(Boolean);
     return (

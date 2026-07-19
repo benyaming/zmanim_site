@@ -31,11 +31,16 @@ function baselineOf(profile: BotProfile): SyncedState {
   };
 }
 
-/** The bot's saved list as picker entries (stable ids so re-renders don't churn). */
+/**
+ * The bot's saved list as picker entries (stable ids so re-renders don't
+ * churn). The bot's name rides as the entry's custom name, so selecting one
+ * keeps it in the header (like the bot shows it) instead of being replaced by
+ * the relabel effect's geocoded city name.
+ */
 function botLocationEntries(profile: BotProfile): SavedLocation[] {
   return profile.locations.map((loc) => ({
     id: `bot:${loc.lat},${loc.lng}`,
-    name: '',
+    name: loc.name,
     location: makeLocation(loc.lat, loc.lng, loc.name, undefined, loc.elevation),
   }));
 }
@@ -72,14 +77,22 @@ export function TelegramMiniApp() {
       if (!profile || cancelled) return;
       synced.current = baselineOf(profile);
       applyBotProfile({
+        // The bot's name rides as customLabel so the header shows it verbatim
+        // («Дом» stays «Дом»); the relabel effect only re-resolves the
+        // underlying geocoded label — otherwise the applied home location
+        // re-geocodes to the user's city name and looks like an auto-detected
+        // "current location" instead of the bot's saved one.
         location: profile.location
-          ? makeLocation(
-              profile.location.lat,
-              profile.location.lng,
-              profile.location.name,
-              undefined,
-              profile.location.elevation,
-            )
+          ? {
+              ...makeLocation(
+                profile.location.lat,
+                profile.location.lng,
+                profile.location.name,
+                undefined,
+                profile.location.elevation,
+              ),
+              customLabel: profile.location.name,
+            }
           : undefined,
         candleLightingOffset:
           profile.clOffset != null
