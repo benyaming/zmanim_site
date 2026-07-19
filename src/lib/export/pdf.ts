@@ -6,6 +6,8 @@
  * to the screen — no PDF font embedding or bidi handling needed.
  */
 
+import { downloadBlob } from './download';
+
 /** A4 landscape at 96 dpi, in CSS pixels. */
 export const PAGE_WIDTH_PX = 1123;
 export const PAGE_HEIGHT_PX = 794;
@@ -27,5 +29,7 @@ export async function pagesToPdf(pages: HTMLElement[], filename: string): Promis
     if (i > 0) pdf.addPage();
     pdf.addImage(dataUrl, 'PNG', 0, 0, 297, 210, undefined, 'FAST');
   }
-  pdf.save(filename);
+  // Through downloadBlob (not pdf.save) so the Telegram Mini App delivery
+  // path applies to PDFs too.
+  await downloadBlob(pdf.output('blob'), filename);
 }

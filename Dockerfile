@@ -16,9 +16,12 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # NEXT_PUBLIC_* values are inlined at build time, so the canonical site URL
-# must be provided here (used for SEO metadata, sitemap, robots).
+# must be provided here (used for SEO metadata, sitemap, robots). The bot API
+# URL is optional — empty keeps the Telegram Mini App profile sync off.
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
+ARG NEXT_PUBLIC_TG_BOT_API_URL=
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_TG_BOT_API_URL=$NEXT_PUBLIC_TG_BOT_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build

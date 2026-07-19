@@ -7,6 +7,7 @@ services:
       context: .
       args:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_TG_BOT_API_URL: ${NEXT_PUBLIC_TG_BOT_API_URL:-}
     restart: unless-stopped
     ports:
       # Bind on all interfaces (0.0.0.0). If a host nginx is the only intended

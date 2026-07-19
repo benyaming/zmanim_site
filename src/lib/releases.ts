@@ -21,6 +21,24 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.20',
+    date: '2026-07-16',
+    notes: {
+      en: [
+        'The calendar now runs as a Telegram Mini App inside zmanim_bot, opening on your bot location.',
+        'Location, candle-lighting offset, and havdalah opinion stay in sync with the bot both ways.',
+      ],
+      he: [
+        'הלוח פועל כעת כמיני-אפליקציה בטלגרם בתוך zmanim_bot, ונפתח על המיקום שנבחר בבוט.',
+        'מיקום, זמן הדלקת נרות ושיטת ההבדלה מסונכרנים עם הבוט בשני הכיוונים.',
+      ],
+      ru: [
+        'Календарь теперь работает как мини-приложение Telegram внутри zmanim_bot и открывается на вашей локации из бота.',
+        'Локация, время зажигания свечей и мнение для авдалы синхронизируются с ботом в обе стороны.',
+      ],
+    },
+  },
+  {
     version: '1.19',
     date: '2026-07-16',
     notes: {

@@ -17,6 +17,7 @@ The `image` job pushes `ghcr.io/<owner>/<repo>:latest` and `:sha-<commit>` and r
 ## What you must configure
 
 - **Repository variable** `NEXT_PUBLIC_SITE_URL` — the production origin (e.g. `https://zmanim.example`). It is inlined at **build time** for SEO (`metadataBase`, sitemap, robots, canonical/OG URLs). It is public by design and is **not** a secret.
+- **Repository variable** `NEXT_PUBLIC_TG_BOT_API_URL` *(optional)* — zmanim_bot's mini-app API base (e.g. `https://<bot-host>/zmanim_bot/miniapp`), also build-time and public. Unset = the Telegram Mini App profile sync is off; see [`telegram-mini-app.md`](telegram-mini-app.md).
 - **No deploy secrets** and **no runtime secrets.** The app has no server-side tokens (geocoding is keyless, timezone is offline). There is nothing sensitive to inject.
 
 ## docker-compose.yml
