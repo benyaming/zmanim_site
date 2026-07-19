@@ -49,6 +49,9 @@ identical in both projects by design (`src/lib/zmanim/havdalah.ts`).
 
 GPS auto-detection is skipped inside the webview (unreliable there, and the
 bot profile is better); the soft IP guess and the manual GPS button still work.
+Lehumra minute rounding defaults ON inside Telegram (the bot always rounds
+lehumra, and the mini app mirrors its times) unless the user has explicitly
+toggled it (`lehumraCustomized`).
 
 **Exports** (CSV/XLSX/PDF): the webview can't do browser downloads, so inside
 Telegram `downloadBlob` posts the file to `/export` (multipart, preflight-free)

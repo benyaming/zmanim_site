@@ -129,6 +129,12 @@ interface PersistedPrefs {
   havdalahOpinion?: HavdalahOpinion;
   /** Opt-in stringent minute rounding; absent/false = exact times. */
   lehumra?: boolean;
+  /**
+   * True once the user has touched the lehumra toggle themselves. Only then
+   * does a stored `false` survive in the Telegram Mini App, where lehumra
+   * defaults ON (the bot always rounds lehumra, and the mini app mirrors it).
+   */
+  lehumraCustomized?: boolean;
   /** Hidden (not visible) keys, so zmanim added later default to shown. */
   hiddenZmanim?: string[];
   /**
@@ -296,7 +302,12 @@ export function AppStateProvider({
     }
     if (profile.botLocations) setBotLocations(profile.botLocations);
   };
-  const [lehumra, setLehumra] = useState(false);
+  const [lehumra, setLehumraState] = useState(false);
+  const [lehumraCustomized, setLehumraCustomized] = useState(false);
+  const setLehumra = (on: boolean) => {
+    setLehumraCustomized(true);
+    setLehumraState(on);
+  };
   const [hiddenZmanim, setHiddenZmanim] = useState<string[]>([...DEFAULT_HIDDEN_ZMANIM]);
   const [zmanimCustomized, setZmanimCustomized] = useState(false);
   const setZmanVisible = (key: string, visible: boolean) => {
@@ -369,7 +380,8 @@ export function AppStateProvider({
     }
     if (prefs.useElevation === true) setUseElevation(true);
     if (isHavdalahOpinion(prefs.havdalahOpinion)) setHavdalahOpinionState(prefs.havdalahOpinion);
-    if (prefs.lehumra === true) setLehumra(true);
+    if (prefs.lehumra === true) setLehumraState(true);
+    if (prefs.lehumraCustomized === true) setLehumraCustomized(true);
     // Unknown/stale keys are dropped, so a save from an old version self-heals.
     // The saved hide list only overrides the default set when it's an explicit
     // choice (zmanimCustomized). Legacy saves predate the flag: there a
@@ -412,6 +424,17 @@ export function AppStateProvider({
       setLocationState({ ...saved, timeZoneId, inIsrael: isIsraelTimezone(timeZoneId) });
     }
   }, [urlProvided]);
+
+  // Telegram Mini App: the zmanim mirror the bot, and the bot always rounds
+  // lehumra — so lehumra defaults ON there. An explicit user choice
+  // (lehumraCustomized, persisted) wins; a plain persisted `false` is just
+  // the eager first-visit save, not a choice.
+  useEffect(() => {
+    if (!isTelegramMiniApp()) return;
+    if (loadPrefs()?.lehumraCustomized) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLehumraState(true);
+  }, []);
 
   // Auto-detect on first visit, when nothing explicit is set (no URL param, no
   // saved location). Two-stage, best-effort, both abortable:
@@ -503,6 +526,7 @@ export function AppStateProvider({
           useElevation,
           havdalahOpinion,
           lehumra,
+          lehumraCustomized,
           hiddenZmanim,
           zmanimCustomized,
           seenOptInZmanim: [...OPT_IN_ZMANIM],
@@ -515,7 +539,7 @@ export function AppStateProvider({
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, hiddenZmanim, zmanimCustomized, hiddenLearning, hiddenFastEnd, fastEndCustomized, customDates]);
+  }, [location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, lehumraCustomized, hiddenZmanim, zmanimCustomized, hiddenLearning, hiddenFastEnd, fastEndCustomized, customDates]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
