@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
+import { markUserEdit } from '@/lib/sync/blob';
 import { THEME_STORAGE_KEY as STORAGE_KEY } from '@/lib/theme';
 
 /**
@@ -63,6 +64,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
+    // A theme pick is always a deliberate change — mark it dirty so the next
+    // sync re-stamps it above whatever the other device holds and it wins,
+    // independent of location/prefs churn or clock skew.
+    markUserEdit('theme');
   };
 
   // Apply on mount (idempotent after the pre-paint script) and on change;

@@ -392,6 +392,8 @@
     "zmanimDesc": "טבלה של זמנים נבחרים לטווח תאריכים — PDF, Excel או CSV.",
     "customDatesName": "תאריכים אישיים",
     "customDatesDesc": "ימי הולדת, בר/בת מצווה ויארצייט בלוח שלך.",
+    "syncName": "סנכרון וגיבוי",
+    "syncDesc": "סנכרון ההגדרות בין מכשירים, או העברתן בקישור או בקובץ.",
     "back": "חזרה",
     "tableTitle": "טבלת זמנים",
     "from": "מ־",
@@ -438,6 +440,34 @@
     "sentToBot": "הקובץ נשלח אליך בצ׳אט עם הבוט",
     "sendToBotFailed": "שליחת הקובץ לצ׳אט נכשלה — מנסה הורדה רגילה"
   },
+  "sync": {
+    "telegramTitle": "סנכרון טלגרם",
+    "miniAppSynced": "ההגדרות מסתנכרנות אוטומטית עם חשבון הטלגרם שלך.",
+    "miniAppNoApi": "הסנכרון אינו זמין כרגע.",
+    "tgHint": "התחברו עם טלגרם כדי שההגדרות — כולל כל מה שבבוט — יסתנכרנו בכל המכשירים.",
+    "tgConnected": "מחובר בתור {name}.",
+    "disconnect": "ניתוק",
+    "googleTitle": "סנכרון Google Drive",
+    "googleHint": "שמרו את ההגדרות ב‑Google Drive הפרטי שלכם וסנכרנו אותן בכל מכשיר.",
+    "googleConnect": "חיבור Google Drive",
+    "googleConnected": "מחובר ל‑Google Drive.",
+    "syncNow": "סנכרון עכשיו",
+    "synced": "ההגדרות סונכרנו.",
+    "connected": "מחובר — ההגדרות סונכרנו.",
+    "syncFailed": "הסנכרון נכשל — נסו שוב מאוחר יותר.",
+    "transferTitle": "העברת הגדרות",
+    "transferHint": "העבירו את ההגדרות למכשיר אחר בקישור או בקובץ — בלי חשבון.",
+    "copyLink": "העתקת קישור הגדרות",
+    "linkCopied": "הקישור הועתק — פתחו אותו במכשיר השני.",
+    "linkCopyFailed": "לא ניתן להעתיק את הקישור — הורידו קובץ במקום.",
+    "downloadFile": "הורדת קובץ הגדרות",
+    "importFile": "ייבוא קובץ הגדרות",
+    "importInvalid": "הקובץ אינו קובץ הגדרות.",
+    "importTitle": "להחיל הגדרות מהקישור?",
+    "importBody": "הפעולה תחליף את ההגדרות במכשיר זה ותטען את האפליקציה מחדש.",
+    "importApply": "החלה",
+    "importCancel": "ביטול"
+  },
   "customDates": {
     "kindBirthday": "יום הולדת",
     "kindBarMitzvah": "בר מצווה",
@@ -473,10 +503,10 @@
     "chipYahrzeit": "{label} · יום השנה ה־{n}"
   },
   "browser": {
-  "unsupported": "הדפדפן שלך ישן מדי להצגה תקינה של האתר — נא לעדכן את הדפדפן או את מערכת ההפעלה.",
-  "dismiss": "סגירה"
- },
- "footer": {
+    "unsupported": "הדפדפן שלך ישן מדי להצגה תקינה של האתר — נא לעדכן את הדפדפן או את מערכת ההפעלה.",
+    "dismiss": "סגירה"
+  },
+  "footer": {
     "disclaimer": "הזמנים מחושבים באמצעות <link>kosher-zmanim</link> והלימוד היומי באמצעות <hebcal>Hebcal</hebcal>. להכרעות הלכתיות יש להתייעץ עם רב מוסמך.",
     "madeBy": "מאת Benyamin Ginzburg",
     "source": "קוד"

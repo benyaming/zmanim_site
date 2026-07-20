@@ -1,0 +1,411 @@
+/**
+ * The portable settings snapshot ("blob") — everything configurable the app
+ * persists on a device, packaged for sync and transfer (see
+ * docs/settings-sync.md).
+ *
+ * The blob is split into independent **sections** (prefs, accessibility,
+ * theme, language), each carrying its OWN timestamp. Reconcile merges
+ * section-by-section, newest wins per section — so changing the theme on one
+ * device can't revert the language set on another. (Whole-blob last-write-wins
+ * did exactly that, which is the bug this shape fixes.)
+ *
+ * The blob stays opaque to every store that holds it (Telegram CloudStorage,
+ * the bot's Mongo, Google Drive, a link/file export): stores keep the bytes
+ * and never model the sections. Content validation stays where it always was —
+ * the providers sanitize what they load from localStorage — so applying a
+ * section is just writing its raw data back to the same key.
+ */
+
+import { PREFS_STORAGE_KEY } from '@/components/providers/app-state';
+import { A11Y_STORAGE_KEY } from '@/components/providers/accessibility-provider';
+import { THEME_STORAGE_KEY } from '@/lib/theme';
+
+/** UI languages that may ride in the blob (the app's routing locales). */
+const LANGUAGES = ['en', 'he', 'ru'];
+
+/** The independently-synced sections. Order is stable for iteration. */
+export const SECTION_NAMES = ['prefs', 'a11y', 'theme', 'language'] as const;
+export type SectionName = (typeof SECTION_NAMES)[number];
+
+/** prefs/a11y hold an object (or null); theme/language a string (or null). */
+export type SectionData = Record<string, unknown> | string | null;
+
+export interface BlobSection {
+  data: SectionData;
+  /** ISO instant this section last genuinely changed on some device. */
+  t: string;
+}
+
+export interface SettingsBlob {
+  v: 2;
+  sections: Record<SectionName, BlobSection>;
+}
+
+/** Per-section change stamps: { prefs?, a11y?, theme?, language? } (ISO). */
+const META_KEY = 'zmanim:sync-meta:v1';
+/** The prefs fingerprint this device last agreed on (gates the prefs watcher). */
+const SYNCED_KEY = 'zmanim:sync-synced:v1';
+/** The highest stamp this device has ever seen — the Lamport clock (ms). */
+const CLOCK_KEY = 'zmanim:sync-clock:v1';
+/** Sections the user edited locally that aren't confirmed pushed yet. */
+const DIRTY_KEY = 'zmanim:sync-dirty:v1';
+
+/** A section never explicitly changed dates to the epoch, so any real edit wins. */
+const EPOCH = new Date(0).toISOString();
+
+/**
+ * Upper bound for a serialized blob. Far above any real save (50 custom dates
+ * and a full hide list stay under ~20k) — it only guards stores and imports
+ * against garbage. The bot API enforces the same cap server-side.
+ */
+export const MAX_BLOB_CHARS = 65536;
+
+function readRaw(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function readJson(key: string): Record<string, unknown> | null {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function readTheme(): string | null {
+  try {
+    const t = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return t === 'light' || t === 'dark' || t === 'system' ? t : null;
+  } catch {
+    return null;
+  }
+}
+
+function readLanguage(): string | null {
+  const lang = typeof document !== 'undefined' ? document.documentElement.lang : '';
+  return LANGUAGES.includes(lang) ? lang : null;
+}
+
+function sectionStamps(): Record<string, string> {
+  const meta = readJson(META_KEY) ?? {};
+  const out: Record<string, string> = {};
+  for (const name of SECTION_NAMES) {
+    const at = meta[name];
+    if (typeof at === 'string' && !Number.isNaN(Date.parse(at))) out[name] = at;
+  }
+  return out;
+}
+
+function readClock(): number {
+  const raw = Number(readRaw(CLOCK_KEY));
+  return Number.isFinite(raw) ? raw : 0;
+}
+
+function writeClock(ms: number): void {
+  try {
+    window.localStorage.setItem(CLOCK_KEY, String(ms));
+  } catch {
+    // Ignore storage errors — worst case a stamp isn't strictly monotonic.
+  }
+}
+
+/**
+ * Record the highest timestamp this device has seen, from any blob it pulled
+ * or holds — the Lamport clock. A later local change is stamped strictly above
+ * this (see nextStamp), so it beats everything already in the system even when
+ * another device's wall clock runs ahead (cross-device clock skew would
+ * otherwise let a stale value with a larger timestamp win forever).
+ */
+export function observeStamps(stamps: string[]): void {
+  let max = readClock();
+  for (const s of stamps) {
+    const ms = Date.parse(s);
+    if (Number.isFinite(ms) && ms > max) max = ms;
+  }
+  writeClock(max);
+}
+
+/** The next monotonic stamp: strictly greater than anything seen or issued. */
+function nextStamp(): string {
+  const ms = Math.max(Date.now(), readClock() + 1);
+  writeClock(ms);
+  return new Date(ms).toISOString();
+}
+
+/**
+ * Stamp one section as changed. With no explicit `at` the stamp is the next
+ * Lamport tick (beats every stamp seen so far); adoption passes the adopted
+ * section's own stamp (and clears the dirty flag, since the remote supersedes
+ * the local edit). Returns the stamp used.
+ */
+export function stampSection(name: SectionName, at?: string): string {
+  const isAdoption = at !== undefined;
+  const stamp = at ?? nextStamp();
+  try {
+    const meta = readJson(META_KEY) ?? {};
+    meta[name] = stamp;
+    window.localStorage.setItem(META_KEY, JSON.stringify(meta));
+  } catch {
+    // Ignore storage errors (private mode, quota, etc.).
+  }
+  if (isAdoption) clearDirty([name]);
+  return stamp;
+}
+
+/**
+ * Stamp a section the user just changed AND flag it dirty. On the next sync,
+ * after remote stamps are observed, the reconcile re-stamps dirty sections
+ * above them — so an explicit edit wins even if this device hadn't yet seen a
+ * newer remote value (or another device's clock runs ahead). Used by the
+ * theme/a11y/language controls; prefs uses the plain watcher path.
+ */
+export function markUserEdit(name: SectionName): string {
+  const dirty = new Set(dirtySections());
+  dirty.add(name);
+  writeDirty([...dirty]);
+  return stampSection(name);
+}
+
+function writeDirty(names: SectionName[]): void {
+  try {
+    window.localStorage.setItem(DIRTY_KEY, JSON.stringify(names));
+  } catch {
+    // Ignore storage errors.
+  }
+}
+
+export function dirtySections(): SectionName[] {
+  try {
+    const raw: unknown = JSON.parse(readRaw(DIRTY_KEY) ?? '[]');
+    return Array.isArray(raw) ? raw.filter((n): n is SectionName => SECTION_NAMES.includes(n as SectionName)) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearDirty(names: SectionName[]): void {
+  const remaining = dirtySections().filter((n) => !names.includes(n));
+  writeDirty(remaining);
+}
+
+/**
+ * Re-stamp every dirty section above the current (post-observe) clock and
+ * return the sections and their new stamps, so the caller's merge lets the
+ * local edit win. Call after observeStamps, before merging.
+ */
+export function restampDirtySections(): { name: SectionName; t: string }[] {
+  return dirtySections().map((name) => ({ name, t: stampSection(name) }));
+}
+
+/** Snapshot the device's current settings as a blob. */
+export function collectSettingsBlob(): SettingsBlob {
+  const stamps = sectionStamps();
+  return {
+    v: 2,
+    sections: {
+      prefs: { data: readJson(PREFS_STORAGE_KEY), t: stamps.prefs ?? EPOCH },
+      a11y: { data: readJson(A11Y_STORAGE_KEY), t: stamps.a11y ?? EPOCH },
+      theme: { data: readTheme(), t: stamps.theme ?? EPOCH },
+      language: { data: readLanguage(), t: stamps.language ?? EPOCH },
+    },
+  };
+}
+
+/**
+ * Stable content identity for one section. The prefs location's
+ * `label`/`labelLocale` are dropped: they're derived by per-device,
+ * per-language reverse geocoding (the same place reads "Petah Tikva" /
+ * "Петах-Тиква" / "פתח תקווה"), so keeping them would make two devices in one
+ * place look different and sync forever. Coordinates, elevation, timezone and
+ * any user `customLabel` still count.
+ */
+export function sectionFingerprint(name: SectionName, data: SectionData): string {
+  if (name === 'prefs' && data && typeof data === 'object') {
+    return JSON.stringify(normalizeForFingerprint(data as Record<string, unknown>));
+  }
+  return JSON.stringify(data ?? null);
+}
+
+function normalizeForFingerprint(prefs: Record<string, unknown>): Record<string, unknown> {
+  if (typeof prefs.location !== 'object' || prefs.location === null) return prefs;
+  const location = { ...(prefs.location as Record<string, unknown>) };
+  delete location.label;
+  delete location.labelLocale;
+  return { ...prefs, location };
+}
+
+/** The prefs fingerprint this device last agreed on with the stores, if any. */
+export function lastSyncedPrefs(): string | null {
+  try {
+    return window.localStorage.getItem(SYNCED_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function recordSyncedPrefs(fingerprint: string): void {
+  try {
+    window.localStorage.setItem(SYNCED_KEY, fingerprint);
+  } catch {
+    // Ignore storage errors — the worst case is one redundant push.
+  }
+}
+
+/**
+ * A total order over a section's two versions: newer stamp wins, and on an
+ * equal stamp the larger fingerprint wins. The tie-break guarantees two
+ * diverged devices converge on the same winner instead of each re-pushing its
+ * own copy forever (equal stamps happen when one device adopts a section, then
+ * a change whose debounced push is lost leaves the stamp unbumped).
+ */
+function sectionIsNewer(name: SectionName, a: BlobSection, b: BlobSection): boolean {
+  const ta = Date.parse(a.t);
+  const tb = Date.parse(b.t);
+  if (ta !== tb) return ta > tb;
+  return sectionFingerprint(name, a.data) > sectionFingerprint(name, b.data);
+}
+
+function defaultSection(name: SectionName): BlobSection {
+  return { data: name === 'prefs' || name === 'a11y' ? null : null, t: EPOCH };
+}
+
+/** Merge blobs section-by-section, taking the newest version of each. */
+export function mergeBlobs(blobs: SettingsBlob[]): SettingsBlob {
+  const sections = {} as Record<SectionName, BlobSection>;
+  for (const name of SECTION_NAMES) {
+    let best: BlobSection | null = null;
+    for (const blob of blobs) {
+      const s = blob.sections[name];
+      if (s && (!best || sectionIsNewer(name, s, best))) best = s;
+    }
+    sections[name] = best ?? defaultSection(name);
+  }
+  return { v: 2, sections };
+}
+
+/** Every section stamp in a blob (feed to observeStamps to advance the clock). */
+export function blobStamps(blob: SettingsBlob): string[] {
+  return SECTION_NAMES.map((name) => blob.sections[name].t);
+}
+
+/**
+ * Opt-in sync tracing. Enable in the browser console with
+ * `localStorage.setItem('zmanim:sync-debug','1')` — then reconcile decisions
+ * print with a `[zmanim-sync]` tag. No-op otherwise.
+ */
+export function syncDebug(...args: unknown[]): void {
+  try {
+    if (window.localStorage.getItem('zmanim:sync-debug') === '1') {
+      console.log('[zmanim-sync]', ...args);
+    }
+  } catch {
+    // Ignore.
+  }
+}
+
+/** Section names whose merged content differs from `local`'s. */
+export function changedSections(local: SettingsBlob, merged: SettingsBlob): SectionName[] {
+  return SECTION_NAMES.filter(
+    (name) => sectionFingerprint(name, merged.sections[name].data) !== sectionFingerprint(name, local.sections[name].data),
+  );
+}
+
+/** Parse an untrusted value into a blob, or null when it isn't one. Migrates v1. */
+export function parseSettingsBlob(raw: unknown): SettingsBlob | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const data = raw as Record<string, unknown>;
+  if (data.v === 1) return migrateV1(data);
+  if (data.v !== 2 || typeof data.sections !== 'object' || data.sections === null) return null;
+
+  const src = data.sections as Record<string, unknown>;
+  const sections = {} as Record<SectionName, BlobSection>;
+  for (const name of SECTION_NAMES) {
+    const s = src[name];
+    if (typeof s !== 'object' || s === null) {
+      sections[name] = defaultSection(name);
+      continue;
+    }
+    const { data: sData, t } = s as Record<string, unknown>;
+    const stamp = typeof t === 'string' && !Number.isNaN(Date.parse(t)) ? t : EPOCH;
+    sections[name] = { data: coerceSectionData(name, sData), t: stamp };
+  }
+  const blob: SettingsBlob = { v: 2, sections };
+  return JSON.stringify(blob).length <= MAX_BLOB_CHARS ? blob : null;
+}
+
+/** Wrap a legacy v1 blob's fields into v2 sections sharing its single stamp. */
+function migrateV1(data: Record<string, unknown>): SettingsBlob | null {
+  const t = typeof data.updatedAt === 'string' && !Number.isNaN(Date.parse(data.updatedAt)) ? data.updatedAt : EPOCH;
+  return {
+    v: 2,
+    sections: {
+      prefs: { data: coerceSectionData('prefs', data.prefs), t },
+      a11y: { data: coerceSectionData('a11y', data.a11y), t },
+      theme: { data: coerceSectionData('theme', data.theme), t },
+      language: { data: coerceSectionData('language', data.language), t },
+    },
+  };
+}
+
+function coerceSectionData(name: SectionName, value: unknown): SectionData {
+  if (name === 'prefs' || name === 'a11y') {
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : null;
+  }
+  if (name === 'theme') return value === 'light' || value === 'dark' || value === 'system' ? value : null;
+  return typeof value === 'string' && LANGUAGES.includes(value) ? value : null;
+}
+
+/** Serialize for a store; null when the blob exceeds the size cap. */
+export function serializeSettingsBlob(blob: SettingsBlob): string | null {
+  const raw = JSON.stringify(blob);
+  return raw.length <= MAX_BLOB_CHARS ? raw : null;
+}
+
+export function deserializeSettingsBlob(raw: string): SettingsBlob | null {
+  if (raw.length > MAX_BLOB_CHARS) return null;
+  try {
+    return parseSettingsBlob(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Write the named sections' data back to their localStorage keys and adopt
+ * their stamps. `language` is intentionally NOT written here (it lives in the
+ * URL, not localStorage) — the caller applies it by navigating. The caller
+ * reloads afterwards; the providers read these keys once at mount (and
+ * sanitize them there, which is why no deeper validation happens here).
+ */
+export function applyBlobSections(blob: SettingsBlob, names: SectionName[]): void {
+  const writeJson = (key: string, value: SectionData) => {
+    if (value === null || typeof value !== 'object') window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, JSON.stringify(value));
+  };
+  for (const name of names) {
+    const { data, t } = blob.sections[name];
+    try {
+      if (name === 'prefs') writeJson(PREFS_STORAGE_KEY, data);
+      else if (name === 'a11y') writeJson(A11Y_STORAGE_KEY, data);
+      else if (name === 'theme') {
+        if (typeof data === 'string') window.localStorage.setItem(THEME_STORAGE_KEY, data);
+        else window.localStorage.removeItem(THEME_STORAGE_KEY);
+      }
+      // 'language' is applied by navigation, not storage.
+      stampSection(name, t);
+    } catch {
+      // Ignore storage errors (private mode, quota, etc.).
+    }
+  }
+}

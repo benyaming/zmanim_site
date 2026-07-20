@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
+import { markUserEdit } from '@/lib/sync/blob';
+
 export type FontScale = 'default' | 'lg' | 'xl' | 'xxl';
 
 interface AccessibilityValue {
@@ -51,13 +53,26 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     }
   }, [fontScale, reduceMotion, highContrast]);
 
+  // Accessibility toggles are always deliberate — mark the a11y section dirty
+  // so the next sync re-stamps it above the other device and it wins (see the
+  // same reasoning in theme-provider). The raw setters are never called on
+  // mount, so this never fires for a plain load.
   const value: AccessibilityValue = {
     fontScale,
-    setFontScale,
+    setFontScale: (s) => {
+      setFontScale(s);
+      markUserEdit('a11y');
+    },
     reduceMotion,
-    setReduceMotion,
+    setReduceMotion: (v) => {
+      setReduceMotion(v);
+      markUserEdit('a11y');
+    },
     highContrast,
-    setHighContrast,
+    setHighContrast: (v) => {
+      setHighContrast(v);
+      markUserEdit('a11y');
+    },
   };
 
   return <AccessibilityContext.Provider value={value}>{children}</AccessibilityContext.Provider>;

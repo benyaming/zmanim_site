@@ -21,6 +21,24 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.22',
+    date: '2026-07-20',
+    notes: {
+      en: [
+        'Your settings now sync across devices through your Telegram account.',
+        'Or move them to another device with a link or a file — no account needed.',
+      ],
+      he: [
+        'ההגדרות מסתנכרנות כעת בין המכשירים דרך חשבון הטלגרם שלך.',
+        'לחלופין אפשר להעביר אותן למכשיר אחר בקישור או בקובץ — בלי חשבון.',
+      ],
+      ru: [
+        'Настройки теперь синхронизируются между устройствами через ваш аккаунт Telegram.',
+        'Или перенесите их на другое устройство ссылкой либо файлом — без аккаунта.',
+      ],
+    },
+  },
+  {
     version: '1.21',
     date: '2026-07-19',
     notes: {

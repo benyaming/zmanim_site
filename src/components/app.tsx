@@ -15,6 +15,7 @@ import { WhatsNewDialog } from '@/components/layout/whats-new';
 import { LocationPicker } from '@/components/location/location-picker';
 import { AppStateProvider, type AppLocation } from '@/components/providers/app-state';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { SettingsSync } from '@/components/providers/settings-sync';
 import { TelegramMiniApp } from '@/components/providers/telegram-mini-app';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ZmanimPanel } from '@/components/zmanim/zmanim-panel';
@@ -52,6 +53,8 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
       <AppStateProvider initialLocation={initialLocation}>
         {/* No-op outside Telegram; inside it, sets up the webview and syncs the bot profile. */}
         <TelegramMiniApp />
+        {/* Mount-gated: it reconciles localStorage with the connected sync stores. */}
+        {mounted && <SettingsSync />}
         {/* Desktop (lg+): a fixed-viewport shell that never scrolls — the
             calendar grid flexes to fill the height and only the zmanim panel
             scrolls internally. Mobile: a normal scrolling page so the stacked

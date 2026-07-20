@@ -9,6 +9,17 @@
  * the fragment) still count as Telegram and keep their initData.
  */
 
+/**
+ * Telegram's per-user key-value store (Bot API 6.9+). Callback-style API;
+ * values are capped at 4096 chars, keys at 128 ([A-Za-z0-9_-]).
+ */
+export interface TelegramCloudStorage {
+  setItem: (key: string, value: string, callback?: (error: string | null, stored?: boolean) => void) => void;
+  getItem: (key: string, callback: (error: string | null, value?: string) => void) => void;
+  getItems: (keys: string[], callback: (error: string | null, values?: Record<string, string>) => void) => void;
+  removeItems: (keys: string[], callback?: (error: string | null, removed?: boolean) => void) => void;
+}
+
 /** The subset of the telegram-web-app.js SDK surface this app uses. */
 export interface TelegramWebApp {
   /** Raw signed launch data — the API's stateless auth credential. */
@@ -20,6 +31,8 @@ export interface TelegramWebApp {
   isVersionAtLeast: (version: string) => boolean;
   /** Bot API 7.7+; keeps vertical swipes on the calendar from minimizing the app. */
   disableVerticalSwipes?: () => void;
+  /** Bot API 6.9+; per-user Telegram-hosted key-value storage. */
+  CloudStorage?: TelegramCloudStorage;
 }
 
 declare global {

@@ -29,6 +29,11 @@ export interface BotProfile {
   location: BotLocation | null;
   /** All locations saved in the bot (the active one included). */
   locations: BotLocation[];
+  /**
+   * The full settings blob (serialized, opaque to the bot — see
+   * lib/sync/blob.ts) stored in the bot's Mongo, or null if never synced.
+   */
+  webPrefs: string | null;
 }
 
 /** The subset of the profile the mini app writes back. */
@@ -36,6 +41,19 @@ export interface BotSyncPatch {
   location?: BotLocation;
   clOffset?: number;
   havdalaOpinion?: string;
+  /** Serialized settings blob to store verbatim. */
+  webPrefs?: string;
+}
+
+/**
+ * API credential: the Mini App's signed initData string, or — on the plain
+ * website — the Telegram Login Widget payload (validated bot-side the same
+ * stateless way). A bare string is initData, kept for the existing callers.
+ */
+export type BotAuth = string | { authData: Record<string, unknown> };
+
+function authFields(auth: BotAuth): Record<string, unknown> {
+  return typeof auth === 'string' ? { init_data: auth } : { auth_data: auth.authData };
 }
 
 const API_BASE = (process.env.NEXT_PUBLIC_TG_BOT_API_URL ?? '').replace(/\/+$/, '');
@@ -69,6 +87,7 @@ function parseProfile(raw: unknown): BotProfile | null {
     locations: Array.isArray(data.locations)
       ? data.locations.map(parseLocation).filter((loc): loc is BotLocation => loc !== null)
       : [],
+    webPrefs: typeof data.web_prefs === 'string' && data.web_prefs ? data.web_prefs : null,
   };
 }
 
@@ -88,8 +107,8 @@ async function call(path: string, body: Record<string, unknown>): Promise<BotPro
 }
 
 /** Fetch the bot-side profile. Null = disabled, unauthenticated, or unreachable. */
-export function fetchBotProfile(initData: string): Promise<BotProfile | null> {
-  return call('/me', { init_data: initData });
+export function fetchBotProfile(auth: BotAuth): Promise<BotProfile | null> {
+  return call('/me', authFields(auth));
 }
 
 /**
@@ -115,8 +134,8 @@ export async function sendExportToBot(initData: string, blob: Blob, filename: st
  * when the sync didn't happen (the caller keeps its dirty state and retries on
  * the next change).
  */
-export function pushBotSync(initData: string, patch: BotSyncPatch): Promise<BotProfile | null> {
-  const body: Record<string, unknown> = { init_data: initData };
+export function pushBotSync(auth: BotAuth, patch: BotSyncPatch): Promise<BotProfile | null> {
+  const body: Record<string, unknown> = authFields(auth);
   if (patch.location) {
     body.location = {
       lat: patch.location.lat,
@@ -127,5 +146,6 @@ export function pushBotSync(initData: string, patch: BotSyncPatch): Promise<BotP
   }
   if (patch.clOffset !== undefined) body.cl_offset = patch.clOffset;
   if (patch.havdalaOpinion !== undefined) body.havdala_opinion = patch.havdalaOpinion;
+  if (patch.webPrefs !== undefined) body.web_prefs = patch.webPrefs;
   return call('/sync', body);
 }
