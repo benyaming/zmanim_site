@@ -62,9 +62,13 @@ export function loadTelegramWebAuth(): TelegramWebAuth | null {
   }
 }
 
+/** Fired after sign-in/sign-out so listeners (e.g. WebBotProfile) can react. */
+export const WEB_AUTH_EVENT = 'zmanim:web-auth';
+
 export function saveTelegramWebAuth(auth: TelegramWebAuth): void {
   try {
     window.localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+    window.dispatchEvent(new Event(WEB_AUTH_EVENT));
   } catch {
     // Sync will simply not persist across reloads.
   }
