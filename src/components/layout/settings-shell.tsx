@@ -22,6 +22,7 @@ export function SettingsDialogShell({
   label,
   title,
   wide,
+  triggerClassName,
   children,
 }: {
   icon: LucideIcon;
@@ -29,6 +30,8 @@ export function SettingsDialogShell({
   title: string;
   /** Wider layout for dense menus (checkbox pickers); default fits the simple ones. */
   wide?: boolean;
+  /** Extra classes on the trigger button (e.g. `hidden sm:inline-flex` to hide it on phones). */
+  triggerClassName?: string;
   children: ReactNode;
 }) {
   return (
@@ -37,7 +40,7 @@ export function SettingsDialogShell({
         <Tooltip>
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
-              <Button variant="outline" size="icon" aria-label={label}>
+              <Button variant="outline" size="icon" aria-label={label} className={triggerClassName}>
                 <Icon className="size-4" />
               </Button>
             </DialogTrigger>

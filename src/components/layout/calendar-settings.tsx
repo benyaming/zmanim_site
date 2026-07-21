@@ -1,6 +1,6 @@
 'use client';
 
-import { Settings } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -50,8 +50,12 @@ function ZmanCheckboxRow({
   );
 }
 
-/** Calendar menu: zmanim/luach preferences (candle-lighting offset, havdalah opinion, displayed zmanim). */
-export function CalendarSettings() {
+/**
+ * Calendar preferences body (candle-lighting offset, havdalah opinion,
+ * displayed zmanim/learning/fast-end). Rendered in its own dialog on wide
+ * screens (CalendarSettings) and folded into the Settings menu on narrow ones.
+ */
+export function CalendarSettingsBody() {
   const t = useTranslations('settings');
   // The lehumra explanation is shared with the day panel's chip/footnote
   // popover, so settings and panel always describe the same rules.
@@ -109,7 +113,7 @@ export function CalendarSettings() {
   const hiddenFast = new Set(hiddenFastEnd);
 
   return (
-    <SettingsDialogShell icon={Settings} label={t('calendarOpen')} title={t('calendarTitle')} wide>
+    <>
       {/* One column on small screens (ruled by separators); two columns on
           desktop, where the separators disappear and the big zmanim picker
           spans the full width with its sections flowing in two columns. */}
@@ -306,6 +310,26 @@ export function CalendarSettings() {
         <p className="text-muted-foreground text-xs">{t('zmanimDisplayHint')}</p>
       </div>
       </div>
+    </>
+  );
+}
+
+/**
+ * Standalone Calendar settings dialog — its own header button on wide screens.
+ * On narrow screens the trigger is hidden and CalendarSettingsBody is folded
+ * into the Settings menu instead (see SettingsMenu), so the header stays small.
+ */
+export function CalendarSettings() {
+  const t = useTranslations('settings');
+  return (
+    <SettingsDialogShell
+      icon={CalendarClock}
+      label={t('calendarOpen')}
+      title={t('calendarTitle')}
+      wide
+      triggerClassName="hidden sm:inline-flex"
+    >
+      <CalendarSettingsBody />
     </SettingsDialogShell>
   );
 }

@@ -372,6 +372,8 @@
     "zmanimRestoreDefaults": "Сбросить к стандартным",
     "appearanceTitle": "Внешний вид",
     "appearanceOpen": "Настройки внешнего вида",
+    "settingsTitle": "Настройки",
+    "settingsOpen": "Настройки",
     "calendarTitle": "Календарь",
     "calendarOpen": "Настройки календаря",
     "toolsTitle": "Инструменты",

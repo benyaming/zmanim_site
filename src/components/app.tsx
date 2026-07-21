@@ -4,9 +4,8 @@ import { useSyncExternalStore } from 'react';
 
 import { CalendarGrid } from '@/components/calendar/calendar-grid';
 import { CalendarView } from '@/components/calendar/calendar-view';
-import { AppearanceSettings } from '@/components/layout/appearance-settings';
 import { CalendarSettings } from '@/components/layout/calendar-settings';
-import { LanguageSwitcher } from '@/components/layout/language-switcher';
+import { SettingsMenu } from '@/components/layout/settings-menu';
 import { ToolsMenu } from '@/components/layout/tools-menu';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
@@ -64,10 +63,11 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
             right={
               <>
                 <LocationPicker />
-                <ToolsMenu />
-                <LanguageSwitcher />
-                <AppearanceSettings />
+                {/* Calendar preferences: their own button on sm+; on phones the
+                    trigger is hidden and they fold into Settings instead. */}
                 <CalendarSettings />
+                <ToolsMenu />
+                <SettingsMenu />
               </>
             }
           />

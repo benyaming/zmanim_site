@@ -1,19 +1,18 @@
 'use client';
 
-import { ArrowDownToLine, ArrowLeft, CalendarHeart, CalendarRange, ChevronRight, FolderSync, LayoutGrid, Table2 } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeft, CalendarHeart, CalendarRange, ChevronRight, LayoutGrid, Table2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, type ComponentType } from 'react';
 
 import { CustomDatesTool } from '@/components/tools/custom-dates';
 import { ExportCalendarTool } from '@/components/tools/export-calendar';
 import { ExportZmanimTool } from '@/components/tools/export-zmanim';
-import { SyncBackupTool } from '@/components/tools/sync-backup';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-type ToolKey = 'calendar' | 'zmanim' | 'customDates' | 'sync';
+type ToolKey = 'calendar' | 'zmanim' | 'customDates';
 
 interface ToolEntry {
   key: ToolKey;
@@ -32,7 +31,6 @@ const TOOLS: ToolEntry[] = [
   { key: 'calendar', Icon: CalendarRange, Tool: ExportCalendarTool, nameKey: 'calendarName', descKey: 'calendarDesc', dialogClass: 'sm:max-w-lg lg:max-w-4xl', download: true },
   { key: 'zmanim', Icon: Table2, Tool: ExportZmanimTool, nameKey: 'zmanimName', descKey: 'zmanimDesc', dialogClass: 'sm:max-w-lg lg:max-w-3xl', download: true },
   { key: 'customDates', Icon: CalendarHeart, Tool: CustomDatesTool, nameKey: 'customDatesName', descKey: 'customDatesDesc', dialogClass: 'sm:max-w-lg', download: false },
-  { key: 'sync', Icon: FolderSync, Tool: SyncBackupTool, nameKey: 'syncName', descKey: 'syncDesc', dialogClass: 'sm:max-w-md', download: false },
 ];
 
 /**

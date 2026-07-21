@@ -372,6 +372,8 @@
     "zmanimRestoreDefaults": "Restore defaults",
     "appearanceTitle": "Appearance",
     "appearanceOpen": "Appearance settings",
+    "settingsTitle": "Settings",
+    "settingsOpen": "Settings",
     "calendarTitle": "Calendar",
     "calendarOpen": "Calendar settings",
     "toolsTitle": "Tools",
