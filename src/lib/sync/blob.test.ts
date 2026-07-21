@@ -114,6 +114,20 @@ describe('mergeBlobs (per-section, newest wins)', () => {
     expect(mergeBlobs([a, b]).sections.theme.data).toBe(winner);
     expect(mergeBlobs([b, a]).sections.theme.data).toBe(winner); // order-independent
   });
+
+  it('never lets an absent (null) section win over a present value', () => {
+    // A partial remote blob (e.g. web_prefs with no language section) carries
+    // language {null, EPOCH}. The equal-stamp fingerprint tie-break would pick
+    // null ("null" > '"en"'), which the reconcile then "adopts" every mount —
+    // an infinite reload, since language lives in the URL, not localStorage.
+    const present = blob({ language: { data: 'en', t: EPOCH } });
+    const absent = blob({ language: { data: null, t: EPOCH } });
+    expect(mergeBlobs([present, absent]).sections.language.data).toBe('en');
+    expect(mergeBlobs([absent, present]).sections.language.data).toBe('en'); // order-independent
+    // A present value beats an absent one even when the absent side is stamped later.
+    const absentLater = blob({ language: { data: null, t: '2099-01-01T00:00:00.000Z' } });
+    expect(mergeBlobs([present, absentLater]).sections.language.data).toBe('en');
+  });
 });
 
 describe('changedSections', () => {

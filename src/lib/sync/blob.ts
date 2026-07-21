@@ -261,13 +261,27 @@ export function recordSyncedPrefs(fingerprint: string): void {
 }
 
 /**
- * A total order over a section's two versions: newer stamp wins, and on an
- * equal stamp the larger fingerprint wins. The tie-break guarantees two
- * diverged devices converge on the same winner instead of each re-pushing its
- * own copy forever (equal stamps happen when one device adopts a section, then
- * a change whose debounced push is lost leaves the stamp unbumped).
+ * A total order over a section's two versions: a present value always beats an
+ * absent one; otherwise newer stamp wins, and on an equal stamp the larger
+ * fingerprint wins. The tie-break guarantees two diverged devices converge on
+ * the same winner instead of each re-pushing its own copy forever (equal stamps
+ * happen when one device adopts a section, then a change whose debounced push is
+ * lost leaves the stamp unbumped).
+ *
+ * `null` data means the section is ABSENT (there is no UI to set a section to
+ * null — a reset writes a real default like theme `system`), so it must never
+ * win over a present value, at ANY stamp. Without this, a store holding a
+ * partial blob (e.g. web_prefs with no language section => language {null,
+ * EPOCH}) beats the device's real value and the reconcile "adopts" the absent
+ * section every mount. Language is the pathological case: it lives in the URL,
+ * never localStorage, so adopting null can't change what the next load reads —
+ * reconcile re-adopts it forever, reloading the page in an infinite loop.
  */
 function sectionIsNewer(name: SectionName, a: BlobSection, b: BlobSection): boolean {
+  const aAbsent = a.data === null;
+  const bAbsent = b.data === null;
+  if (aAbsent !== bAbsent) return !aAbsent; // a present value always wins
+
   const ta = Date.parse(a.t);
   const tb = Date.parse(b.t);
   if (ta !== tb) return ta > tb;
