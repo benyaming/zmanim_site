@@ -35,7 +35,7 @@ const fmt = (e: { type: string; zmanKey?: string; time: DateTime | null; afterNi
 describe('day-events parity: dayEventZmanKeys subset vs full compute', () => {
   const DATES = [
     '2024-07-23', // 17 Tammuz — minor fast (both fast-end groups)
-    '2024-08-13', // Tisha B'Av — major fast (nightfall only)
+    '2024-08-13', // Tisha B'Av — all fast-end opinions, like a minor fast
     '2024-03-22', // Erev Shabbat — candle lighting
     '2024-03-23', // Motzei Shabbat — havdalah
     '2024-10-12', // Yom Kippur — havdalah, no fast-end

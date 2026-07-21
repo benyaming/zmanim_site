@@ -1,18 +1,19 @@
 /**
  * End-of-fast opinions. A fast ends at tzeit ha-kochavim; the question is WHICH
- * tzeit, and it differs by the fast's severity:
+ * tzeit. The opinions fall into two groups, by how stringent the tzeit is:
  *
  * - `gmarTaanis` — the end of a MINOR rabbinic fast (17 Tammuz, 10 Tevet, Tzom
  *   Gedaliah, Taanit Esther): the emergence of three MEDIUM stars, per myzmanim's
  *   "gmar hataaniyos." Degree-based and attributed to the poskim myzmanim's
  *   calculator uses — Baal HaTanya (5.95°), R' Tukachinsky (6.45°), R' Moshe
  *   Feinstein (7.083°) — each matching myzmanim to the second at Rosh HaAyin.
- * - `nightfall` — three SMALL stars, full nightfall. The stringent end, and the
- *   ONLY valid end for TISHA B'AV (a major fast). Minor fasts offer it too, for
- *   those who are stringent. `tzais` 8.5°, plus 42 min and Rabbeinu Tam 72 min.
+ * - `nightfall` — three SMALL stars, full nightfall. The stringent end. `tzais`
+ *   8.5°, plus 42 min and Rabbeinu Tam 72 min.
  *
- * So a minor fast offers both groups; Tisha b'Av offers only `nightfall`. (Yom
- * Kippur ends at nightfall as well, but is surfaced as havdalah, not here.)
+ * Every fast — minor or Tisha b'Av — surfaces whichever opinions the user has
+ * left visible; the two groups are a display grouping (in settings), not a
+ * per-fast filter. (Yom Kippur ends at nightfall as well, but is surfaced as
+ * havdalah, not here.)
  *
  * Every opinion reads its time from a computed zman (`zmanKey`). Order is
  * earliest → latest at the Jerusalem equinox.
@@ -60,10 +61,9 @@ export const FAST_END_ZMAN_KEYS: readonly string[] = FAST_END_OPINIONS.map((o) =
  * Shown out of the box: three DISTINCT, commonly-used fast-end opinions in a
  * clear lenient→stringent spread — the early Geonim nightfall (5.95°), one
  * gmar-taanis "three medium stars" time (7.083°), and the standard "three small
- * stars" nightfall (8.5°, also the only default a major fast shows). Each has a
- * different label, so there's no confusing pair of near-identical rows. The
- * second medium-stars degree (6.45°), the fixed-minute poskim, and the later
- * nightfalls stay available but off by default.
+ * stars" nightfall (8.5°). Each has a different label, so there's no confusing
+ * pair of near-identical rows. The second medium-stars degree (6.45°), the
+ * fixed-minute poskim, and the later nightfalls stay available but off by default.
  */
 const DEFAULT_VISIBLE_FAST_END = new Set(['tzaisGeonim', 'tzaisGeonim7083', 'tzais']);
 
@@ -86,13 +86,4 @@ export function isDefaultHiddenFastEnd(hidden: readonly string[]): boolean {
 export function sanitizeHiddenFastEnd(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.filter((k): k is string => typeof k === 'string' && FAST_END_KEYS.has(k)))];
-}
-
-/**
- * The opinions offered for a fast of the given severity, in display order. A
- * minor fast may end at the lenient gmar-taanis OR the stringent nightfall; a
- * major fast (Tisha b'Av) only at nightfall.
- */
-export function fastEndOpinionsFor(isMajorFast: boolean): readonly FastEndOpinionDef[] {
-  return isMajorFast ? FAST_END_OPINIONS.filter((o) => o.kind === 'nightfall') : FAST_END_OPINIONS;
 }

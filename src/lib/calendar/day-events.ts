@@ -1,7 +1,7 @@
 import { JewishCalendar } from 'kosher-zmanim';
 import type { DateTime } from 'luxon';
 
-import { DEFAULT_HIDDEN_FAST_END, FAST_END_FALLBACK, FAST_END_ZMAN_KEYS, fastEndOpinionsFor } from './fast-end';
+import { DEFAULT_HIDDEN_FAST_END, FAST_END_FALLBACK, FAST_END_OPINIONS, FAST_END_ZMAN_KEYS } from './fast-end';
 
 export type DayEventType = 'candle' | 'havdalah' | 'fastStart' | 'fastEnd';
 
@@ -153,20 +153,18 @@ export function getDayEvents(
       events.push({ type: 'fastStart', time: times.zmanimByKey[zmanKey] ?? null, zmanKey });
     }
     // Yom Kippur's end is already shown as havdalah; avoid a duplicate nightfall.
-    // Tisha B'Av (a major fast) ends only at nightfall (three small stars); a
-    // minor fast may also end at the lenient gmar-taanis (three medium stars).
-    // Each visible opinion is emitted; a display with room for one (the grid)
-    // keeps the earliest that has a time.
+    // Every other fast — minor or Tisha B'Av alike — emits each visible fast-end
+    // opinion; a display with room for one (the grid) keeps the earliest that
+    // has a time.
     if (!endsTonight) {
       const hidden = new Set(hiddenFastEnd);
       const ends: DayEvent[] = [];
-      for (const op of fastEndOpinionsFor(idx === TISHA_BEAV)) {
+      for (const op of FAST_END_OPINIONS) {
         if (hidden.has(op.key)) continue;
         ends.push({ type: 'fastEnd', time: times.zmanimByKey[op.zmanKey] ?? null, zmanKey: op.key });
       }
-      // Short night: every visible nightfall opinion is degree-based and
-      // unreached, so the fast would show no end time at all (worst on Tisha
-      // B'Av, whose only default is 8.5°). Fall through to the fixed-minute
+      // Short night: every visible degree-based opinion is unreached, so the
+      // fast would show no end time at all. Fall through to the fixed-minute
       // Rabbeinu Tam nightfall, labelled, so a real end always appears — the
       // same choice made for the fast start. Skipped if it's already visible,
       // or itself undefined (a true polar day, where nothing can anchor it).

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_HIDDEN_FAST_END, FAST_END_OPINIONS, fastEndOpinionsFor, sanitizeHiddenFastEnd } from './fast-end';
+import { DEFAULT_HIDDEN_FAST_END, FAST_END_OPINIONS, sanitizeHiddenFastEnd } from './fast-end';
 
 describe('FAST_END_OPINIONS catalog', () => {
   it('has unique keys and strictly increasing order', () => {
@@ -20,15 +20,6 @@ describe('FAST_END_OPINIONS catalog', () => {
     expect(byKind('gmarTaanis')).toEqual(['tzaisGeonim', 'tzaisGeonim645', 'tzaisGeonim7083']);
     // Nightfall (three small stars) — all fasts, incl. Tisha b'Av.
     expect(byKind('nightfall')).toEqual(['tzais', 'tzais42', 'tzais72']);
-  });
-});
-
-describe('fastEndOpinionsFor', () => {
-  it('offers both groups for a minor fast, nightfall only for a major fast', () => {
-    expect(fastEndOpinionsFor(false)).toEqual(FAST_END_OPINIONS);
-    const major = fastEndOpinionsFor(true);
-    expect(major.every((o) => o.kind === 'nightfall')).toBe(true);
-    expect(major.map((o) => o.key)).toEqual(['tzais', 'tzais42', 'tzais72']);
   });
 });
 

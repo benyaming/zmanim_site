@@ -6,7 +6,6 @@ export {
   type FastEndKind,
   type FastEndOpinionDef,
   type FastEndOpinionKey,
-  fastEndOpinionsFor,
   isDefaultHiddenFastEnd,
   sanitizeHiddenFastEnd,
 } from './fast-end';
