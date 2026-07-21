@@ -61,14 +61,9 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
             calendar and zmanim panel are both reachable. */}
         <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
           <SiteHeader
-            left={
-              <>
-                {/* Wordmark on sm+; on phones it's dropped and an account
-                    button takes its place for one-tap sign-in / sync. */}
-                <BrandLink className="hidden sm:flex" />
-                <AccountMenu className="sm:hidden" />
-              </>
-            }
+            // Wordmark on sm+; dropped on phones, leaving an empty left so the
+            // controls (with the account button) sit in the right corner.
+            left={<BrandLink className="hidden sm:flex" />}
             right={
               <>
                 <LocationPicker />
@@ -77,6 +72,8 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
                 <CalendarSettings />
                 <ToolsMenu />
                 <SettingsMenu />
+                {/* Account / sign-in — phones only, in the right corner. */}
+                <AccountMenu className="sm:hidden" />
               </>
             }
           />

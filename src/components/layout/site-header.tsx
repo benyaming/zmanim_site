@@ -24,10 +24,11 @@ export function SiteHeader({ left, right }: { left?: ReactNode; right?: ReactNod
   return (
     <header className="bg-card/80 supports-[backdrop-filter]:bg-card/60 sticky top-0 z-30 shrink-0 border-b backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-[2200px] items-center justify-between gap-2 px-4">
-        {/* Defaults to the brand link; the main app overrides it to swap in an
-            account button on phones (see app.tsx). */}
+        {/* Defaults to the brand link; the main app hides it on phones (see
+            app.tsx), where the left stays empty and the controls hug the right
+            corner — `ms-auto` keeps them there even when the left is gone. */}
         {left ?? <BrandLink />}
-        {right && <div className="flex min-w-0 items-center gap-2">{right}</div>}
+        {right && <div className="ms-auto flex min-w-0 items-center gap-2">{right}</div>}
       </div>
     </header>
   );
