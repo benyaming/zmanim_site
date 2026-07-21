@@ -8,7 +8,6 @@ import { CalendarSettingsBody } from '@/components/layout/calendar-settings';
 import { LanguageSettingsBody } from '@/components/layout/language-settings';
 import { SettingsDialogShell } from '@/components/layout/settings-shell';
 import { AppearanceSettingsBody, InstallAppSection } from '@/components/layout/appearance-settings';
-import { SyncBackupTool } from '@/components/tools/sync-backup';
 import { Separator } from '@/components/ui/separator';
 import { useIsMiniApp } from '@/hooks/use-mini-app';
 
@@ -23,42 +22,36 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /**
- * The single "Settings" menu: appearance, language, and sync/backup in one
- * place (replacing the old separate Appearance dialog and Language dropdown,
- * and pulling Sync out of Tools). On narrow screens — where the standalone
- * Calendar button is hidden to keep the header uncluttered — the calendar
- * preferences fold in here too, right after Appearance.
+ * The single "Settings" menu: language, appearance, and (when its own header
+ * button is hidden for lack of room) the calendar preferences. Sync/account
+ * lives on its own header button now, not here.
  */
-export function SettingsMenu() {
+export function SettingsMenu({ showCalendar = false }: { showCalendar?: boolean }) {
   const t = useTranslations('settings');
   const tLang = useTranslations('language');
-  const tExport = useTranslations('export');
   const isMiniApp = useIsMiniApp();
 
   return (
     <SettingsDialogShell icon={Settings} label={t('settingsOpen')} title={t('settingsTitle')}>
-      <Section title={t('appearanceTitle')}>
-        <AppearanceSettingsBody />
-      </Section>
-
-      {/* Calendar preferences only fold in here on phones; on sm+ they have
-          their own header button (see CalendarSettings), so this stays hidden. */}
-      <div className="space-y-6 sm:hidden">
-        <Separator />
-        <Section title={t('calendarTitle')}>
-          <CalendarSettingsBody />
-        </Section>
-      </div>
-
-      <Separator />
       <Section title={tLang('label')}>
         <LanguageSettingsBody />
       </Section>
 
       <Separator />
-      <Section title={tExport('syncName')}>
-        <SyncBackupTool />
+      <Section title={t('appearanceTitle')}>
+        <AppearanceSettingsBody />
       </Section>
+
+      {/* Calendar preferences fold in only when the header dropped their own
+          button for lack of space (see app.tsx). */}
+      {showCalendar && (
+        <>
+          <Separator />
+          <Section title={t('calendarTitle')}>
+            <CalendarSettingsBody />
+          </Section>
+        </>
+      )}
 
       {!isMiniApp && (
         <>

@@ -23,6 +23,7 @@ export function SettingsDialogShell({
   title,
   wide,
   triggerClassName,
+  triggerData,
   children,
 }: {
   icon: LucideIcon;
@@ -32,6 +33,8 @@ export function SettingsDialogShell({
   wide?: boolean;
   /** Extra classes on the trigger button (e.g. `hidden sm:inline-flex` to hide it on phones). */
   triggerClassName?: string;
+  /** Sets `data-hdr` on the trigger, so the header fit-detection can measure it. */
+  triggerData?: string;
   children: ReactNode;
 }) {
   return (
@@ -40,7 +43,7 @@ export function SettingsDialogShell({
         <Tooltip>
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
-              <Button variant="outline" size="icon" aria-label={label} className={triggerClassName}>
+              <Button variant="outline" size="icon" aria-label={label} data-hdr={triggerData} className={triggerClassName}>
                 <Icon className="size-4" />
               </Button>
             </DialogTrigger>

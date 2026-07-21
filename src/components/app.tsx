@@ -19,6 +19,7 @@ import { SettingsSync } from '@/components/providers/settings-sync';
 import { TelegramMiniApp } from '@/components/providers/telegram-mini-app';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ZmanimPanel } from '@/components/zmanim/zmanim-panel';
+import { useHeaderStage } from '@/hooks/use-header-stage';
 
 function AppSkeleton() {
   return (
@@ -47,6 +48,9 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
   // The calendar depends on the current date; render only after mount so server
   // and client agree (no hydration mismatch on "today"/selected highlights).
   const mounted = useIsClient();
+  // Header fit: drop the wordmark, then fold the Calendar button, only when the
+  // controls actually run out of room (not at a fixed breakpoint).
+  const { barRef, stage } = useHeaderStage();
 
   return (
     <QueryProvider>
@@ -61,19 +65,20 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
             calendar and zmanim panel are both reachable. */}
         <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
           <SiteHeader
-            // Wordmark on sm+; dropped on phones, leaving an empty left so the
-            // controls (with the account button) sit in the right corner.
-            left={<BrandLink className="hidden sm:flex" />}
+            barRef={barRef}
+            // Wordmark only when it fits (stage 0); otherwise the left is empty
+            // and the controls (ms-auto) hug the right corner.
+            left={stage === 0 ? <BrandLink /> : <></>}
             right={
               <>
                 <LocationPicker />
-                {/* Calendar preferences: their own button on sm+; on phones the
-                    trigger is hidden and they fold into Settings instead. */}
-                <CalendarSettings />
+                {/* Calendar preferences: their own button until the header runs
+                    out of room (stage 2), when they fold into Settings. */}
+                {stage < 2 && <CalendarSettings />}
                 <ToolsMenu />
-                <SettingsMenu />
-                {/* Account / sign-in — phones only, in the right corner. */}
-                <AccountMenu className="sm:hidden" />
+                <SettingsMenu showCalendar={stage === 2} />
+                {/* Account / sign-in, in the right corner. */}
+                <AccountMenu />
               </>
             }
           />

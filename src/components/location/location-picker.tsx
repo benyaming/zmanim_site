@@ -207,11 +207,13 @@ export function LocationPicker() {
   return (
     <Dialog open={open} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        {/* `shrink min-w-0` overrides the button base's shrink-0 so a long city
-            name ellipsizes instead of overflowing the header on narrow screens. */}
+        {/* max-w-[12rem] caps a long name (it ellipsizes inside); the button
+            keeps the base `shrink-0` so it contributes its real width to the
+            header — that's what the header's fit-detection measures to decide
+            when to drop the logo / fold the Calendar button (see app.tsx). */}
         {/* h-auto + min-h-8 keeps the normal pill height but lets it grow when
             the elevation wraps to a second line on narrow screens. */}
-        <Button variant="outline" size="sm" className="h-auto min-h-8 min-w-0 shrink max-w-[12rem] gap-1.5 py-1">
+        <Button variant="outline" size="sm" className="h-auto min-h-8 max-w-[12rem] gap-1.5 py-1">
           <MapPin className="size-4 shrink-0" />
           {/* Elevation-adjusted zmanim change the displayed times, so surface
               the elevation where the location is — only while the setting is

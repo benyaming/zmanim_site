@@ -315,9 +315,10 @@ export function CalendarSettingsBody() {
 }
 
 /**
- * Standalone Calendar settings dialog — its own header button on wide screens.
- * On narrow screens the trigger is hidden and CalendarSettingsBody is folded
- * into the Settings menu instead (see SettingsMenu), so the header stays small.
+ * Standalone Calendar settings dialog — its own header button when there's
+ * room. When the header runs out of space it stops rendering this and folds
+ * CalendarSettingsBody into the Settings menu instead (see app.tsx); the
+ * `data-hdr="cal"` lets the fit-detection measure this button's width.
  */
 export function CalendarSettings() {
   const t = useTranslations('settings');
@@ -327,7 +328,7 @@ export function CalendarSettings() {
       label={t('calendarOpen')}
       title={t('calendarTitle')}
       wide
-      triggerClassName="hidden sm:inline-flex"
+      triggerData="cal"
     >
       <CalendarSettingsBody />
     </SettingsDialogShell>
