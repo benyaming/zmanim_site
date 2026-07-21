@@ -9,7 +9,7 @@ import { CalendarSettings } from '@/components/layout/calendar-settings';
 import { SettingsMenu } from '@/components/layout/settings-menu';
 import { ToolsMenu } from '@/components/layout/tools-menu';
 import { SiteFooter } from '@/components/layout/site-footer';
-import { BrandLink, SiteHeader } from '@/components/layout/site-header';
+import { SiteHeader } from '@/components/layout/site-header';
 import { Toaster } from '@/components/layout/toaster';
 import { WhatsNewDialog } from '@/components/layout/whats-new';
 import { LocationPicker } from '@/components/location/location-picker';
@@ -48,9 +48,9 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
   // The calendar depends on the current date; render only after mount so server
   // and client agree (no hydration mismatch on "today"/selected highlights).
   const mounted = useIsClient();
-  // Header fit: drop the wordmark, then fold the Calendar button, only when the
-  // controls actually run out of room (not at a fixed breakpoint).
-  const { barRef, stage } = useHeaderStage();
+  // Header fit: fold the Calendar button into Settings only when the controls
+  // actually run out of room (not at a fixed breakpoint). The wordmark stays.
+  const { barRef, foldCalendar } = useHeaderStage();
 
   return (
     <QueryProvider>
@@ -66,17 +66,14 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
         <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
           <SiteHeader
             barRef={barRef}
-            // Wordmark only when it fits (stage 0); otherwise the left is empty
-            // and the controls (ms-auto) hug the right corner.
-            left={stage === 0 ? <BrandLink /> : <></>}
             right={
               <>
                 <LocationPicker />
                 {/* Calendar preferences: their own button until the header runs
-                    out of room (stage 2), when they fold into Settings. */}
-                {stage < 2 && <CalendarSettings />}
+                    out of room, when they fold into Settings. */}
+                {!foldCalendar && <CalendarSettings />}
                 <ToolsMenu />
-                <SettingsMenu showCalendar={stage === 2} />
+                <SettingsMenu showCalendar={foldCalendar} />
                 {/* Account / sign-in, in the right corner. */}
                 <AccountMenu />
               </>
