@@ -17,7 +17,6 @@ import { AppStateProvider, type AppLocation } from '@/components/providers/app-s
 import { QueryProvider } from '@/components/providers/query-provider';
 import { SettingsSync } from '@/components/providers/settings-sync';
 import { TelegramMiniApp } from '@/components/providers/telegram-mini-app';
-import { WebBotProfile } from '@/components/providers/web-bot-profile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ZmanimPanel } from '@/components/zmanim/zmanim-panel';
 import { useHeaderStage } from '@/hooks/use-header-stage';
@@ -58,8 +57,6 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
       <AppStateProvider initialLocation={initialLocation}>
         {/* No-op outside Telegram; inside it, sets up the webview and syncs the bot profile. */}
         <TelegramMiniApp />
-        {/* On the plain web, signed in via the Login Widget: pulls the bot's saved locations. */}
-        <WebBotProfile />
         {/* Mount-gated: it reconciles localStorage with the connected sync stores. */}
         {mounted && <SettingsSync />}
         {/* Desktop (lg+): a fixed-viewport shell that never scrolls — the

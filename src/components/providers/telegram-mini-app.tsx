@@ -37,7 +37,7 @@ function baselineOf(profile: BotProfile): SyncedState {
  * keeps it in the header (like the bot shows it) instead of being replaced by
  * the relabel effect's geocoded city name.
  */
-export function botLocationEntries(profile: BotProfile): SavedLocation[] {
+function botLocationEntries(profile: BotProfile): SavedLocation[] {
   return profile.locations.map((loc) => ({
     id: `bot:${loc.lat},${loc.lng}`,
     name: loc.name,
