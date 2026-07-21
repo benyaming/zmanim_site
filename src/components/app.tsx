@@ -72,10 +72,11 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
             right={
               <>
                 <LocationPicker />
-                {/* Calendar preferences: their own button until the header runs
-                    out of room, when they fold into Settings. */}
-                {!foldCalendar && <CalendarSettings />}
                 <ToolsMenu />
+                {/* Calendar preferences: their own button, sitting beside the
+                    Settings gear — until the header runs out of room, when they
+                    fold into Settings. */}
+                {!foldCalendar && <CalendarSettings />}
                 <SettingsMenu showCalendar={foldCalendar} />
                 {/* Account / sign-in, in the right corner. */}
                 <AccountMenu />
