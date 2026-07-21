@@ -46,8 +46,14 @@ agreed on lives in `zmanim:sync-synced:v1`.
   fingerprint tie-break picks the winner, so two diverged devices always
   converge instead of standing off.
 - **Adopting is loop-safe.** Adopting a section copies its remote stamp
-  locally, so the post-reload run sees them equal and can't re-adopt — no
-  session guard needed.
+  locally, so the post-reload run normally sees them equal and can't re-adopt.
+  The one place that invariant breaks is the Telegram Mini App: `TelegramMiniApp`
+  re-applies the bot's *structured* location on every mount, which can disagree
+  with the `web_prefs` blob and lose the fingerprint tie-break, so the reconcile
+  re-adopts and reloads on a loop. A session guard (`consumeStartupReload`, a
+  `sessionStorage` flag) caps the automatic startup reconcile to **one reload per
+  tab session**; the residual difference then converges silently via the normal
+  push. Manual "Sync now" and imports don't go through the guard.
 - **Only *genuine* changes stamp a section.** Theme, a11y and language stamp
   their own section directly in their setter (they're always deliberate), so a
   lost debounced push can't strand them at an equal stamp. The prefs section is
