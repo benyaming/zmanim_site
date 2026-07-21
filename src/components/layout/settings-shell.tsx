@@ -24,6 +24,7 @@ export function SettingsDialogShell({
   wide,
   triggerClassName,
   triggerData,
+  defaultOpen,
   children,
 }: {
   icon: LucideIcon;
@@ -35,10 +36,12 @@ export function SettingsDialogShell({
   triggerClassName?: string;
   /** Sets `data-hdr` on the trigger, so the header fit-detection can measure it. */
   triggerData?: string;
+  /** Open on mount — used to reopen the menu after a language-switch remount. */
+  defaultOpen?: boolean;
   children: ReactNode;
 }) {
   return (
-    <Dialog>
+    <Dialog defaultOpen={defaultOpen}>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>

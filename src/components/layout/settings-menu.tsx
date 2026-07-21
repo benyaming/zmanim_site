@@ -2,10 +2,10 @@
 
 import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { CalendarSettingsBody } from '@/components/layout/calendar-settings';
-import { LanguageSettingsBody } from '@/components/layout/language-settings';
+import { clearSettingsReopen, LanguageSettingsBody, peekSettingsReopen } from '@/components/layout/language-settings';
 import { SettingsDialogShell } from '@/components/layout/settings-shell';
 import { AppearanceSettingsBody, InstallAppSection } from '@/components/layout/appearance-settings';
 import { Separator } from '@/components/ui/separator';
@@ -30,9 +30,14 @@ export function SettingsMenu({ showCalendar = false }: { showCalendar?: boolean 
   const t = useTranslations('settings');
   const tLang = useTranslations('language');
   const isMiniApp = useIsMiniApp();
+  // Reopen on mount when this mount is the remount from a language switch made
+  // inside this menu, so picking a language doesn't close it. Read once, then
+  // clear so an ordinary later remount doesn't spuriously reopen.
+  const [reopen] = useState(peekSettingsReopen);
+  useEffect(clearSettingsReopen, []);
 
   return (
-    <SettingsDialogShell icon={Settings} label={t('settingsOpen')} title={t('settingsTitle')}>
+    <SettingsDialogShell icon={Settings} label={t('settingsOpen')} title={t('settingsTitle')} defaultOpen={reopen}>
       <Section title={tLang('label')}>
         <LanguageSettingsBody />
       </Section>
