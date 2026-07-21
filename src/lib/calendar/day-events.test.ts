@@ -92,12 +92,17 @@ describe('getDayEvents', () => {
     ]);
   });
 
-  it('falls through for Tisha B\'Av, whose only default nightfall (8.5°) can be null', () => {
-    // Tisha B'Av 5784 (2024-08-13). Its single default end is tzais 8.5°; when
-    // that is unreachable a major fast would otherwise show no end at all.
-    const shortNight = { ...TIMES, zmanimByKey: { ...ZMANIM, tzais: null } };
+  it('falls through for Tisha B\'Av when every visible default is null', () => {
+    // Tisha B'Av 5784 (2024-08-13). It shows the same defaults as a minor fast;
+    // when all are unreachable the fixed-72 nightfall is appended, labelled.
+    const shortNight = {
+      ...TIMES,
+      zmanimByKey: { ...ZMANIM, tzaisGeonim: null, tzaisGeonim7083: null, tzais: null },
+    };
     const ends = getDayEvents(DateTime.fromISO('2024-08-13'), shortNight).filter((e) => e.type === 'fastEnd');
     expect(ends).toEqual([
+      { type: 'fastEnd', time: null, zmanKey: 'tzaisGeonim' },
+      { type: 'fastEnd', time: null, zmanKey: 'tzaisGeonim7083' },
       { type: 'fastEnd', time: null, zmanKey: 'tzais' },
       { type: 'fastEnd', time: ZMANIM.tzais72, zmanKey: 'tzais72' },
     ]);
@@ -170,16 +175,23 @@ describe('getDayEvents', () => {
     expect(events('2024-04-30')).toEqual(['havdalah']);
   });
 
-  it('ends Tisha B’Av only at nightfall (never the lenient gmar-taanis) — onset on the eve', () => {
+  it('ends Tisha B’Av at the default opinions, like a minor fast — onset on the eve', () => {
     expect(events('2024-08-12')).toEqual(['fastStart']); // erev → sunset onset
-    // A major fast offers only nightfall opinions; the default shows 8.5°.
+    // The same three defaults a minor fast shows: Geonim 5.95°, 7.083°, 8.5°.
     const day = getDayEvents(DateTime.fromISO('2024-08-13'), TIMES);
-    expect(day).toEqual([{ type: 'fastEnd', time: ZMANIM.tzais, zmanKey: 'tzais' }]);
+    expect(day).toEqual([
+      { type: 'fastEnd', time: ZMANIM.tzaisGeonim, zmanKey: 'tzaisGeonim' },
+      { type: 'fastEnd', time: ZMANIM.tzaisGeonim7083, zmanKey: 'tzaisGeonim7083' },
+      { type: 'fastEnd', time: ZMANIM.tzais, zmanKey: 'tzais' },
+    ]);
   });
 
-  it('offers all three nightfall opinions for Tisha B’Av when enabled, and no medium-stars', () => {
+  it('offers every fast-end opinion for Tisha B’Av when all are enabled (incl. medium-stars)', () => {
     const day = getDayEvents(DateTime.fromISO('2024-08-13'), TIMES, false, []); // show all
     expect(day).toEqual([
+      { type: 'fastEnd', time: ZMANIM.tzaisGeonim, zmanKey: 'tzaisGeonim' },
+      { type: 'fastEnd', time: ZMANIM.tzaisGeonim645, zmanKey: 'tzaisGeonim645' },
+      { type: 'fastEnd', time: ZMANIM.tzaisGeonim7083, zmanKey: 'tzaisGeonim7083' },
       { type: 'fastEnd', time: ZMANIM.tzais, zmanKey: 'tzais' },
       { type: 'fastEnd', time: ZMANIM.tzais42, zmanKey: 'tzais42' },
       { type: 'fastEnd', time: ZMANIM.tzais72, zmanKey: 'tzais72' },
