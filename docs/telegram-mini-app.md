@@ -24,11 +24,18 @@ Telegram client
        src/components/providers/telegram-mini-app.tsx   profile fetch + write-back
        src/lib/telegram/bot-sync.ts    HTTP client for the bot API
   └─ bot API (zmanim_bot repo, aiohttp)
-       POST {WEBHOOK_PATH}/miniapp/me     → {language, cl_offset, havdala_opinion, location, locations}
-       POST {WEBHOOK_PATH}/miniapp/sync   → applies location / cl_offset / havdala_opinion
+       POST {WEBHOOK_PATH}/miniapp/me     → {language, cl_offset, havdala_opinion, location, locations, web_prefs}
+       POST {WEBHOOK_PATH}/miniapp/sync   → applies location / cl_offset / havdala_opinion / web_prefs
        POST {WEBHOOK_PATH}/miniapp/export → relays an export file to the user's chat
-       auth: the signed initData string, validated against the bot token per request
+       auth: the signed initData string (or, from the plain site, a Login Widget
+       payload as auth_data), validated against the bot token per request
 ```
+
+`web_prefs` is the site's full settings snapshot (the sync blob — see
+[settings-sync.md](settings-sync.md)), stored verbatim in Mongo so **every**
+configurable thing follows the user across devices, not only the three
+fields the bot models. Blob syncs are silent; the chat confirmation below
+covers only the structured fields.
 
 Detection is fragment-based (`tgWebAppPlatform` in the launch hash), captured
 at module load before the calendar's URL-reflect effect rewrites the URL, and

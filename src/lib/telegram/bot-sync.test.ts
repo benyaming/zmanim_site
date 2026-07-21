@@ -59,6 +59,25 @@ describe('bot-sync', () => {
         { lat: 32.08, lng: 34.78, name: 'Тель-Авив', elevation: 20 },
         { lat: 31.77, lng: 35.21, name: 'Иерусалим', elevation: 754 },
       ],
+      webPrefs: null,
+    });
+  });
+
+  it('authenticates with a Login Widget payload and carries the settings blob both ways', async () => {
+    const { fetchBotProfile, pushBotSync } = await freshModule('https://bot.test/api');
+    const blob = JSON.stringify({ v: 1, updatedAt: '2026-07-19T10:00:00.000Z' });
+    let mock = okFetch({ ...PROFILE, web_prefs: blob });
+
+    const authData = { id: 42, first_name: 'B', auth_date: 1770000000, hash: 'h' };
+    const profile = await fetchBotProfile({ authData });
+    expect(JSON.parse((mock.mock.calls[0][1] as RequestInit).body as string)).toEqual({ auth_data: authData });
+    expect(profile?.webPrefs).toBe(blob);
+
+    mock = okFetch();
+    await pushBotSync({ authData }, { webPrefs: blob });
+    expect(JSON.parse((mock.mock.calls[0][1] as RequestInit).body as string)).toEqual({
+      auth_data: authData,
+      web_prefs: blob,
     });
   });
 

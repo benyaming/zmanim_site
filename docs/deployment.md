@@ -17,8 +17,13 @@ The `image` job pushes `ghcr.io/<owner>/<repo>:latest` and `:sha-<commit>` and r
 ## What you must configure
 
 - **Repository variable** `NEXT_PUBLIC_SITE_URL` — the production origin (e.g. `https://zmanim.example`). It is inlined at **build time** for SEO (`metadataBase`, sitemap, robots, canonical/OG URLs). It is public by design and is **not** a secret.
-- **Repository variable** `NEXT_PUBLIC_TG_BOT_API_URL` *(optional)* — zmanim_bot's mini-app API base (e.g. `https://<bot-host>/zmanim_bot/miniapp`), also build-time and public. Unset = the Telegram Mini App profile sync is off; see [`telegram-mini-app.md`](telegram-mini-app.md).
+- **Repository variable** `NEXT_PUBLIC_TG_BOT_API_URL` *(optional)* — zmanim_bot's mini-app API base (e.g. `https://<bot-host>/zmanim_bot/miniapp`), also build-time and public. Unset = the Telegram Mini App profile sync **and** the bot-backed settings sync are off; see [`telegram-mini-app.md`](telegram-mini-app.md).
+- **Repository variable** `NEXT_PUBLIC_TG_BOT_USERNAME` *(optional)* — the bot's public username (no `@`), enabling "Sign in with Telegram" on the plain site. Also needs a one-time BotFather `/setdomain` for the site's domain. Unset = that section is hidden; see [`settings-sync.md`](settings-sync.md).
+- **Repository variable** `NEXT_PUBLIC_GOOGLE_CLIENT_ID` *(optional)* — a Google OAuth **web** client id enabling Google Drive settings sync. Public by design (an OAuth client id is not a secret; there is no client secret in this flow). Unset = that section is hidden.
 - **No deploy secrets** and **no runtime secrets.** The app has no server-side tokens (geocoding is keyless, timezone is offline). There is nothing sensitive to inject.
+
+All four are **build-time** values baked into the image: changing one requires a
+rebuild (push to `main` or a manual re-run), not just a container restart.
 
 ## docker-compose.yml
 

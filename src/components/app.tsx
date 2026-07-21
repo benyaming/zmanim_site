@@ -4,9 +4,9 @@ import { useSyncExternalStore } from 'react';
 
 import { CalendarGrid } from '@/components/calendar/calendar-grid';
 import { CalendarView } from '@/components/calendar/calendar-view';
-import { AppearanceSettings } from '@/components/layout/appearance-settings';
+import { AccountMenu } from '@/components/layout/account-menu';
 import { CalendarSettings } from '@/components/layout/calendar-settings';
-import { LanguageSwitcher } from '@/components/layout/language-switcher';
+import { SettingsMenu } from '@/components/layout/settings-menu';
 import { ToolsMenu } from '@/components/layout/tools-menu';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
@@ -15,9 +15,11 @@ import { WhatsNewDialog } from '@/components/layout/whats-new';
 import { LocationPicker } from '@/components/location/location-picker';
 import { AppStateProvider, type AppLocation } from '@/components/providers/app-state';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { SettingsSync } from '@/components/providers/settings-sync';
 import { TelegramMiniApp } from '@/components/providers/telegram-mini-app';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ZmanimPanel } from '@/components/zmanim/zmanim-panel';
+import { useHeaderStage } from '@/hooks/use-header-stage';
 
 function AppSkeleton() {
   return (
@@ -46,25 +48,34 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
   // The calendar depends on the current date; render only after mount so server
   // and client agree (no hydration mismatch on "today"/selected highlights).
   const mounted = useIsClient();
+  // Header fit: fold the Calendar button into Settings only when the controls
+  // actually run out of room (not at a fixed breakpoint). The wordmark stays.
+  const { barRef, foldCalendar } = useHeaderStage();
 
   return (
     <QueryProvider>
       <AppStateProvider initialLocation={initialLocation}>
         {/* No-op outside Telegram; inside it, sets up the webview and syncs the bot profile. */}
         <TelegramMiniApp />
+        {/* Mount-gated: it reconciles localStorage with the connected sync stores. */}
+        {mounted && <SettingsSync />}
         {/* Desktop (lg+): a fixed-viewport shell that never scrolls — the
             calendar grid flexes to fill the height and only the zmanim panel
             scrolls internally. Mobile: a normal scrolling page so the stacked
             calendar and zmanim panel are both reachable. */}
         <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
           <SiteHeader
+            barRef={barRef}
             right={
               <>
                 <LocationPicker />
+                {/* Calendar preferences: their own button until the header runs
+                    out of room, when they fold into Settings. */}
+                {!foldCalendar && <CalendarSettings />}
                 <ToolsMenu />
-                <LanguageSwitcher />
-                <AppearanceSettings />
-                <CalendarSettings />
+                <SettingsMenu showCalendar={foldCalendar} />
+                {/* Account / sign-in, in the right corner. */}
+                <AccountMenu />
               </>
             }
           />

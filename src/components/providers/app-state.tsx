@@ -118,7 +118,9 @@ interface AppStateValue {
 
 const AppStateContext = createContext<AppStateValue | null>(null);
 
-const STORAGE_KEY = 'zmanim:prefs:v1';
+/** localStorage key for the persisted prefs — read by the settings-sync blob too. */
+export const PREFS_STORAGE_KEY = 'zmanim:prefs:v1';
+const STORAGE_KEY = PREFS_STORAGE_KEY;
 
 interface PersistedPrefs {
   location?: AppLocation;

@@ -372,6 +372,8 @@
     "zmanimRestoreDefaults": "Restore defaults",
     "appearanceTitle": "Appearance",
     "appearanceOpen": "Appearance settings",
+    "settingsTitle": "Settings",
+    "settingsOpen": "Settings",
     "calendarTitle": "Calendar",
     "calendarOpen": "Calendar settings",
     "toolsTitle": "Tools",
@@ -392,6 +394,8 @@
     "zmanimDesc": "A table of selected zmanim for a date range — PDF, Excel or CSV.",
     "customDatesName": "Personal dates",
     "customDatesDesc": "Birthdays, bar/bat mitzvahs and yahrzeits on your calendar.",
+    "syncName": "Sync & backup",
+    "syncDesc": "Sync settings between devices, or move them with a link or a file.",
     "back": "Back",
     "tableTitle": "Zmanim table",
     "from": "From",
@@ -438,6 +442,34 @@
     "sentToBot": "The file was sent to you in the bot chat",
     "sendToBotFailed": "Could not send the file to the bot chat — trying a regular download"
   },
+  "sync": {
+    "telegramTitle": "Telegram sync",
+    "miniAppSynced": "Your settings sync with your Telegram account automatically.",
+    "miniAppNoApi": "Sync is not available right now.",
+    "tgHint": "Sign in with Telegram to keep your settings — including everything from the bot — synced on all your devices.",
+    "tgConnected": "Connected as {name}.",
+    "disconnect": "Disconnect",
+    "googleTitle": "Google Drive sync",
+    "googleHint": "Keep your settings in your own Google Drive and sync them on any device.",
+    "googleConnect": "Connect Google Drive",
+    "googleConnected": "Connected to Google Drive.",
+    "syncNow": "Sync now",
+    "synced": "Settings synced.",
+    "connected": "Connected — settings synced.",
+    "syncFailed": "Sync didn’t work — try again later.",
+    "transferTitle": "Transfer settings",
+    "transferHint": "Move your settings to another device with a link or a file — no account needed.",
+    "copyLink": "Copy settings link",
+    "linkCopied": "Link copied — open it on the other device.",
+    "linkCopyFailed": "Couldn’t copy the link — download the file instead.",
+    "downloadFile": "Download settings file",
+    "importFile": "Import settings file",
+    "importInvalid": "This file is not a settings export.",
+    "importTitle": "Apply settings from the link?",
+    "importBody": "This will replace this device’s settings and reload the app.",
+    "importApply": "Apply",
+    "importCancel": "Cancel"
+  },
   "customDates": {
     "kindBirthday": "Birthday",
     "kindBarMitzvah": "Bar mitzvah",
@@ -473,10 +505,10 @@
     "chipYahrzeit": "{label} · {n, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} yahrzeit"
   },
   "browser": {
-  "unsupported": "Your browser is too old to display this site correctly — please update your browser or system.",
-  "dismiss": "Dismiss"
- },
- "footer": {
+    "unsupported": "Your browser is too old to display this site correctly — please update your browser or system.",
+    "dismiss": "Dismiss"
+  },
+  "footer": {
     "disclaimer": "Zmanim times computed with <link>kosher-zmanim</link>, daily learning with <hebcal>Hebcal</hebcal>. For halachic decisions, consult your local rabbinic authority.",
     "madeBy": "Made by Benyamin Ginzburg",
     "source": "Source"

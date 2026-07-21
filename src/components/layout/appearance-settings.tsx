@@ -1,6 +1,6 @@
 'use client';
 
-import { MonitorDown, Palette } from 'lucide-react';
+import { MonitorDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type FontScale, useAccessibility } from '@/components/providers/accessibility-provider';
 import { type Theme, useTheme } from '@/components/providers/theme-provider';
@@ -8,9 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { isIosFamily, promptInstall, useInstallPrompt } from '@/hooks/use-install-prompt';
-import { useIsMiniApp } from '@/hooks/use-mini-app';
-
-import { SettingsDialogShell } from './settings-shell';
 
 const FONT_SCALES: { value: FontScale; px: string }[] = [
   { value: 'default', px: '13px' },
@@ -25,7 +22,7 @@ const FONT_SCALES: { value: FontScale; px: string }[] = [
  * available the button re-triggers the native prompt; otherwise (iOS, Firefox,
  * prompt already consumed) short manual instructions are shown instead.
  */
-function InstallAppSection() {
+export function InstallAppSection() {
   const t = useTranslations('settings');
   const status = useInstallPrompt();
 
@@ -49,16 +46,14 @@ function InstallAppSection() {
   );
 }
 
-/** Appearance menu: theme + accessibility (text size, motion, contrast) + app install. */
-export function AppearanceSettings() {
+/** Appearance controls (theme + accessibility), composed into the Settings menu. */
+export function AppearanceSettingsBody() {
   const t = useTranslations('settings');
   const { theme, setTheme } = useTheme();
   const { fontScale, setFontScale, reduceMotion, setReduceMotion, highContrast, setHighContrast } = useAccessibility();
-  // Telegram's webview can't install a PWA — the whole section is noise there.
-  const isMiniApp = useIsMiniApp();
 
   return (
-    <SettingsDialogShell icon={Palette} label={t('appearanceOpen')} title={t('appearanceTitle')}>
+    <div className="space-y-4">
       <div className="space-y-2">
         <p className="text-sm font-medium">{t('theme')}</p>
         <ToggleGroup
@@ -128,13 +123,6 @@ export function AppearanceSettings() {
           </Button>
         </div>
       </div>
-
-      {!isMiniApp && (
-        <>
-          <Separator />
-          <InstallAppSection />
-        </>
-      )}
-    </SettingsDialogShell>
+    </div>
   );
 }

@@ -22,6 +22,9 @@ export function SettingsDialogShell({
   label,
   title,
   wide,
+  triggerClassName,
+  triggerData,
+  defaultOpen,
   children,
 }: {
   icon: LucideIcon;
@@ -29,15 +32,21 @@ export function SettingsDialogShell({
   title: string;
   /** Wider layout for dense menus (checkbox pickers); default fits the simple ones. */
   wide?: boolean;
+  /** Extra classes on the trigger button (e.g. `hidden sm:inline-flex` to hide it on phones). */
+  triggerClassName?: string;
+  /** Sets `data-hdr` on the trigger, so the header fit-detection can measure it. */
+  triggerData?: string;
+  /** Open on mount — used to reopen the menu after a language-switch remount. */
+  defaultOpen?: boolean;
   children: ReactNode;
 }) {
   return (
-    <Dialog>
+    <Dialog defaultOpen={defaultOpen}>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
-              <Button variant="outline" size="icon" aria-label={label}>
+              <Button variant="outline" size="icon" aria-label={label} data-hdr={triggerData} className={triggerClassName}>
                 <Icon className="size-4" />
               </Button>
             </DialogTrigger>

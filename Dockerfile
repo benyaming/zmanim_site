@@ -16,12 +16,20 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # NEXT_PUBLIC_* values are inlined at build time, so the canonical site URL
-# must be provided here (used for SEO metadata, sitemap, robots). The bot API
-# URL is optional — empty keeps the Telegram Mini App profile sync off.
+# must be provided here (used for SEO metadata, sitemap, robots). The rest are
+# optional feature switches — empty simply keeps that feature off:
+#   TG_BOT_API_URL   Mini App profile sync + settings sync through the bot
+#   TG_BOT_USERNAME  "Sign in with Telegram" on the plain site (Login Widget)
+#   GOOGLE_CLIENT_ID Google Drive settings sync
+# See docs/settings-sync.md.
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ARG NEXT_PUBLIC_TG_BOT_API_URL=
+ARG NEXT_PUBLIC_TG_BOT_USERNAME=
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_TG_BOT_API_URL=$NEXT_PUBLIC_TG_BOT_API_URL
+ENV NEXT_PUBLIC_TG_BOT_USERNAME=$NEXT_PUBLIC_TG_BOT_USERNAME
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
