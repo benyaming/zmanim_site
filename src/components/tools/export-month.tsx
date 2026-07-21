@@ -18,7 +18,7 @@ import {
   getDayInfo,
   localizedHolidayLabel,
 } from '@/lib/calendar';
-import { type CustomDate, type CustomDateKind, occurrencesOn } from '@/lib/custom-dates';
+import { type Observance, observancesOn, type PersonalDatesData } from '@/lib/personal-dates';
 import { alternateMonthsTitle, monthTitle, PAGE_HEIGHT_PX, PAGE_WIDTH_PX, weekdayHeaders } from '@/lib/export';
 import { formatDuration, formatTime } from '@/lib/format';
 import { getDailyLearning, LEARNING_CYCLE_KEYS, type LearningCycleKey } from '@/lib/learning';
@@ -65,7 +65,7 @@ export interface ExportMonthCfg {
   useElevation: boolean;
   lehumra: boolean;
   /** Personal dates to overlay on the grid (empty unless the user opted in). */
-  customDates: CustomDate[];
+  personalDates: PersonalDatesData;
   /** Zmanim and/or learning cycles to show in each day cell (≤ MAX_CELL_ITEMS). */
   cellItemKeys: string[];
   /** Translated labels the cells need (resolved by the caller, which has hooks). */
@@ -74,8 +74,8 @@ export interface ExportMonthCfg {
     mevarchim: string;
     omer: (day: number) => string;
     specialShabbat: (name: string) => string;
-    /** Fallback name for an unlabeled personal date, by kind. */
-    customDate: (kind: CustomDateKind) => string;
+    /** Display name for a personal-date observance (its owner, or a generic label). */
+    personalName: (obs: Observance) => string;
     /** Compact cell label for a zman base (zmanim.abbr). */
     zmanAbbr: (base: string) => string;
     /** Compact cell label for a learning cycle (learning.abbr). */
@@ -155,8 +155,11 @@ export function buildExportMonth(monthDate: DateTime, mode: CalendarMode, cfg: E
     if (info.isRoshChodesh && !(label && info.category === 'roshChodesh')) {
       chips.push({ label: cfg.labels.roshChodesh, category: 'roshChodesh' });
     }
-    for (const occ of occurrencesOn(date, cfg.customDates)) {
-      chips.push({ label: occ.entry.label.trim() || cfg.labels.customDate(occ.entry.kind), category: 'weekday', custom: true });
+    const seenOwners = new Set<string>();
+    for (const obs of observancesOn(date, cfg.personalDates)) {
+      if (seenOwners.has(obs.sourceId)) continue;
+      seenOwners.add(obs.sourceId);
+      chips.push({ label: cfg.labels.personalName(obs), category: 'weekday', custom: true });
     }
 
     // Compute the event keys plus any zmanim the user chose to show in the cell.

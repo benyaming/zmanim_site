@@ -3,7 +3,7 @@ import type { DateTime } from 'luxon';
 
 import { daysInJewishMonth, isHebrewLeapYear, jewishToLocalDay } from '@/lib/calendar';
 
-import type { AdarBehavior, CustomDate, CustomDateOccurrence, HebrewDateParts } from './types';
+import type { AdarBehavior, HebrewDateParts } from './types';
 
 /**
  * Anniversary / yahrzeit arithmetic, transcribed from the algorithm in
@@ -37,6 +37,12 @@ export function toJewishDate(parts: HebrewDateParts): JewishDate {
 /** The Gregorian day (app-Luxon, local midnight) a Hebrew date falls on. */
 export function hebrewPartsToDay(parts: HebrewDateParts): DateTime {
   return jewishToLocalDay(toJewishDate(parts));
+}
+
+/** The Hebrew date a Gregorian day falls on. */
+export function partsFromDay(dt: DateTime): HebrewDateParts {
+  const jd = new JewishDate(dt);
+  return { year: jd.getJewishYear(), month: jd.getJewishMonth(), day: jd.getJewishDayOfMonth() };
 }
 
 /**
@@ -113,96 +119,4 @@ export function yahrzeitInYear(anchor: HebrewDateParts, hyear: number, adar: Ada
     day = 1;
   }
   return { year: hyear, month, day };
-}
-
-/** The entry's Adar choice with kind defaults applied. */
-export function effectiveAdar(entry: CustomDate): AdarBehavior {
-  if (entry.kind === 'barMitzvah' || entry.kind === 'batMitzvah') return 'adar2';
-  return entry.adarBehavior ?? (entry.kind === 'yahrzeit' ? 'adar1' : 'adar2');
-}
-
-/** The Hebrew year a bar (13) / bat (12) mitzvah falls in. */
-export function barMitzvahYear(entry: CustomDate): number {
-  return entry.hebrew.year + (entry.kind === 'batMitzvah' ? 12 : 13);
-}
-
-/**
- * The entry's observance in `hyear`, or null when it has none there: birthdays
- * recur from the birth year on (the birth date itself is `number` 0), yahrzeits
- * from the year after death, bar/bat mitzvah only in its single year.
- */
-export function occurrenceInYear(entry: CustomDate, hyear: number): CustomDateOccurrence | null {
-  const number = hyear - entry.hebrew.year;
-  switch (entry.kind) {
-    case 'birthday': {
-      const hebrew = anniversaryInYear(entry.hebrew, hyear, effectiveAdar(entry));
-      return hebrew ? { entry, hebrew, number } : null;
-    }
-    case 'barMitzvah':
-    case 'batMitzvah': {
-      if (hyear !== barMitzvahYear(entry)) return null;
-      const hebrew = anniversaryInYear(entry.hebrew, hyear, 'adar2');
-      return hebrew ? { entry, hebrew, number } : null;
-    }
-    case 'yahrzeit': {
-      const hebrew = yahrzeitInYear(entry.hebrew, hyear, effectiveAdar(entry));
-      return hebrew ? { entry, hebrew, number } : null;
-    }
-  }
-}
-
-/** All entries observed on the given Gregorian day (pure Hebrew-date comparison). */
-export function occurrencesOn(date: DateTime, entries: readonly CustomDate[]): CustomDateOccurrence[] {
-  if (entries.length === 0) return [];
-  const jd = new JewishDate(date);
-  const hyear = jd.getJewishYear();
-  const month = jd.getJewishMonth();
-  const day = jd.getJewishDayOfMonth();
-  const out: CustomDateOccurrence[] = [];
-  for (const entry of entries) {
-    const occ = occurrenceInYear(entry, hyear);
-    if (occ && occ.hebrew.month === month && occ.hebrew.day === day) out.push(occ);
-  }
-  return out;
-}
-
-export interface NextOccurrence {
-  hebrew: HebrewDateParts;
-  date: DateTime;
-  number: number;
-}
-
-/**
- * The entry's next observance on or after `today`. Bar/bat mitzvah returns its
- * one fixed date even when it is already past (callers show "was on …").
- */
-export function nextOccurrence(entry: CustomDate, today: DateTime): NextOccurrence | null {
-  const start = today.startOf('day');
-  if (entry.kind === 'barMitzvah' || entry.kind === 'batMitzvah') {
-    const occ = occurrenceInYear(entry, barMitzvahYear(entry));
-    return occ ? { hebrew: occ.hebrew, date: hebrewPartsToDay(occ.hebrew), number: occ.number } : null;
-  }
-  const currentYear = new JewishDate(start).getJewishYear();
-  const firstYear = entry.hebrew.year + (entry.kind === 'yahrzeit' ? 1 : 0);
-  const from = Math.max(currentYear, firstYear);
-  // This year's observance if it hasn't passed, otherwise next year's.
-  for (let hyear = from; hyear <= from + 1; hyear++) {
-    const occ = occurrenceInYear(entry, hyear);
-    if (!occ) continue;
-    const date = hebrewPartsToDay(occ.hebrew);
-    if (date >= start) return { hebrew: occ.hebrew, date, number: occ.number };
-  }
-  return null;
-}
-
-/**
- * A stable serialization of everything that affects rendering, used as the
- * calendar grid's cache identity (the array's object identity is not). JSON,
- * not a delimiter join: `label` is free user text and could otherwise contain
- * the separators and forge a different list's fingerprint, staling the cache.
- */
-export function customDatesFingerprint(entries: readonly CustomDate[]): string {
-  return JSON.stringify(
-    entries.map((e) => [e.id, e.kind, e.hebrew.year, e.hebrew.month, e.hebrew.day, e.adarBehavior ?? '', e.label]),
-  );
 }

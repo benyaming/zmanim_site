@@ -28,7 +28,9 @@ import {
   pagesToPdf,
 } from '@/lib/export';
 import { LEARNING_CYCLE_KEYS } from '@/lib/learning';
+import { EMPTY_PERSONAL_DATES } from '@/lib/personal-dates';
 
+import { observanceName, type PersonalDatesTranslator } from './personal-dates-labels';
 import {
   buildExportMonth,
   EXPORT_GRID_THEMES,
@@ -170,9 +172,9 @@ export function ExportCalendarTool() {
   const tGroup = useTranslations('zmanim.groups');
   const tLearning = useTranslations('learning');
   const locale = useLocale();
-  const { monthDate, mode, candleLightingOffset, havdalahOpinion, customDates } = useAppState();
+  const { monthDate, mode, candleLightingOffset, havdalahOpinion, personalDates } = useAppState();
   const { fontScale: appFontScale } = useAccessibility();
-  const [includeCustomDates, setIncludeCustomDates] = useState(true);
+  const [includePersonalDates, setIncludePersonalDates] = useState(true);
   // Zmanim and/or learnings shown inside each day cell — up to MAX_CELL_ITEMS,
   // any opinion; kept in canonical order (zmanim first, then learnings).
   const [cellItems, setCellItems] = useState<string[]>([]);
@@ -200,6 +202,7 @@ export function ExportCalendarTool() {
   // Report content follows the chosen report language (labels, month names,
   // time formats, direction) — the dialog itself stays in the UI language.
   const tr = reportTranslator(reportLocale);
+  const tPersonal: PersonalDatesTranslator = (key, values) => tr(`personalDates.${key}`, values);
   const reportDir = dirForLocale(reportLocale) === 'rtl' ? 'rtl' : 'ltr';
   const cfg: ExportMonthCfg = {
     locale: reportLocale,
@@ -208,14 +211,14 @@ export function ExportCalendarTool() {
     havdalahOpinion,
     useElevation,
     lehumra,
-    customDates: includeCustomDates ? customDates : [],
+    personalDates: includePersonalDates ? personalDates : EMPTY_PERSONAL_DATES,
     cellItemKeys: cellItems,
     labels: {
       roshChodesh: tr('categories.roshChodesh'),
       mevarchim: tr('panel.shabbatMevarchim'),
       omer: (day: number) => tr('panel.omer', { day }),
       specialShabbat: (name: string) => tr('panel.specialShabbat', { name }),
-      customDate: (kind) => tr(`customDates.kind${kind[0].toUpperCase()}${kind.slice(1)}`),
+      personalName: (obs) => observanceName(obs, tPersonal),
       zmanAbbr: (base: string) => tr(`zmanim.abbr.${base}`),
       learningAbbr: (key: string) => tr(`learning.abbr.${key}`),
       // Full name plus the shita, so the legend disambiguates a short cell label.
@@ -392,10 +395,10 @@ export function ExportCalendarTool() {
         <p className="text-muted-foreground text-xs">{t('cellZmanimHint')}</p>
       </div>
 
-      {customDates.length > 0 && (
+      {(personalDates.people.length > 0 || personalDates.occasions.length > 0) && (
         <label className="flex cursor-pointer items-center gap-2">
-          <Checkbox checked={includeCustomDates} onCheckedChange={(v) => setIncludeCustomDates(v === true)} />
-          <span className="text-sm">{t('includeCustomDates')}</span>
+          <Checkbox checked={includePersonalDates} onCheckedChange={(v) => setIncludePersonalDates(v === true)} />
+          <span className="text-sm">{t('includePersonalDates')}</span>
         </label>
       )}
 

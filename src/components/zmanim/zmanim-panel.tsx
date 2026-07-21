@@ -36,7 +36,8 @@ import {
   type DayEventType,
   type DayInfo,
 } from '@/lib/calendar';
-import { type CustomDateOccurrence, occurrencesOn } from '@/lib/custom-dates';
+import { type Observance, observancesOn } from '@/lib/personal-dates';
+import { observanceChipText, type PersonalDatesTranslator } from '@/components/tools/personal-dates-labels';
 import { formatMoladParts, formatTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
@@ -250,22 +251,9 @@ function buildDayChips(info: DayInfo, locale: string, t: { cat: Translator; pane
   return chips;
 }
 
-/** A masthead chip for a personal date observed on the selected day. */
-function customChip(occ: CustomDateOccurrence, t: Translator): Chip {
-  const { entry, number } = occ;
-  const label = entry.label.trim() || t(`kind${entry.kind[0].toUpperCase()}${entry.kind.slice(1)}`);
-  const key = `custom-${entry.id}`;
-  const chip = (text: string): Chip => ({ key, label: text, tone: 'custom', Icon: CalendarHeart });
-  switch (entry.kind) {
-    case 'birthday':
-      return chip(number === 0 ? t('chipBorn', { label }) : t('chipBirthday', { label, age: number }));
-    case 'barMitzvah':
-      return chip(t('chipBarMitzvah', { label }));
-    case 'batMitzvah':
-      return chip(t('chipBatMitzvah', { label }));
-    case 'yahrzeit':
-      return chip(t('chipYahrzeit', { label, n: number }));
-  }
+/** A masthead chip for a personal-date observance on the selected day. */
+function observanceToChip(obs: Observance, t: PersonalDatesTranslator): Chip {
+  return { key: `pd-${obs.sourceId}-${obs.kind}`, label: observanceChipText(obs, t), tone: 'custom', Icon: CalendarHeart };
 }
 
 export function ZmanimPanel() {
@@ -278,7 +266,7 @@ export function ZmanimPanel() {
     hiddenFastEnd,
     useElevation,
     lehumra,
-    customDates,
+    personalDates,
   } = useAppState();
   const zmanim = useZmanim();
   const locale = useLocale();
@@ -294,12 +282,20 @@ export function ZmanimPanel() {
   const tPanel = useTranslations('panel');
   const tEvents = useTranslations('events');
   const tFastEnd = useTranslations('events.fastEndOpinions');
-  const tCustom = useTranslations('customDates');
+  const tPersonal = useTranslations('personalDates');
 
   const info = getDayInfo(selectedDay, undefined, locale, location.inIsrael);
 
   const chips = buildDayChips(info, locale, { cat: tCat, panel: tPanel });
-  for (const occ of occurrencesOn(selectedDay, customDates)) chips.push(customChip(occ, tCustom));
+  // Both calendars' anniversaries can coincide (an un-shifted birth) and produce
+  // the same text — collapse exact duplicates.
+  const seenCustom = new Set<string>();
+  for (const obs of observancesOn(selectedDay, personalDates)) {
+    const chip = observanceToChip(obs, tPersonal);
+    if (seenCustom.has(chip.label)) continue;
+    seenCustom.add(chip.label);
+    chips.push(chip);
+  }
 
   // Candle lighting + havdalah for the rest period (both bookends on both days),
   // plus any fast times for the selected day. Lehumra rounds per event type

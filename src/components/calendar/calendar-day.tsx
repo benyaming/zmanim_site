@@ -34,10 +34,7 @@ export type CellDensity = 'compact' | 'medium' | 'full';
 export interface CellChip {
   label: string;
   category: DayCategory;
-  /**
-   * An explicit tone, overriding the category-derived one. Used by personal
-   * dates, which carry their own color rather than a halachic day category.
-   */
+  /** An explicit tone, overriding the category-derived one. */
   tone?: DayTone;
 }
 
@@ -46,6 +43,8 @@ interface CalendarDayProps {
   inMonth: boolean;
   info: DayInfo;
   chips: CellChip[];
+  /** The day carries a personal-date observance — shown as one teal dot by the number. */
+  hasCustom: boolean;
   events: DayEvent[];
   mode: CalendarMode;
   locale: string;
@@ -62,6 +61,7 @@ export function CalendarDay({
   inMonth,
   info,
   chips,
+  hasCustom,
   events,
   mode,
   locale,
@@ -73,6 +73,7 @@ export function CalendarDay({
 }: CalendarDayProps) {
   const tEvents = useTranslations('events');
   const tPanel = useTranslations('panel');
+  const tPersonal = useTranslations('personalDates');
   const primary = mode === 'hebrew' ? info.hebrewDayOfMonth : date.day;
   const secondary =
     mode === 'hebrew'
@@ -135,14 +136,23 @@ export function CalendarDay({
     >
       <div data-day-content className="flex origin-top-left flex-col gap-0.5 rtl:origin-top-right" style={fitStyle}>
         <div className="flex items-baseline justify-between gap-1">
-        <span
-          className={cn(
-            'shrink-0 text-sm font-semibold tabular-nums transition-colors sm:text-base',
-            // Today's / the selected day's number picks up the accent color.
-            (isToday || isSelected) && 'text-day-selected font-bold',
+        <span className="flex shrink-0 items-center gap-1">
+          <span
+            className={cn(
+              'text-sm font-semibold tabular-nums transition-colors sm:text-base',
+              // Today's / the selected day's number picks up the accent color.
+              (isToday || isSelected) && 'text-day-selected font-bold',
+            )}
+          >
+            {primary}
+          </span>
+          {/* Personal date marker — one teal dot regardless of how many fall today. */}
+          {hasCustom && (
+            <span
+              className={cn('size-1.5 rounded-full', DAY_TONE.custom.dot)}
+              title={tPersonal('gridMarker')}
+            />
           )}
-        >
-          {primary}
         </span>
         {showLabels && (
           <span className="text-muted-foreground min-w-0 truncate text-[0.6875rem] leading-tight">{secondary}</span>

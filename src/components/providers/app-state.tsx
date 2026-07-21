@@ -5,7 +5,21 @@ import { useLocale, useTranslations } from 'next-intl';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { type CalendarMode, DEFAULT_HIDDEN_FAST_END, monthAnchor, sanitizeHiddenFastEnd } from '@/lib/calendar';
-import { type CustomDate, MAX_CUSTOM_DATES, newCustomDateId, sanitizeCustomDates } from '@/lib/custom-dates';
+import {
+  EMPTY_PERSONAL_DATES,
+  type Gender,
+  MAX_EVENTS_PER_PERSON,
+  MAX_OCCASIONS,
+  MAX_PEOPLE,
+  migrateLegacyCustomDates,
+  newId,
+  type Person,
+  type PersonalDatesData,
+  type PersonEvent,
+  sanitizePersonalDates,
+  SINGLE_EVENT_KINDS,
+  type StandaloneDate,
+} from '@/lib/personal-dates';
 import { browserGeolocate } from '@/lib/geo/browser-location';
 import { fetchElevation } from '@/lib/geo/elevation';
 import { reverseGeocode } from '@/lib/geo/geocoding';
@@ -33,7 +47,7 @@ import {
 export { DEFAULT_LOCATION, makeLocation };
 export type { AppLocation };
 export type { SavedLocation };
-export type { CustomDate };
+export type { Person, PersonalDatesData, PersonEvent, StandaloneDate };
 
 export const DEFAULT_CANDLE_OFFSET = 18;
 /** Candle lighting is always *before* sunset, so the offset must be ≥ 1 minute. */
@@ -108,12 +122,20 @@ interface AppStateValue {
    * not persisted here and not editable from the picker.
    */
   botLocations: SavedLocation[];
-  /** Personal recurring dates (birthdays, bar/bat mitzvahs, yahrzeits). */
-  customDates: CustomDate[];
-  /** Add an entry; a no-op once MAX_CUSTOM_DATES is reached. Returns the new id, or null if full. */
-  addCustomDate: (entry: Omit<CustomDate, 'id'>) => string | null;
-  updateCustomDate: (id: string, entry: Omit<CustomDate, 'id'>) => void;
-  removeCustomDate: (id: string) => void;
+  /** Personal dates: people (with their events) and standalone occasions. */
+  personalDates: PersonalDatesData;
+  /** Add a person; a no-op once MAX_PEOPLE is reached. Returns the new id, or null if full. */
+  addPerson: (input: { name: string; gender?: Gender }) => string | null;
+  updatePerson: (id: string, patch: { name?: string; gender?: Gender }) => void;
+  removePerson: (id: string) => void;
+  /** Append an event to a person; a no-op once the person has MAX_EVENTS_PER_PERSON. */
+  addPersonEvent: (personId: string, event: Omit<PersonEvent, 'id'>) => void;
+  updatePersonEvent: (personId: string, eventId: string, event: Omit<PersonEvent, 'id'>) => void;
+  removePersonEvent: (personId: string, eventId: string) => void;
+  /** Add a standalone occasion; a no-op once MAX_OCCASIONS is reached. Returns the new id, or null if full. */
+  addOccasion: (occasion: Omit<StandaloneDate, 'id'>) => string | null;
+  updateOccasion: (id: string, occasion: Omit<StandaloneDate, 'id'>) => void;
+  removeOccasion: (id: string) => void;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -160,8 +182,10 @@ interface PersistedPrefs {
   hiddenFastEnd?: string[];
   /** True once the user has touched the fast-end picker; only then does hiddenFastEnd override the default. */
   fastEndCustomized?: boolean;
-  /** Personal recurring dates. */
-  customDates?: CustomDate[];
+  /** Personal dates: people + occasions. */
+  personalDates?: PersonalDatesData;
+  /** Legacy flat personal-date list — migrated into `personalDates` on load. */
+  customDates?: unknown;
 }
 
 function loadPrefs(): PersistedPrefs | null {
@@ -357,27 +381,72 @@ export function AppStateProvider({
     setHiddenFastEnd([...DEFAULT_HIDDEN_FAST_END]);
   };
 
-  const [customDates, setCustomDates] = useState<CustomDate[]>([]);
-  const addCustomDate = (entry: Omit<CustomDate, 'id'>): string | null => {
-    if (customDates.length >= MAX_CUSTOM_DATES) return null;
-    const id = newCustomDateId();
-    setCustomDates((prev) => (prev.length >= MAX_CUSTOM_DATES ? prev : [...prev, { ...entry, id }]));
+  const [personalDates, setPersonalDates] = useState<PersonalDatesData>(EMPTY_PERSONAL_DATES);
+  const mapPerson = (id: string, fn: (p: Person) => Person) =>
+    setPersonalDates((prev) => ({ ...prev, people: prev.people.map((p) => (p.id === id ? fn(p) : p)) }));
+
+  const addPerson = ({ name, gender }: { name: string; gender?: Gender }): string | null => {
+    if (personalDates.people.length >= MAX_PEOPLE) return null;
+    const id = newId();
+    setPersonalDates((prev) =>
+      prev.people.length >= MAX_PEOPLE ? prev : { ...prev, people: [...prev.people, { id, name, gender, events: [] }] },
+    );
     return id;
   };
-  const updateCustomDate = (id: string, entry: Omit<CustomDate, 'id'>) =>
-    setCustomDates((prev) => prev.map((e) => (e.id === id ? { ...entry, id } : e)));
-  const removeCustomDate = (id: string) => setCustomDates((prev) => prev.filter((e) => e.id !== id));
+  const updatePerson = (id: string, patch: { name?: string; gender?: Gender }) =>
+    mapPerson(id, (p) => ({ ...p, ...patch }));
+  const removePerson = (id: string) =>
+    setPersonalDates((prev) => ({ ...prev, people: prev.people.filter((p) => p.id !== id) }));
+
+  // A person is born once and passes once — reject a second birth/death.
+  const hasKind = (p: Person, kind: PersonEvent['kind'], exceptId?: string) =>
+    SINGLE_EVENT_KINDS.includes(kind) && p.events.some((e) => e.kind === kind && e.id !== exceptId);
+  const addPersonEvent = (personId: string, event: Omit<PersonEvent, 'id'>) =>
+    mapPerson(personId, (p) =>
+      p.events.length >= MAX_EVENTS_PER_PERSON || hasKind(p, event.kind)
+        ? p
+        : { ...p, events: [...p.events, { ...event, id: newId() }] },
+    );
+  const updatePersonEvent = (personId: string, eventId: string, event: Omit<PersonEvent, 'id'>) =>
+    mapPerson(personId, (p) =>
+      hasKind(p, event.kind, eventId)
+        ? p
+        : { ...p, events: p.events.map((e) => (e.id === eventId ? { ...event, id: eventId } : e)) },
+    );
+  const removePersonEvent = (personId: string, eventId: string) =>
+    mapPerson(personId, (p) => ({ ...p, events: p.events.filter((e) => e.id !== eventId) }));
+
+  const addOccasion = (occasion: Omit<StandaloneDate, 'id'>): string | null => {
+    if (personalDates.occasions.length >= MAX_OCCASIONS) return null;
+    const id = newId();
+    setPersonalDates((prev) =>
+      prev.occasions.length >= MAX_OCCASIONS ? prev : { ...prev, occasions: [...prev.occasions, { ...occasion, id }] },
+    );
+    return id;
+  };
+  const updateOccasion = (id: string, occasion: Omit<StandaloneDate, 'id'>) =>
+    setPersonalDates((prev) => ({ ...prev, occasions: prev.occasions.map((o) => (o.id === id ? { ...occasion, id } : o)) }));
+  const removeOccasion = (id: string) =>
+    setPersonalDates((prev) => ({ ...prev, occasions: prev.occasions.filter((o) => o.id !== id) }));
+
+  // Gates persistence: it flips true only after the load effect has read
+  // localStorage, so a pre-hydration render (initial mount, an HMR remount, or
+  // React StrictMode's double-invoke) can never overwrite saved prefs with the
+  // component's empty defaults.
+  const [hydrated, setHydrated] = useState(false);
 
   // Load saved preferences once after mount. Done in an effect (not the initial
   // render) so server and client first-render agree — avoids hydration drift.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHydrated(true);
     const prefs = loadPrefs();
     if (!prefs) return;
     // Apply a saved offset only if it's a sane value; otherwise keep the default
     // (this also heals a previously-persisted 0, which is invalid for candle lighting).
     const savedOffset = prefs.candleLightingOffset;
     if (typeof savedOffset === 'number' && Number.isFinite(savedOffset) && savedOffset >= CANDLE_OFFSET_MIN) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setCandleLightingOffsetState(Math.min(CANDLE_OFFSET_MAX, Math.round(savedOffset)));
     }
     if (prefs.useElevation === true) setUseElevation(true);
@@ -410,8 +479,11 @@ export function AppStateProvider({
     }
     const savedList = sanitizeSavedLocations(prefs.savedLocations);
     if (savedList.length > 0) setSavedLocations(savedList);
-    const savedCustomDates = sanitizeCustomDates(prefs.customDates);
-    if (savedCustomDates.length > 0) setCustomDates(savedCustomDates);
+    // Prefer the new shape; migrate the legacy flat list once when it's absent.
+    const savedPersonal = prefs.personalDates
+      ? sanitizePersonalDates(prefs.personalDates)
+      : migrateLegacyCustomDates(prefs.customDates);
+    if (savedPersonal.people.length > 0 || savedPersonal.occasions.length > 0) setPersonalDates(savedPersonal);
     // A location from the URL (deep link) takes precedence over the saved one.
     // Ignore a persisted *default* (eager-persisted, not a real choice) so it
     // doesn't lock out auto-detection. inIsrael is always derived from the
@@ -516,8 +588,11 @@ export function AppStateProvider({
     return () => controller.abort();
   }, [location]);
 
-  // Persist preferences whenever they change.
+  // Persist preferences whenever they change — but never before the load effect
+  // has hydrated state from localStorage, or the first render's empty defaults
+  // would clobber the saved prefs.
   useEffect(() => {
+    if (!hydrated) return;
     try {
       window.localStorage.setItem(
         STORAGE_KEY,
@@ -535,13 +610,13 @@ export function AppStateProvider({
           hiddenLearning,
           hiddenFastEnd,
           fastEndCustomized,
-          customDates,
+          personalDates,
         }),
       );
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, lehumraCustomized, hiddenZmanim, zmanimCustomized, hiddenLearning, hiddenFastEnd, fastEndCustomized, customDates]);
+  }, [hydrated, location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, lehumraCustomized, hiddenZmanim, zmanimCustomized, hiddenLearning, hiddenFastEnd, fastEndCustomized, personalDates]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
@@ -635,10 +710,16 @@ export function AppStateProvider({
     restoreDefaultFastEnd,
     applyBotProfile,
     botLocations,
-    customDates,
-    addCustomDate,
-    updateCustomDate,
-    removeCustomDate,
+    personalDates,
+    addPerson,
+    updatePerson,
+    removePerson,
+    addPersonEvent,
+    updatePersonEvent,
+    removePersonEvent,
+    addOccasion,
+    updateOccasion,
+    removeOccasion,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
