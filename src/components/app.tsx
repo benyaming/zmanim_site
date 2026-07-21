@@ -4,11 +4,12 @@ import { useSyncExternalStore } from 'react';
 
 import { CalendarGrid } from '@/components/calendar/calendar-grid';
 import { CalendarView } from '@/components/calendar/calendar-view';
+import { AccountMenu } from '@/components/layout/account-menu';
 import { CalendarSettings } from '@/components/layout/calendar-settings';
 import { SettingsMenu } from '@/components/layout/settings-menu';
 import { ToolsMenu } from '@/components/layout/tools-menu';
 import { SiteFooter } from '@/components/layout/site-footer';
-import { SiteHeader } from '@/components/layout/site-header';
+import { BrandLink, SiteHeader } from '@/components/layout/site-header';
 import { Toaster } from '@/components/layout/toaster';
 import { WhatsNewDialog } from '@/components/layout/whats-new';
 import { LocationPicker } from '@/components/location/location-picker';
@@ -60,6 +61,14 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
             calendar and zmanim panel are both reachable. */}
         <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
           <SiteHeader
+            left={
+              <>
+                {/* Wordmark on sm+; on phones it's dropped and an account
+                    button takes its place for one-tap sign-in / sync. */}
+                <BrandLink className="hidden sm:flex" />
+                <AccountMenu className="sm:hidden" />
+              </>
+            }
             right={
               <>
                 <LocationPicker />
