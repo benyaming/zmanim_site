@@ -21,6 +21,15 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.23',
+    date: '2026-07-21',
+    notes: {
+      en: ['Signed in with Telegram on the web, your bot’s saved locations now appear in the location picker.'],
+      he: ['לאחר התחברות עם טלגרם באתר, המיקומים השמורים בבוט מופיעים כעת בבוחר המיקומים.'],
+      ru: ['После входа через Telegram на сайте сохранённые в боте локации теперь появляются в выборе локации.'],
+    },
+  },
+  {
     version: '1.22',
     date: '2026-07-20',
     notes: {
