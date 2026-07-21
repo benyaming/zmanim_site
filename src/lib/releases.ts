@@ -21,6 +21,24 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.23',
+    date: '2026-07-21',
+    notes: {
+      en: [
+        'Personal dates reworked around people — add someone once, with their birthday, bris, bar/bat mitzvah, wedding and passing.',
+        'A passing now shows shiva, shloshim and the yahrzeit automatically; every date marks both its Hebrew and civil anniversary.',
+      ],
+      he: [
+        'התאריכים האישיים מסודרים סביב אנשים — מוסיפים אדם פעם אחת, עם יום הולדת, ברית, בר/בת מצווה, נישואין ופטירה.',
+        'פטירה מציגה אוטומטית שבעה, שלושים ויום השנה; כל תאריך מסומן ביום השנה העברי והלועזי כאחד.',
+      ],
+      ru: [
+        'Личные даты переработаны вокруг людей — добавьте человека один раз, с днём рождения, бритом, бар/бат-мицвой, свадьбой и датой кончины.',
+        'Кончина автоматически показывает шиву, шлошим и йорцайт; каждая дата отмечается и по еврейскому, и по гражданскому календарю.',
+      ],
+    },
+  },
+  {
     version: '1.22',
     date: '2026-07-20',
     notes: {

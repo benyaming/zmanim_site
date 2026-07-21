@@ -4,7 +4,7 @@ import { ArrowDownToLine, ArrowLeft, CalendarHeart, CalendarRange, ChevronRight,
 import { useTranslations } from 'next-intl';
 import { useState, type ComponentType } from 'react';
 
-import { CustomDatesTool } from '@/components/tools/custom-dates';
+import { PersonalDatesTool } from '@/components/tools/personal-dates';
 import { ExportCalendarTool } from '@/components/tools/export-calendar';
 import { ExportZmanimTool } from '@/components/tools/export-zmanim';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-type ToolKey = 'calendar' | 'zmanim' | 'customDates';
+type ToolKey = 'calendar' | 'zmanim' | 'personalDates';
 
 interface ToolEntry {
   key: ToolKey;
@@ -30,7 +30,7 @@ interface ToolEntry {
 const TOOLS: ToolEntry[] = [
   { key: 'calendar', Icon: CalendarRange, Tool: ExportCalendarTool, nameKey: 'calendarName', descKey: 'calendarDesc', dialogClass: 'sm:max-w-lg lg:max-w-4xl', download: true },
   { key: 'zmanim', Icon: Table2, Tool: ExportZmanimTool, nameKey: 'zmanimName', descKey: 'zmanimDesc', dialogClass: 'sm:max-w-lg lg:max-w-3xl', download: true },
-  { key: 'customDates', Icon: CalendarHeart, Tool: CustomDatesTool, nameKey: 'customDatesName', descKey: 'customDatesDesc', dialogClass: 'sm:max-w-lg', download: false },
+  { key: 'personalDates', Icon: CalendarHeart, Tool: PersonalDatesTool, nameKey: 'personalDatesName', descKey: 'personalDatesDesc', dialogClass: 'sm:max-w-lg', download: false },
 ];
 
 /**

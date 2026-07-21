@@ -15,7 +15,7 @@ const BLOB: SettingsBlob = {
   v: 2,
   sections: {
     // Unicode exercises the base64url text path (labels are often Hebrew/Russian).
-    prefs: { data: { location: { label: 'Петах-Тиква' }, customDates: [{ name: 'בר מצווה' }] }, t: T },
+    prefs: { data: { location: { label: 'Петах-Тиква' }, personalDates: { people: [{ name: 'בר מצווה' }] } }, t: T },
     a11y: { data: { fontScale: 'lg' }, t: T },
     theme: { data: 'system', t: T },
     language: { data: 'ru', t: T },

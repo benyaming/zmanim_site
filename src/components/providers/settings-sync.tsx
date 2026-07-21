@@ -55,7 +55,7 @@ export function SettingsSync() {
     hiddenZmanim,
     hiddenLearning,
     hiddenFastEnd,
-    customDates,
+    personalDates,
   } = useAppState();
   const { fontScale, reduceMotion, highContrast } = useAccessibility();
   const { theme } = useTheme();
@@ -94,7 +94,7 @@ export function SettingsSync() {
     hiddenZmanim,
     hiddenLearning,
     hiddenFastEnd,
-    customDates,
+    personalDates,
     fontScale,
     reduceMotion,
     highContrast,

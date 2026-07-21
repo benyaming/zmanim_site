@@ -2,7 +2,7 @@ import type { HebrewDateFormatter } from 'kosher-zmanim';
 
 import { createHebrewFormatter, RU_MONTHS_GENITIVE } from '@/lib/calendar';
 
-import { toJewishDate } from './occurrences';
+import { toJewishDate } from './anniversaries';
 import type { HebrewDateParts } from './types';
 
 /** Lazy per-locale formatters — module-level like day-info's, they're stateless. */

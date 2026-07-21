@@ -28,7 +28,7 @@ beforeEach(() => {
   document.documentElement.lang = '';
 });
 
-const PREFS = { candleLightingOffset: 22, hiddenZmanim: ['alos'], customDates: [{ id: 'x', name: 'Test' }] };
+const PREFS = { candleLightingOffset: 22, hiddenZmanim: ['alos'], personalDates: { people: [{ id: 'x', name: 'Test', events: [] }], occasions: [] } };
 const A11Y = { fontScale: 'xl', reduceMotion: true, highContrast: false };
 
 function blob(sections: Partial<Record<(typeof SECTION_NAMES)[number], { data: unknown; t: string }>>): SettingsBlob {

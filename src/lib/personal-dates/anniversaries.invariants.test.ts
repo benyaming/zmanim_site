@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { daysInJewishMonth, isHebrewLeapYear } from '@/lib/calendar';
 
-import { anniversaryInYear, hebrewPartsToDay, yahrzeitInYear } from './occurrences';
+import { anniversaryInYear, hebrewPartsToDay, yahrzeitInYear } from './anniversaries';
 import type { AdarBehavior, HebrewDateParts } from './types';
 
 /**

@@ -2,6 +2,7 @@ import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_LOCATION } from '@/lib/location';
+import { EMPTY_PERSONAL_DATES } from '@/lib/personal-dates';
 import { DEFAULT_HAVDALAH_OPINION } from '@/lib/zmanim';
 
 import { buildExportMonth, type ExportMonthCfg } from './export-month';
@@ -15,14 +16,14 @@ function cfg(over: Partial<ExportMonthCfg>): ExportMonthCfg {
     havdalahOpinion: DEFAULT_HAVDALAH_OPINION,
     useElevation: false,
     lehumra: false,
-    customDates: [],
+    personalDates: EMPTY_PERSONAL_DATES,
     cellItemKeys: [],
     labels: {
       roshChodesh: 'RC',
       mevarchim: 'Mev',
       omer: (d) => `Omer ${d}`,
       specialShabbat: (n) => n,
-      customDate: (k) => k,
+      personalName: (obs) => obs.label,
       zmanAbbr: (base) => base,
       learningAbbr: (key) => key,
       zmanLegend: (key) => `legend:${key}`,
