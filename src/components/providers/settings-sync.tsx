@@ -15,7 +15,7 @@ import {
   stampSection,
   type SettingsBlob,
 } from '@/lib/sync/blob';
-import { applyImportedSettings, pushLocalSettings, reloadForSync, runSync } from '@/lib/sync/engine';
+import { applyImportedSettings, consumeStartupReload, pushLocalSettings, reloadForSync, runSync } from '@/lib/sync/engine';
 import { settingsFromHash } from '@/lib/sync/transfer';
 
 /**
@@ -65,14 +65,17 @@ export function SettingsSync() {
 
   // Startup reconcile. Adopting newer remote sections reloads the page so the
   // providers re-read them; a pending import skips this — the user decides
-  // first. No loop guard is needed: adopting copies each remote section's
-  // stamp, so the post-reload run sees them equal and won't re-adopt.
+  // first. Adopting copies each remote section's stamp, so a re-run normally
+  // sees them equal and won't re-adopt — but that invariant breaks inside the
+  // Telegram Mini App (TelegramMiniApp re-applies the bot's structured location
+  // each mount, defeating the fingerprint tie-break), so we also cap the
+  // startup reload to once per session (consumeStartupReload) to stop the loop.
   useEffect(() => {
     if (settingsFromHash(launchHash)) return;
     let cancelled = false;
     void runSync().then(({ outcome, appliedLanguage }) => {
       if (cancelled || outcome !== 'applied') return;
-      reloadForSync(appliedLanguage);
+      if (consumeStartupReload()) reloadForSync(appliedLanguage);
     });
     return () => {
       cancelled = true;

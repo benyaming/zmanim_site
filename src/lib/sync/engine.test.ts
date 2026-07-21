@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { PREFS_STORAGE_KEY } from '@/components/providers/app-state';
 import { THEME_STORAGE_KEY } from '@/lib/theme';
-import { installMemoryLocalStorage } from '@/test/memory-storage';
+import { installMemoryLocalStorage, installMemorySessionStorage } from '@/test/memory-storage';
 
 import { markUserEdit, SECTION_NAMES, stampSection, type SettingsBlob } from './blob';
-import { localizedPath, reconcileTargets, type SyncTarget } from './engine';
+import { consumeStartupReload, localizedPath, reconcileTargets, type SyncTarget } from './engine';
 
 const EPOCH = new Date(0).toISOString();
 
@@ -171,6 +171,28 @@ describe('reconcileTargets', () => {
     const { outcome, appliedLanguage } = await reconcileTargets([target]);
     expect(outcome).toBe('applied');
     expect(appliedLanguage).toBe('he');
+  });
+});
+
+describe('consumeStartupReload (startup-reconcile reload guard)', () => {
+  beforeEach(() => {
+    installMemorySessionStorage();
+  });
+
+  it('allows the first startup reload but not a second in the same session', () => {
+    // First mount: a newer remote was adopted, so the reconcile reloads once.
+    expect(consumeStartupReload()).toBe(true);
+    // After the reload, the Mini App re-applies the bot profile and the reconcile
+    // wants to adopt+reload again — this is the loop, and the guard blocks it.
+    expect(consumeStartupReload()).toBe(false);
+    expect(consumeStartupReload()).toBe(false);
+  });
+
+  it('grants a fresh reload budget in a new session', () => {
+    expect(consumeStartupReload()).toBe(true);
+    expect(consumeStartupReload()).toBe(false);
+    installMemorySessionStorage(); // a new tab session
+    expect(consumeStartupReload()).toBe(true);
   });
 });
 

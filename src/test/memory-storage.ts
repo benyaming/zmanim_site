@@ -1,11 +1,11 @@
 /**
- * Functional in-memory localStorage for unit tests — the jsdom environment
+ * Functional in-memory Web Storage for unit tests — the jsdom environment
  * here exposes only an inert stub, and the sync modules need real
  * get/set/remove semantics.
  */
-export function installMemoryLocalStorage(): void {
+function memoryStorage(): Storage {
   const store = new Map<string, string>();
-  const storage: Storage = {
+  return {
     get length() {
       return store.size;
     },
@@ -15,5 +15,12 @@ export function installMemoryLocalStorage(): void {
     removeItem: (key) => void store.delete(key),
     setItem: (key, value) => void store.set(key, String(value)),
   };
-  Object.defineProperty(window, 'localStorage', { value: storage, configurable: true });
+}
+
+export function installMemoryLocalStorage(): void {
+  Object.defineProperty(window, 'localStorage', { value: memoryStorage(), configurable: true });
+}
+
+export function installMemorySessionStorage(): void {
+  Object.defineProperty(window, 'sessionStorage', { value: memoryStorage(), configurable: true });
 }
