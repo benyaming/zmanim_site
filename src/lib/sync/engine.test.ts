@@ -141,6 +141,28 @@ describe('reconcileTargets', () => {
     expect(Date.parse(state.blob!.sections.language.t)).toBeGreaterThan(Date.parse('2099-01-01T00:00:00.000Z'));
   });
 
+  it('does not adopt (reload) forever when a store lacks the language section', async () => {
+    // The reported infinite-reload bug: a logged-in web user on default English
+    // whose bot web_prefs blob has no language section -> language {null, EPOCH}.
+    // The device's language is 'en' (from the URL) at EPOCH. Adopting the null
+    // could never change what the next load reads (language is not in
+    // localStorage), so a naive tie-break re-adopts it every mount and reloads.
+    document.documentElement.lang = 'en';
+    window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify({ candleLightingOffset: 18 }));
+    const { target, state } = memoryTarget(blob({ prefs: { data: { candleLightingOffset: 18 }, t: EPOCH } }));
+
+    const first = await reconcileTargets([target]);
+    expect(first.outcome).not.toBe('applied'); // no reload
+    expect(first.appliedLanguage).toBeNull();
+    // The device fixes the store instead: its real language ('en') is pushed out.
+    expect(state.blob?.sections.language.data).toBe('en');
+
+    // A reload cannot change the URL-derived language; a second run must agree.
+    document.documentElement.lang = 'en';
+    const second = await reconcileTargets([target]);
+    expect(second.outcome).toBe('clean');
+  });
+
   it('reports the adopted language so the caller can switch locale', async () => {
     document.documentElement.lang = 'en';
     stampSection('language', '2026-07-20T09:00:00.000Z');
