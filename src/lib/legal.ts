@@ -86,7 +86,8 @@ export const PRIVACY: Record<LegalLocale, LegalDoc> = {
         heading: 'Removing your data',
         body: [
           'Sign out of Google or disconnect Telegram to drop the stored credential and stop syncing. Clearing this site’s data in your browser removes everything held on the device.',
-          'To delete the settings file from your Drive, remove the app under “Manage apps” in your Google Drive settings — Drive deletes the application folder with it. Telegram-side data is removed through zmanim_bot.',
+          'To delete the settings file from your Drive, open your Google Drive settings, go to “Manage apps”, find Zmanim and choose “Delete hidden app data” from its Options menu. Disconnecting the app only withdraws its access — it leaves the stored file in place.',
+          'Signing in with Telegram stores your settings in zmanim_bot under your Telegram user id, along with the name and username Telegram supplies. Saved locations can be deleted one by one in the bot’s /location menu; to have everything erased, ask through /report in the bot or through the contacts below.',
         ],
       },
       {
@@ -144,7 +145,8 @@ export const PRIVACY: Record<LegalLocale, LegalDoc> = {
         heading: 'מחיקת הנתונים',
         body: [
           'יציאה מחשבון Google או ניתוק טלגרם מוחקים את פרטי ההזדהות השמורים ומפסיקים את הסנכרון. מחיקת נתוני האתר בדפדפן מסירה את כל מה ששמור במכשיר.',
-          'כדי למחוק את קובץ ההגדרות מה‑Drive, הסירו את האפליקציה תחת «ניהול אפליקציות» בהגדרות Google Drive — Drive מוחק איתה את תיקיית האפליקציה. נתונים בצד טלגרם נמחקים דרך zmanim_bot.',
+          'כדי למחוק את קובץ ההגדרות מה‑Drive: היכנסו להגדרות Google Drive, עברו ל«ניהול אפליקציות», אתרו את Zmanim ובחרו «מחיקת נתוני אפליקציה מוסתרים» בתפריט האפשרויות שלה. ניתוק האפליקציה שולל ממנה את הגישה בלבד — הקובץ השמור נשאר במקומו.',
+          'ההתחברות עם טלגרם שומרת את ההגדרות ב‑zmanim_bot תחת מזהה המשתמש שלכם בטלגרם, יחד עם השם ושם המשתמש שטלגרם מספקת. מיקומים שמורים ניתן למחוק אחד‑אחד בתפריט /location של הבוט; למחיקה מלאה יש לפנות דרך /report בבוט או דרך פרטי הקשר שלהלן.',
         ],
       },
       {
@@ -202,7 +204,8 @@ export const PRIVACY: Record<LegalLocale, LegalDoc> = {
         heading: 'Удаление данных',
         body: [
           'Выход из Google или отключение Telegram удаляет сохранённые учётные данные и прекращает синхронизацию. Очистка данных сайта в браузере убирает всё, что хранится на устройстве.',
-          'Чтобы удалить файл настроек из Drive, отключите приложение в разделе «Управление приложениями» настроек Google Drive — Drive удалит вместе с ним папку приложения. Данные на стороне Telegram удаляются через zmanim_bot.',
+          'Чтобы удалить файл настроек из Drive, откройте настройки Google Drive, перейдите в «Управление приложениями», найдите Zmanim и выберите «Удалить скрытые данные приложения» в меню параметров. Отключение приложения лишь отзывает доступ — сохранённый файл при этом остаётся.',
+          'Вход через Telegram сохраняет ваши настройки в zmanim_bot под вашим идентификатором пользователя Telegram, вместе с именем и username, которые предоставляет Telegram. Сохранённые локации можно удалять по одной в меню /location бота; чтобы удалить всё, попросите об этом через /report в боте или по контактам ниже.',
         ],
       },
       {
