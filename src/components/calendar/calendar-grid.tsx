@@ -62,18 +62,25 @@ const FLICK_MIN_PX = 24;
 const SETTLE_MS = 260;
 const SETTLE_EASING = 'cubic-bezier(0.32, 0.72, 0, 1)';
 
-const SWIPE_HINT_KEY = 'zmanim:swipe-hint:v1';
+// Once the user has genuinely swiped (localStorage, permanent) the hint retires
+// for good; until then it replays once per browser session (sessionStorage), so
+// the swipe affordance stays discoverable now that mobile has no ‹ › month
+// arrows — without nagging anyone who already gets it.
+const SWIPE_LEARNED_KEY = 'zmanim:swipe-learned:v1';
+const SWIPE_HINT_SESSION_KEY = 'zmanim:swipe-hint-seen';
 
 /**
- * Show the one-time swipe-onboarding hint: touch-capable device, never shown
- * before. Read directly (not in an effect) — the app shell only renders this
- * after mount, so there's no SSR pass to disagree with.
+ * Show the swipe-onboarding hint: touch-capable device, the user hasn't swiped
+ * before, and it hasn't already played this session. Read directly (not in an
+ * effect) — the app shell only renders this after mount, so there's no SSR pass
+ * to disagree with.
  */
 function shouldShowSwipeHint(): boolean {
   if (typeof window === 'undefined') return false;
   if (!window.matchMedia('(any-pointer: coarse)').matches && !('ontouchstart' in window)) return false;
   try {
-    return window.localStorage.getItem(SWIPE_HINT_KEY) === null;
+    if (window.localStorage.getItem(SWIPE_LEARNED_KEY) !== null) return false;
+    return window.sessionStorage.getItem(SWIPE_HINT_SESSION_KEY) === null;
   } catch {
     return false;
   }
@@ -489,12 +496,22 @@ export function CalendarGrid() {
   // fades in/out. Dismissed for good once the animation has played or the user
   // has swiped for real — whichever comes first.
   const [showHint, setShowHint] = useState(shouldShowSwipeHint);
+  // Hide the hint and remember it played this session (so it doesn't re-fire on
+  // re-render, but does return next session until the user has swiped).
   const dismissHint = () => {
     setShowHint(false);
     try {
-      window.localStorage.setItem(SWIPE_HINT_KEY, '1');
+      window.sessionStorage.setItem(SWIPE_HINT_SESSION_KEY, '1');
     } catch {
-      // Best-effort — without storage the hint just replays next visit.
+      // Best-effort — without storage the hint just replays next render.
+    }
+  };
+  // Called the moment a real horizontal swipe begins: retire the hint for good.
+  const markSwipeLearned = () => {
+    try {
+      window.localStorage.setItem(SWIPE_LEARNED_KEY, '1');
+    } catch {
+      // Best-effort — without storage the hint just keeps reminding per session.
     }
   };
 
@@ -587,8 +604,9 @@ export function CalendarGrid() {
       drag.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
       if (drag.axis === 'x') {
         if (stripRef.current) stripRef.current.style.willChange = 'transform';
-        // The user is already swiping — retire the hint (its CSS animation
-        // would also override the strip transform while it plays).
+        // The user is swiping for real — they've got it: retire the hint for
+        // good (and stop it overriding the strip transform while it plays).
+        markSwipeLearned();
         if (showHint) dismissHint();
       }
     }
