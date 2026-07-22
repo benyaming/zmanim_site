@@ -80,7 +80,11 @@ export function CalendarView() {
 
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* Wrap-aware header. Mobile collapses to two lines: title + compact month
+          nav (filling what used to be an empty top-right corner), then the
+          calendar-system toggle as a full-width segmented control. ≥sm puts it
+          all on one line: title left, toggle + full nav hugging the right. */}
+      <div className="flex flex-wrap items-start gap-2 sm:gap-3">
         <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
           <PopoverTrigger asChild>
             <button
@@ -103,35 +107,56 @@ export function CalendarView() {
           </PopoverContent>
         </Popover>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <ToggleGroup
-            type="single"
-            value={mode}
-            onValueChange={(v) => v && setMode(v as 'gregorian' | 'hebrew')}
-            variant="outline"
-            size="sm"
-          >
-            <ToggleGroupItem value="gregorian">{t('civil')}</ToggleGroupItem>
-            <ToggleGroupItem value="hebrew">{t('hebrew')}</ToggleGroupItem>
-          </ToggleGroup>
+        {/* order-last + w-full drops this onto its own line under the title on
+            mobile; on ≥sm it returns to source order and hugs the right (ms-auto). */}
+        <ToggleGroup
+          type="single"
+          value={mode}
+          onValueChange={(v) => v && setMode(v as 'gregorian' | 'hebrew')}
+          variant="outline"
+          size="sm"
+          className="order-last w-full sm:order-none sm:ms-auto sm:w-fit"
+        >
+          <ToggleGroupItem value="gregorian" className="flex-1 sm:flex-initial">
+            {t('civil')}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="hebrew" className="flex-1 sm:flex-initial">
+            {t('hebrew')}
+          </ToggleGroupItem>
+        </ToggleGroup>
 
-          <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" aria-label={t('prevYear')} onClick={() => setMonthDate(prevYear(monthDate, mode))}>
-              <PrevYearIcon className="size-4" />
-            </Button>
-            <Button variant="outline" size="icon" aria-label={t('prevMonth')} onClick={() => setMonthDate(prevMonth(monthDate, mode))}>
-              <PrevIcon className="size-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={goToday}>
-              {t('today')}
-            </Button>
-            <Button variant="outline" size="icon" aria-label={t('nextMonth')} onClick={() => setMonthDate(nextMonth(monthDate, mode))}>
-              <NextIcon className="size-4" />
-            </Button>
-            <Button variant="outline" size="icon" aria-label={t('nextYear')} onClick={() => setMonthDate(nextYear(monthDate, mode))}>
-              <NextYearIcon className="size-4" />
-            </Button>
-          </div>
+        {/* ms-auto pins the nav to the title's right on mobile. Month stepping
+            there is by swipe (see CalendarGrid's swipe hint), so the ‹ › month
+            arrows are hidden on mobile — only the year jumps and Today show; the
+            full set returns on ≥sm where there's room. */}
+        <div className="ms-auto flex items-center gap-1 sm:ms-0">
+          <Button variant="outline" size="icon" aria-label={t('prevYear')} onClick={() => setMonthDate(prevYear(monthDate, mode))}>
+            <PrevYearIcon className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t('prevMonth')}
+            onClick={() => setMonthDate(prevMonth(monthDate, mode))}
+            className="hidden sm:inline-flex"
+          >
+            <PrevIcon className="size-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={goToday}>
+            {t('today')}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t('nextMonth')}
+            onClick={() => setMonthDate(nextMonth(monthDate, mode))}
+            className="hidden sm:inline-flex"
+          >
+            <NextIcon className="size-4" />
+          </Button>
+          <Button variant="outline" size="icon" aria-label={t('nextYear')} onClick={() => setMonthDate(nextYear(monthDate, mode))}>
+            <NextYearIcon className="size-4" />
+          </Button>
         </div>
       </div>
     </section>

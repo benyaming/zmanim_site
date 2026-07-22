@@ -3,8 +3,9 @@
  * and in the "What's new" popup on first load after an update.
  *
  * This file — not package.json — is the source of truth for the visible
- * version. Every PR must bump the version and prepend a release entry with the
- * PR's user-facing changes in ALL THREE locales (see CLAUDE.md → Conventions).
+ * version. Bump the version and prepend a release entry (in ALL THREE locales)
+ * for user-facing changes worth announcing; minor fixes, small UI tweaks and
+ * internal-only refactors don't need a bump (see CLAUDE.md → Conventions).
  * Notes are one to three one-line bullets naming the headline features only —
  * fold minor tweaks into a single line or drop them; never explain usage.
  * Newest release first; `APP_VERSION` is derived from the top entry.
