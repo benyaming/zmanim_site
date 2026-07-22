@@ -15,7 +15,11 @@ function alternates(path: string): Record<string, string> {
   return Object.fromEntries(routing.locales.map((locale) => [locale, localePath(locale, path)]));
 }
 
-function entriesForPath(path: string, priority: number, changeFrequency: 'daily' | 'weekly'): MetadataRoute.Sitemap {
+function entriesForPath(
+  path: string,
+  priority: number,
+  changeFrequency: 'daily' | 'weekly' | 'yearly',
+): MetadataRoute.Sitemap {
   return routing.locales.map((locale) => ({
     url: localePath(locale, path),
     changeFrequency,
@@ -29,5 +33,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...entriesForPath('/', 1, 'daily'),
     ...entriesForPath('/zmanim', 0.9, 'weekly'),
     ...CITIES.flatMap((c) => entriesForPath(`/zmanim/${c.slug}`, 0.8, 'daily')),
+    ...entriesForPath('/privacy', 0.3, 'yearly'),
+    ...entriesForPath('/terms', 0.3, 'yearly'),
   ];
 }

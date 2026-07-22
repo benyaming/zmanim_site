@@ -561,7 +561,12 @@
   "footer": {
     "disclaimer": "Зманим рассчитаны с помощью <link>kosher-zmanim</link>, ежедневное изучение — с помощью <hebcal>Hebcal</hebcal>. Для алахических решений обратитесь к местному раввину.",
     "madeBy": "Сделал Benyamin Ginzburg",
-    "source": "Код"
+    "source": "Код",
+    "privacy": "Конфиденциальность",
+    "terms": "Условия"
+  },
+  "legal": {
+    "updated": "Последнее обновление: {date}"
   },
   "language": {
     "label": "Язык",

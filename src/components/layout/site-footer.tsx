@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import type { ReactNode, SVGProps } from 'react';
 
 import { useIsMiniApp } from '@/hooks/use-mini-app';
+import { Link } from '@/i18n/navigation';
 
 import { ReleaseNotesPane } from './release-notes';
 
@@ -115,6 +116,19 @@ export function SiteFooter() {
           <GithubIcon />
           {t('source')}
         </a>
+
+        <Dot />
+
+        {/* Required to be reachable from the site for the Google OAuth app
+            (see docs/settings-sync.md), and useful regardless. */}
+        <span className="inline-flex items-center gap-2">
+          <Link href="/privacy" className="hover:text-foreground underline underline-offset-2">
+            {t('privacy')}
+          </Link>
+          <Link href="/terms" className="hover:text-foreground underline underline-offset-2">
+            {t('terms')}
+          </Link>
+        </span>
 
         <Dot />
 
