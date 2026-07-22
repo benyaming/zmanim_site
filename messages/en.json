@@ -561,7 +561,12 @@
   "footer": {
     "disclaimer": "Zmanim times computed with <link>kosher-zmanim</link>, daily learning with <hebcal>Hebcal</hebcal>. For halachic decisions, consult your local rabbinic authority.",
     "madeBy": "Made by Benyamin Ginzburg",
-    "source": "Source"
+    "source": "Source",
+    "privacy": "Privacy",
+    "terms": "Terms"
+  },
+  "legal": {
+    "updated": "Last updated {date}"
   },
   "language": {
     "label": "Language",
