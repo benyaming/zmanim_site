@@ -15,7 +15,7 @@ import {
   stampSection,
   type SettingsBlob,
 } from '@/lib/sync/blob';
-import { GOOGLE_AUTH_EVENT, loadGoogleAccount } from '@/lib/google/web-login';
+import { clearLegacyGoogleKeys, GOOGLE_AUTH_EVENT, loadGoogleAccount } from '@/lib/google/web-login';
 import {
   adoptAccountSettings,
   applyImportedSettings,
@@ -91,11 +91,16 @@ export function SettingsSync() {
   // Startup reconcile. Adopting newer remote sections reloads the page so the
   // providers re-read them; a pending import skips this — the user decides
   // first. Adopting copies each remote section's stamp, so a re-run normally
-  // sees them equal and won't re-adopt — but that invariant breaks inside the
-  // Telegram Mini App (TelegramMiniApp re-applies the bot's structured location
-  // each mount, defeating the fingerprint tie-break), so we also cap the
-  // startup reload to once per session (consumeStartupReload) to stop the loop.
+  // sees them equal and won't re-adopt. The Mini App used to break that (it
+  // re-applied the bot's structured location each mount, defeating the
+  // fingerprint tie-break); it now only seeds a device that has none, but the
+  // startup reload stays capped at once per session (consumeStartupReload) as
+  // the backstop.
   useEffect(() => {
+    // Purge the Drive-era localStorage keys on the way in (see web-login.ts):
+    // nothing reads them, and one held an access token. Unconditional, because
+    // a device that used that flow may never touch Google sign-in again.
+    clearLegacyGoogleKeys();
     if (settingsFromHash(launchHash)) return;
     let cancelled = false;
     void runSync().then(({ outcome, appliedLanguage }) => {
@@ -250,7 +255,14 @@ export function SettingsSync() {
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{t('conflictTitle')}</DialogTitle>
-          <DialogDescription>{t('conflictBody', { account: accountName })}</DialogDescription>
+          {/* Two ways in, two explanations: a newly connected account whose
+              data clashes, or a push that would delete content the store
+              holds. The choices are the same either way. */}
+          <DialogDescription>
+            {t(group[0].reason === 'removes-data' ? 'conflictBodyRemoves' : 'conflictBody', {
+              account: accountName,
+            })}
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="space-y-1">

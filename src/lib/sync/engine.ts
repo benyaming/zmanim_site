@@ -10,6 +10,11 @@
  *  - The bot's Mongo (web_sync) — via Sign in with Google, for users without
  *    Telegram.
  *
+ * At most ONE account ever syncs (activeSyncTargets): the two Mini App stores
+ * share a single Telegram account, and on the website a connected Telegram
+ * account sidelines a signed-in Google one. Two accounts would mirror settings
+ * into both and bridge data between devices that use only one of them.
+ *
  * A run pulls every target, merges each blob's sections with the local ones
  * taking the newest of each, adopts the sections the merge changed (the caller
  * reloads — providers read localStorage at mount), and pushes the merged blob
@@ -37,6 +42,7 @@ import {
   blobStamps,
   changedSections,
   clearDirty,
+  clearLineage,
   collectSettingsBlob,
   deserializeSettingsBlob,
   dirtySections,
@@ -47,6 +53,7 @@ import {
   prefsHoldUserData,
   recordLineage,
   recordSyncedPrefs,
+  removedUserItems,
   restampDirtySections,
   sectionFingerprint,
   SECTION_NAMES,
@@ -122,21 +129,43 @@ export async function activeSyncTargets(): Promise<SyncTarget[]> {
     }
     if (botSyncEnabled() && initData) targets.push(botTarget(initData, account));
   } else {
-    const webAuth = loadTelegramWebAuth();
-    if (botSyncEnabled() && webAuth) {
-      targets.push(botTarget({ authData: { ...webAuth } }, String(webAuth.id), webAuthDisplayName(webAuth)));
+    // Null when bot sync is unconfigured: an auth we can't sync with isn't a
+    // connected account, and must not sideline Google below.
+    const telegramAuth = botSyncEnabled() ? loadTelegramWebAuth() : null;
+    if (telegramAuth) {
+      targets.push(
+        botTarget({ authData: { ...telegramAuth } }, String(telegramAuth.id), webAuthDisplayName(telegramAuth)),
+      );
     }
     // Google belongs to the plain website only. Inside the Mini App the bot is
     // already the store (via initData), so there is nothing for it to add.
     const googleAccount = loadGoogleAccount();
     if (googleAccount) {
-      targets.push({
-        id: 'google-websync',
-        account: googleAccount.key,
-        label: googleAccountDisplayName(googleAccount) || null,
-        pull: () => pullFromGoogleWebSync(googleAccount),
-        push: (blob) => pushToGoogleWebSync(googleAccount, blob),
-      });
+      // EXACTLY ONE account syncs per device, and this is where that holds —
+      // not the account panel, which only decides what's offered. Two live
+      // stores would mirror every setting into two unrelated accounts and make
+      // this device a bridge copying data between a Telegram-only device and a
+      // Google-only one. Telegram wins: it is the authoritative store for its
+      // users (it also carries the structured location / candle offset /
+      // havdalah opinion the bot itself models), and it is the only account
+      // inside the Mini App. Google stays signed in but dormant — dropping the
+      // credential would delete a connection the user never asked to end.
+      if (telegramAuth) {
+        // A dormant store misses every push, so its stamps go stale while the
+        // other account moves on. Forget its lineage: whenever it becomes
+        // active again (Telegram disconnected), it must reconcile as a fresh
+        // connect instead of blind-pushing this device's state over settings
+        // another device may have written meanwhile.
+        clearLineage('google-websync');
+      } else {
+        targets.push({
+          id: 'google-websync',
+          account: googleAccount.key,
+          label: googleAccountDisplayName(googleAccount) || null,
+          pull: () => pullFromGoogleWebSync(googleAccount),
+          push: (blob) => pushToGoogleWebSync(googleAccount, blob),
+        });
+      }
     }
   }
   return targets;
@@ -164,6 +193,13 @@ export interface SyncConflict {
   account: string;
   label: string | null;
   remote: SettingsBlob;
+  /**
+   * Why the store is quarantined, which is what the dialog explains:
+   * 'connect' — a newly connected account whose data clashes with this device's.
+   * 'removes-data' — pushing would drop personal dates or saved locations the
+   * store holds (see the destructive-push guard in reconcileTargets).
+   */
+  reason: 'connect' | 'removes-data';
 }
 
 /** Fired (with `detail: SyncConflict[]`) when a run finds connect conflicts. */
@@ -221,9 +257,19 @@ function conflictingSections(
     const l = local.sections[name];
     const r = remote.sections[name];
     if (l.data === null || r.data === null) return false;
-    if (Date.parse(l.t) <= 0 && !realUnstamped[name]) return false;
+    if (nothingToLose(local, name, realUnstamped)) return false;
     return sectionFingerprint(name, l.data) !== sectionFingerprint(name, r.data);
   });
+}
+
+/**
+ * A local section the connect gate may replace without asking: never stamped on
+ * this device, and its content doesn't vouch for it either (mount-written
+ * defaults, the URL-derived language). "May replace" is only sound if the
+ * account's copy then actually WINS the merge — see the yield below.
+ */
+function nothingToLose(local: SettingsBlob, name: SectionName, realUnstamped: Record<SectionName, boolean>): boolean {
+  return Date.parse(local.sections[name].t) <= 0 && !realUnstamped[name];
 }
 
 /**
@@ -265,9 +311,9 @@ export async function reconcileTargets(
   // stamp at all. Theme is persisted only by an explicit pick, so presence
   // alone is deliberate; a11y is judged against its mount-written defaults;
   // prefs by its user-data fields — but on the web only, because the Mini App
-  // writes the bot's structured location into prefs on every mount, which
-  // would read as "user data" and raise a bogus first-run conflict against
-  // the bot's own blob. Language is URL-derived and never counts.
+  // seeds the bot's structured location into prefs on a device that has none,
+  // which would read as "user data" and raise a bogus first-run conflict
+  // against the bot's own blob. Language is URL-derived and never counts.
   const realUnstamped: Record<SectionName, boolean> = {
     prefs: !isTelegramMiniApp() && prefsHoldUserData(local.sections.prefs.data),
     a11y: a11yHoldsUserData(local.sections.a11y.data),
@@ -277,26 +323,63 @@ export async function reconcileTargets(
   const conflicts: SyncConflict[] = [];
   const settled: typeof results = [];
   // Lineage recording is DEFERRED until this run settles: the record is what
-  // un-gates blind pushes (canPushBlind), so writing it here — while the
-  // merged push and adoption are still ahead — would let a concurrently firing
-  // change-watcher push slip its pre-merge snapshot over the store and, if its
-  // request lands last, erase remote sections the merge was about to keep.
+  // un-quarantines the store, so writing it here — while the merged push and
+  // adoption are still ahead — would let a concurrently firing run treat the
+  // store as settled and slip its own pre-merge snapshot over it, erasing
+  // remote sections this merge was about to keep.
   const pendingLineage: { targetId: string; account: string }[] = [];
+  // The blobs of the freshly connected stores the gate waved through — the ones
+  // whose reconcile it just promised is lossless.
+  const freshlyConnected: SettingsBlob[] = [];
   for (const { target, blob } of results) {
     if (target.account !== null && blob !== PULL_FAILED && lineageAccount(target.id) !== target.account) {
       // No extra "has anything ever stamped" guard: a conflicting section
       // already requires a real (stamped or content-vouched) local value.
       if (blob !== null && conflictingSections(local, blob, realUnstamped)) {
-        conflicts.push({ targetId: target.id, account: target.account, label: target.label ?? null, remote: blob });
+        conflicts.push({
+          targetId: target.id,
+          account: target.account,
+          label: target.label ?? null,
+          remote: blob,
+          reason: 'connect',
+        });
         continue;
       }
       pendingLineage.push({ targetId: target.id, account: target.account });
+      if (blob !== null) freshlyConnected.push(blob);
     }
     settled.push({ target, blob });
   }
   const commitLineage = () => {
     for (const { targetId, account } of pendingLineage) recordLineage(targetId, account);
   };
+
+  // Make the gate's promise true. Waving a connect through means "this is
+  // lossless: the account keeps what it holds, the device keeps what only it
+  // has" — but a section the gate judged as having nothing to lose could still
+  // WIN the merge against the account's copy. Both sides commonly sit at the
+  // EPOCH (prefs is stamped only when the user really edits it, so a device
+  // that just signed in and pushed stores it unstamped), and the equal-stamp
+  // tie-break then decides by fingerprint order — arbitrarily. Whenever it
+  // picked the device, its mount-written defaults were pushed over the
+  // account's real settings — personal dates and all — with no dialog: exactly
+  // the silent loss the gate exists to prevent, and unrecoverable.
+  //
+  // So yield those sections: dropping them from the local side of the merge
+  // makes the account's copy win by presence (absent never beats present) at
+  // any stamp, and it is adopted here instead of overwriting the account. Only
+  // sections the gate already declared free to replace are yielded, so a
+  // device with real data still raises a conflict and is never silently reset.
+  for (const name of SECTION_NAMES) {
+    if (local.sections[name].data === null || !nothingToLose(local, name, realUnstamped)) continue;
+    const localFingerprint = sectionFingerprint(name, local.sections[name].data);
+    const accountDiffers = freshlyConnected.some(
+      (remote) =>
+        remote.sections[name].data !== null &&
+        sectionFingerprint(name, remote.sections[name].data) !== localFingerprint,
+    );
+    if (accountDiffers) local.sections[name] = { ...local.sections[name], data: null };
+  }
   const remotes = settled.map((r) => r.blob).filter((b): b is SettingsBlob => b !== null && b !== PULL_FAILED);
 
   // Now that we've seen the newest remote stamps, re-stamp the sections the
@@ -328,7 +411,43 @@ export async function reconcileTargets(
   const readable = settled.filter(
     (r): r is { target: SyncTarget; blob: SettingsBlob | null } => r.blob !== PULL_FAILED,
   );
-  const stale = readable.filter(({ blob }) => !blob || blobFingerprint(blob) !== mergedFingerprint);
+
+  // Never let a push destroy irreplaceable content a store holds. Stamps order
+  // whole SECTIONS, so a device whose prefs are merely newer wins the section
+  // outright — personal dates and saved locations included, even ones another
+  // device added that this one has never seen. ("Add a yahrzeit on the phone,
+  // change the candle offset on the laptop, sync" is enough: the laptop's prefs
+  // are newer, so the yahrzeit goes.) Losing a preference to last-write-wins is
+  // recoverable — the user sets it again; losing a date someone typed is not.
+  //
+  // So a merge that would drop items the store holds is not pushed: it becomes
+  // a conflict for the user to settle, the same dialog a fresh connect raises.
+  // The exemption is `dirty` prefs, which means the user just answered this
+  // question — "keep this device" marks it — so the answer isn't asked twice
+  // and their deletion propagates. (A deliberate delete does prompt once, here
+  // on the device it was made: without knowing which items this device ever
+  // synced, a delete and a never-seen addition look identical from the blob.)
+  const destructive = new Set<SyncTarget['id']>();
+  if (!dirty.includes('prefs')) {
+    for (const { target, blob } of readable) {
+      if (blob === null || target.account === null) continue;
+      if (conflicts.some((c) => c.targetId === target.id)) continue; // already quarantined
+      if (removedUserItems(blob, merged) === 0) continue;
+      destructive.add(target.id);
+      conflicts.push({
+        targetId: target.id,
+        account: target.account,
+        label: target.label ?? null,
+        remote: blob,
+        reason: 'removes-data',
+      });
+    }
+  }
+
+  const stale = readable.filter(
+    ({ target, blob }) =>
+      !destructive.has(target.id) && (!blob || blobFingerprint(blob) !== mergedFingerprint),
+  );
   let pushedOk = false;
   if (stale.length > 0) {
     const pushed = await Promise.all(stale.map(({ target }) => target.push(merged)));
@@ -459,21 +578,21 @@ export function keepDeviceSettings(conflicts: SyncConflict[]): void {
 }
 
 /**
- * Whether a store may be written without pulling first: its account matches
- * the recorded lineage (or it carries no identity). A store still awaiting its
- * connect reconcile — or a conflict choice — must not be pushed to blind.
+ * Send the current local settings out after a change (callers stamp the edited
+ * sections first). This is a full reconcile — pull, merge, push — with adoption
+ * switched off, NOT a blind write: it used to push the local blob straight over
+ * every store, which meant an edit here silently destroyed anything another
+ * device had added since this one last synced (a section is won whole, so the
+ * newer prefs take their personal dates with them). Pulling first lets the
+ * merge keep both sides and lets the destructive-push guard speak up.
+ *
+ * Adoption stays off because this runs while the user is using the app: the
+ * merged blob still goes out, but newer remote sections are not written to
+ * localStorage under the mounted providers (that needs a reload, which the
+ * startup reconcile owns). They are picked up on the next load.
  */
-export function canPushBlind(target: SyncTarget): boolean {
-  return target.account === null || lineageAccount(target.id) === target.account;
-}
-
-/** Write the current local settings to every store (callers stamp sections first). */
 export async function pushLocalSettings(): Promise<void> {
-  const targets = (await activeSyncTargets()).filter(canPushBlind);
-  if (targets.length === 0) return;
-  const local = collectSettingsBlob();
-  recordSyncedPrefs(sectionFingerprint('prefs', local.sections.prefs.data));
-  await Promise.all(targets.map((target) => target.push(local)));
+  await runSync({ allowApply: false });
 }
 
 /**
@@ -541,13 +660,14 @@ const STARTUP_RELOAD_KEY = 'zmanim:sync-startup-reloaded:v1';
  * the same session only ever means the stamp-copy convergence failed and we're
  * looping.
  *
- * That happens inside the Telegram Mini App: `TelegramMiniApp` re-applies the
- * bot's structured location on every mount, which can disagree with the
- * `web_prefs` blob's location and lose the fingerprint tie-break — so reconcile
- * re-adopts and reloads forever (until a debounced push happens to win a race).
- * This caps that to a single reload; the residual difference then converges
- * silently via the normal push. User-gesture reloads (Sync now, import) don't
- * go through here, so they're unaffected.
+ * That used to happen inside the Telegram Mini App, which re-applied the bot's
+ * structured location on every mount: it could disagree with the `web_prefs`
+ * blob's location and lose the fingerprint tie-break, so reconcile re-adopted
+ * and reloaded forever (until a debounced push happened to win a race). The
+ * bot's location now only seeds a device that has none, so that driver is gone
+ * — but this cap stays as the backstop for any future mount-time write. The
+ * residual difference converges silently via the normal push. User-gesture
+ * reloads (Sync now, import) don't go through here, so they're unaffected.
  */
 export function consumeStartupReload(): boolean {
   try {

@@ -76,8 +76,23 @@ export function SyncBackupTool() {
     }
   };
 
+  /**
+   * One sync account at a time: each provider's sign-in is withheld while the
+   * other is connected. Two connected stores would mirror every setting into
+   * two unrelated accounts, and a device holding both would silently bridge
+   * data between a Telegram-only device and a Google-only one. Switching is
+   * therefore disconnect-then-sign-in, which also makes it plain what happens
+   * to the data.
+   *
+   * This panel only decides what's OFFERED. The rule itself is enforced in
+   * lib/sync/engine.ts (activeSyncTargets), which syncs at most one account no
+   * matter what credentials a device holds — so a device that paired both
+   * before this gate is covered too: Telegram wins there, and the Google
+   * account is shown here as connected-but-inactive rather than pretending to
+   * sync. Keep the precedence below in step with the engine's.
+   */
   // Mount Telegram's Login Widget while signed out (plain site only).
-  const showTelegramLogin = !isMiniApp && telegramWebLoginConfigured() && !webAuth;
+  const showTelegramLogin = !isMiniApp && telegramWebLoginConfigured() && !webAuth && !googleAccount;
   useEffect(() => {
     if (!showTelegramLogin || !widgetRef.current) return;
     return mountTelegramLoginWidget(widgetRef.current, (auth) => {
@@ -93,6 +108,13 @@ export function SyncBackupTool() {
    */
   const showGoogleSection = !isMiniApp && googleLoginConfigured();
 
+  /**
+   * Signed in with Google, but the engine won't sync it: a Telegram account is
+   * connected and takes precedence (activeSyncTargets). Only reachable on a
+   * device that paired both before the sign-ins became mutually exclusive.
+   */
+  const googleSidelined = Boolean(googleAccount && webAuth);
+
   // React to sign-in / sign-out / invalidation from anywhere (e.g. a sync that
   // hit a 401 after a bot-token rotation drops the credential) so an open panel
   // reflects it live instead of showing a stale "signed in".
@@ -104,7 +126,7 @@ export function SyncBackupTool() {
 
   // Render Google's official sign-in button while signed out. Signing in is
   // the only Google interaction — after it, syncs go through the bot.
-  const showGoogleSignIn = showGoogleSection && !googleAccount;
+  const showGoogleSignIn = showGoogleSection && !googleAccount && !webAuth;
   useEffect(() => {
     if (!showGoogleSignIn || !googleButtonRef.current) return;
     return mountGoogleSignInButton(googleButtonRef.current, (account) => {
@@ -203,9 +225,9 @@ export function SyncBackupTool() {
             </>
           ) : (
             <>
-              <p className="text-muted-foreground text-sm">{t('tgHint')}</p>
+              <p className="text-muted-foreground text-sm">{googleAccount ? t('tgBlocked') : t('tgHint')}</p>
               {/* The Login Widget script renders its iframe button in here. */}
-              <div ref={widgetRef} className="flex min-h-10 justify-center" />
+              {showTelegramLogin && <div ref={widgetRef} className="flex min-h-10 justify-center" />}
             </>
           )}
         </div>
@@ -240,11 +262,17 @@ export function SyncBackupTool() {
                     )}
                   </div>
                 </div>
+                {/* No "Sync now" while sidelined: the run would sync Telegram,
+                    not this account — offering it under the Google heading
+                    would claim a sync that never happens. */}
+                {googleSidelined && <p className="text-muted-foreground text-sm">{t('googleInactive')}</p>}
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" disabled={busy} onClick={() => void syncNow(false)}>
-                    <RefreshCw className="size-4" />
-                    {t('syncNow')}
-                  </Button>
+                  {!googleSidelined && (
+                    <Button variant="outline" size="sm" className="flex-1" disabled={busy} onClick={() => void syncNow(false)}>
+                      <RefreshCw className="size-4" />
+                      {t('syncNow')}
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -268,23 +296,27 @@ export function SyncBackupTool() {
               </>
             ) : (
               <>
-                <p className="text-muted-foreground text-sm">{t('googleHint')}</p>
-                {/* Google's own rendered button owns the sign-in gesture. */}
-                <div ref={googleButtonRef} className="flex justify-center" />
-                <p className="text-muted-foreground text-xs">
-                  {t.rich('googleStored', {
-                    link: (chunks) => (
-                      <Link
-                        href="/privacy"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:text-foreground underline underline-offset-2"
-                      >
-                        {chunks}
-                      </Link>
-                    ),
-                  })}
-                </p>
+                <p className="text-muted-foreground text-sm">{webAuth ? t('googleBlocked') : t('googleHint')}</p>
+                {showGoogleSignIn && (
+                  <>
+                    {/* Google's own rendered button owns the sign-in gesture. */}
+                    <div ref={googleButtonRef} className="flex justify-center" />
+                    <p className="text-muted-foreground text-xs">
+                      {t.rich('googleStored', {
+                        link: (chunks) => (
+                          <Link
+                            href="/privacy"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="hover:text-foreground underline underline-offset-2"
+                          >
+                            {chunks}
+                          </Link>
+                        ),
+                      })}
+                    </p>
+                  </>
+                )}
               </>
             )}
           </div>

@@ -44,15 +44,25 @@ agreed on lives in `zmanim:sync-synced:v1`.
 - **Per-section merge, newest of each wins.** The reconcile merges every blob
   section-by-section — so changing the theme on one device can never revert
   the language set on another. (Whole-blob last-write-wins did exactly that;
-  this shape is the fix.) On an *equal* section stamp a deterministic
-  fingerprint tie-break picks the winner, so two diverged devices always
-  converge instead of standing off.
+  this shape is the fix.) On an *equal* section stamp — two versions claiming
+  the same moment, with no history to order them — the side carrying **more
+  irreplaceable user content** wins (personal-date people and occasions, saved
+  locations: `userItemCount`), and only then does a deterministic fingerprint
+  tie-break decide, so two diverged devices always converge instead of standing
+  off. Content beats fingerprint order because fingerprint order is content
+  sorting, i.e. a coin flip, and losing it costs data that exists nowhere else;
+  a genuine deletion always bumps the stamp, so a side that is poorer *at an
+  equal stamp* is never someone's deliberate delete — it is a copy that never
+  had the data.
 - **Adopting is loop-safe.** Adopting a section copies its remote stamp
   locally, so the post-reload run normally sees them equal and can't re-adopt.
-  The one place that invariant breaks is the Telegram Mini App: `TelegramMiniApp`
-  re-applies the bot's *structured* location on every mount, which can disagree
-  with the `web_prefs` blob and lose the fingerprint tie-break, so the reconcile
-  re-adopts and reloads on a loop. A session guard (`consumeStartupReload`, a
+  The place that invariant used to break was the Telegram Mini App, where
+  `TelegramMiniApp` re-applied the bot's *structured* location on every mount:
+  it could disagree with the `web_prefs` blob and lose the fingerprint
+  tie-break, so the reconcile re-adopted and reloaded on a loop. That driver is
+  gone — the bot's location now only seeds a device that has none — but the
+  guard stays, since any future mount-time write would reopen it. A session
+  guard (`consumeStartupReload`, a
   `sessionStorage` flag) caps the automatic startup reconcile to **one reload per
   tab session**; the residual difference then converges silently via the normal
   push. Manual "Sync now" and imports don't go through the guard.
@@ -65,7 +75,14 @@ agreed on lives in `zmanim:sync-synced:v1`.
   On a mismatch the store is **quarantined** — not merged from, not pushed to
   (including the debounced change push) — until the reconcile is lossless or
   the user chooses. Empty store → local seeds it; equal content or a
-  section-disjoint blob → merges silently; both sides holding real, differing
+  section-disjoint blob → merges silently (and "the account wins" is literal:
+  a section the gate judged as having nothing to lose is **dropped from the
+  local side of the merge**, so the account's copy takes it by presence. Leaving
+  it to the equal-stamp fingerprint tie-break caused real data loss — both sides
+  commonly sit at the EPOCH, since prefs is stamped only on a genuine edit, and
+  whenever the device's mount-written defaults happened to sort higher they were
+  pushed over the account's settings, personal dates and all, with no dialog);
+  both sides holding real, differing
   data → a dialog asks which side wins ("use account" re-pulls the store —
   the snapshot behind a long-open dialog may be stale — and adopts every
   section the account holds *now*; a failed re-pull aborts the choice rather
@@ -94,6 +111,20 @@ agreed on lives in `zmanim:sync-synced:v1`.
   "Petah Tikva" / "Петах-Тиква" / "פתח תקווה"), so keeping them would make two
   devices in one place sync forever. Coordinates, elevation, timezone and any
   user `customLabel` still count.
+- **A push never destroys irreplaceable content.** Stamps order whole
+  *sections*, so a device whose prefs are merely newer wins the section
+  outright — carrying away personal dates or saved locations another device
+  added that this one never saw (add a yahrzeit on the phone, change the candle
+  offset on the laptop, sync). A preference lost to last-write-wins can be set
+  again; a date someone typed cannot. So if the merged blob would drop user
+  items a store holds (`removedUserItems`, compared by item id — a rename is an
+  edit, not a removal), that store is **not pushed to**: the run reports a
+  conflict with `reason: 'removes-data'` and the same dialog asks. The
+  exemption is a *dirty* prefs section, i.e. the user just answered this
+  question ("keep this device" marks it), so the answer isn't asked twice.
+  A deliberate deletion therefore prompts once, on the device it was made:
+  without tracking which items this device ever synced, a delete and a
+  never-seen addition are indistinguishable from the blob alone.
 - **Legacy v1 blobs migrate on read** — each field becomes a section sharing
   the old single `updatedAt`.
 - **Sync happens on load and on change, not live.** A change on device A shows
@@ -112,6 +143,28 @@ agreed on lives in `zmanim:sync-synced:v1`.
 path next to the Telegram Login Widget. It is a **plain-website** feature (gated
 off inside the Mini App, where the bot is already the store via initData) and
 it uses GIS's **ID-token** flow, not the access-token flow.
+
+**One account at a time**, enforced in three places, because two connected
+stores mirror every setting into two unrelated accounts and make the device
+holding both a bridge that copies data between a Telegram-only device and a
+Google-only one:
+
+1. The panel withholds each provider's sign-in control while the other is
+   connected (a line naming what to disconnect takes its place), so switching
+   accounts is disconnect-then-sign-in.
+2. `exchangeGoogleCredential` refuses a Google sign-in outright while a Telegram
+   auth is stored — the credential never comes into existence, and the ID token
+   is never sent to the bot.
+3. **`activeSyncTargets` is where it actually holds**: it returns at most one
+   account's stores. A connected Telegram account sidelines a signed-in Google
+   one (Telegram wins — it is the authoritative store for its users, carrying
+   the structured location / candle offset / havdalah opinion too, and it is the
+   only account inside the Mini App). This covers devices that paired both
+   before the gate existed; the Google credential is *kept* (dropping it would
+   end a connection the user never asked to end) but dormant, and the panel
+   shows it as connected-but-inactive. Its lineage is cleared while dormant, so
+   if it ever becomes active again it reconciles as a fresh connect instead of
+   blind-pushing over settings another device may have written meanwhile.
 
 Why not Google Drive, which an earlier version used: a browser is never issued
 a refresh token, and minting a Google **access** token always shows UI, so
@@ -150,9 +203,10 @@ keyed by `key`.
 
 The bot's Mongo is the authoritative store for Telegram users — **all**
 configurable things land there as the `web_prefs` blob (on top of the three
-structured fields the bot itself models: location, cl_offset,
-havdala_opinion, which keep their existing two-way sync and chat
-confirmations).
+structured fields the bot itself models: location, cl_offset, havdala_opinion.
+The offset and the opinion keep their two-way sync and chat confirmations; the
+**location is never written by the app** — it only seeds a device that has none.
+See [`telegram-mini-app.md`](telegram-mini-app.md)).
 
 ## Engine
 
@@ -166,9 +220,13 @@ confirmations).
   check is quarantined instead (see the connect rule above); when both sides
   hold clashing data the run reports a conflict, announced app-wide
   (`SYNC_CONFLICT_EVENT`) and resolved by the provider's choice dialog.
-- **On change**: any synced setting changing stamps `updatedAt` and pushes
-  the fresh localStorage snapshot to all stores, debounced (the providers'
-  own persist effects run first, so the pushed blob is never stale).
+- **On change**: any synced setting changing stamps its section and runs the
+  same reconcile with adoption switched off, debounced (the providers' own
+  persist effects run first, so the pushed blob is never stale). It pulls first
+  on purpose — a blind write of the local blob would destroy whatever another
+  device had added since this one last synced, because a section is won whole.
+  Newer remote sections still aren't written to localStorage here (the mounted
+  providers would keep showing the old values); the next load adopts them.
 - **Import** (link `#settings=…` or file): asks first, then applies with a
   fresh stamp so the import wins everywhere on the next sync.
 

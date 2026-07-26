@@ -21,18 +21,34 @@
 
 import { clearLineage } from '@/lib/sync/blob';
 import { botApiBase } from '@/lib/telegram/bot-sync';
+import { loadTelegramWebAuth } from '@/lib/telegram/web-login';
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 const GSI_SRC = 'https://accounts.google.com/gsi/client';
 /** Holds the sync credential (key + sig) and the display profile. */
 const ACCOUNT_KEY = 'zmanim:google-account:v2';
-/** Orphaned keys from the old Drive flow — cleared on sign-out for hygiene. */
+/**
+ * Keys written by the short-lived Google **Drive** store (on main between 1.22
+ * and 1.24), which no code reads any more. One of them held a Drive access
+ * token — long expired, but a bearer credential has no business outliving the
+ * feature — so they are purged outright on any load rather than only when the
+ * user happens to sign out of the new flow.
+ */
 const LEGACY_KEYS = [
   'zmanim:google-account:v1',
   'zmanim:google-sync:v1',
   'zmanim:google-token:v1',
   'zmanim:google-silent-denied:v1',
 ];
+
+/** Drop the Drive-era leftovers. Called once at startup; safe to repeat. */
+export function clearLegacyGoogleKeys(): void {
+  try {
+    for (const key of LEGACY_KEYS) window.localStorage.removeItem(key);
+  } catch {
+    // Storage unavailable — nothing to clean up.
+  }
+}
 
 /** Fired after sign-in / sign-out so listeners (e.g. the sync engine) react. */
 export const GOOGLE_AUTH_EVENT = 'zmanim:google-auth';
@@ -161,6 +177,13 @@ function loadGsi(): Promise<boolean> {
 async function exchangeGoogleCredential(credential: string): Promise<GoogleAccount | null> {
   const base = botApiBase();
   if (!base) return null;
+  // One sync account per device (see engine.activeSyncTargets). A connected
+  // Telegram account wins, so a Google sign-in on top of it would be dead
+  // weight: stored, shown as signed in, never synced. Refuse it here rather
+  // than only hiding the button — this is the last point before the credential
+  // exists, and the token is simply dropped (never sent to the bot, so no row
+  // is created for an account that isn't going to be used).
+  if (loadTelegramWebAuth()) return null;
   try {
     const res = await fetch(`${base}/google-key`, {
       method: 'POST',
@@ -251,7 +274,6 @@ export function signOutFromGoogle(): void {
   memoryAccount = null;
   try {
     window.localStorage.removeItem(ACCOUNT_KEY);
-    for (const key of LEGACY_KEYS) window.localStorage.removeItem(key);
   } catch {
     // Nothing to clean up.
   }
