@@ -77,7 +77,7 @@ jobs:
             NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_TG_BOT_API_URL=${{ vars.NEXT_PUBLIC_TG_BOT_API_URL }}
             NEXT_PUBLIC_TG_BOT_USERNAME=${{ vars.NEXT_PUBLIC_TG_BOT_USERNAME }}
-            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
