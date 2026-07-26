@@ -15,6 +15,7 @@ import {
   stampSection,
   type SettingsBlob,
 } from '@/lib/sync/blob';
+import { GOOGLE_AUTH_EVENT, loadGoogleAccount } from '@/lib/google/web-login';
 import { applyImportedSettings, consumeStartupReload, pushLocalSettings, reloadForSync, runSync } from '@/lib/sync/engine';
 import { settingsFromHash } from '@/lib/sync/transfer';
 
@@ -80,6 +81,30 @@ export function SettingsSync() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // A Google sign-in that lands mid-session adds a store the startup reconcile
+  // never saw. Reconcile it here — NOT from the account panel's callback, which
+  // is skipped if the user closes the dialog while the sign-in is in flight.
+  // Without this, the change watcher's push-only sync would upload local
+  // settings to the freshly connected store without first pulling, overwriting
+  // its (possibly sole) remote copy. Fires on the auth event, not on sign-out
+  // (guarded on an account actually being present).
+  useEffect(() => {
+    const onGoogleAuth = () => {
+      if (!loadGoogleAccount()) return; // sign-out / invalidation — nothing to pull
+      void runSync().then(({ outcome, appliedLanguage }) => {
+        // Reload whenever remote sections were adopted, WITHOUT the startup
+        // one-reload guard: runSync already wrote them to localStorage, and the
+        // mounted providers still hold the stale values — skipping the reload
+        // would let a later edit persist that stale state over what was just
+        // applied. This is a one-shot, user-initiated event (not the mount
+        // loop), and adopting copies the remote stamps, so it can't loop.
+        if (outcome === 'applied') reloadForSync(appliedLanguage);
+      });
+    };
+    window.addEventListener(GOOGLE_AUTH_EVENT, onGoogleAuth);
+    return () => window.removeEventListener(GOOGLE_AUTH_EVENT, onGoogleAuth);
   }, []);
 
   // Change watcher: any synced value changing (after the mount pass) stamps

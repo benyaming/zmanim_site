@@ -62,6 +62,15 @@ export function botSyncEnabled(): boolean {
   return API_BASE !== '';
 }
 
+/**
+ * The bot API base, '' when unset. The same backend also stores the settings
+ * of website users who sign in with Google (lib/sync/google-websync.ts) — the
+ * bot is the store, keyed by a value it derives from the Google account.
+ */
+export function botApiBase(): string {
+  return API_BASE;
+}
+
 function parseLocation(raw: unknown): BotLocation | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const { lat, lng, name, elevation } = raw as Record<string, unknown>;

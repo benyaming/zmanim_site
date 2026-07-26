@@ -33,11 +33,11 @@ describe('legal documents', () => {
   });
 
   /** Google requires the policy to disclose how Google user data is handled. */
-  it('privacy policy covers Google sign-in and Drive in every locale', () => {
+  it('privacy policy covers Google sign-in and where the data is stored', () => {
     for (const locale of LOCALES) {
       const text = JSON.stringify(PRIVACY[locale]);
       expect(text).toContain('Google');
-      expect(text).toContain('Drive');
+      expect(text).toContain('Zmanim'); // discloses the bot service that stores it
     }
   });
 

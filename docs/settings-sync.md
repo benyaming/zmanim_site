@@ -1,8 +1,10 @@
 # Settings sync & backup
 
 Everything configurable is persisted locally (localStorage) and, optionally,
-synced across devices — with **no dedicated user-data backend**. One portable
-snapshot, several interchangeable stores, last-write-wins.
+synced across devices. One portable snapshot, several interchangeable stores,
+last-write-wins. On its own the site has **no user-data backend** — the stores
+are the user's own accounts: Telegram (via `zmanim_bot`) or Google. Signing in
+with Google syncs through the same `zmanim_bot` service, keyed to the account.
 
 ## The blob
 
@@ -76,8 +78,48 @@ agreed on lives in `zmanim:sync-synced:v1`.
 | --- | --- | --- | --- |
 | Telegram CloudStorage | Mini App users (Bot API 6.9+) | implicit | Telegram's own per-user KV store |
 | Bot Mongo (`web_prefs`) | Mini App **and** site users with Telegram | initData / Login Widget payload | `zmanim_bot`'s user document |
-| Google Drive appDataFolder | users without Telegram | GIS OAuth (`drive.appdata`, non-sensitive) | the user's own Drive |
+| Bot Mongo (`web_sync`) | site users without Telegram, via Google | Google key + signature | `zmanim_bot`'s `web_sync` collection |
 | Link / file export | everyone | none | wherever the user puts it |
+
+**Sign in with Google** (`src/lib/google/web-login.ts`) is the second account
+path next to the Telegram Login Widget. It is a **plain-website** feature (gated
+off inside the Mini App, where the bot is already the store via initData) and
+it uses GIS's **ID-token** flow, not the access-token flow.
+
+Why not Google Drive, which an earlier version used: a browser is never issued
+a refresh token, and minting a Google **access** token always shows UI, so
+Drive-in-the-browser popped a window on **every page load** — a daily visitor
+faced a popup every visit (third-party-cookie blocking killed the old silent
+hidden-iframe renewal). There is no client-side fix; the token lifetime is
+Google's. So the store moved to the bot and Google became identity-only.
+
+The flow, end to end:
+
+1. The user clicks Google's rendered sign-in button (the one Google UI, at
+   sign-in). GIS returns a signed **ID token** (a JWT) — no access token, no
+   scopes, no Drive.
+2. The site POSTs that JWT once to the bot's `/google-key`. The bot verifies it
+   (`aud` = our client id, issuer, expiry, `email_verified`), looks the account
+   up by a one-way hash of its `sub`, and returns that account's `key` — a
+   **random, stored** value, minted once and reused for every device/sign-in —
+   plus a `sig` = `HMAC(bot_token, key)`, along with the display profile
+   (name / email / avatar).
+3. The site stores `{key, sig, …profile}` in `zmanim:google-account:v2` and
+   **never contacts Google again**. Syncs are plain POSTs to the bot's
+   `/websync` carrying `key` + `sig`; the `sig` authenticates them, so the
+   store can be public without letting anyone create rows (see the bot's
+   `miniapp/api.py`). The bot reads the id/email from the token only to verify
+   it and never stores them — it keeps only the derived account hash.
+
+Because the `key` is stored (not derived from the bot token), it **survives a
+bot-token rotation**: a rotation invalidates the token-derived `sig`, so the
+next `/websync` 401s and the device must re-sign-in — but `/google-key` returns
+the same key, so the data is intact (Telegram parity: re-auth, never loss).
+
+So after sign-in there is **no Google interaction at all** — no token to renew,
+nothing to pop up, on any load or tab. The profile fields are display-only and
+live on the device; the settings blob lives in the bot's `web_sync` collection,
+keyed by `key`.
 
 The bot's Mongo is the authoritative store for Telegram users — **all**
 configurable things land there as the `web_prefs` blob (on top of the three
@@ -101,8 +143,8 @@ confirmations).
   fresh stamp so the import wins everywhere on the next sync.
 
 The Sync & backup tool (Tools menu, `src/components/tools/sync-backup.tsx`)
-is the control panel: Telegram sign-in (Login Widget), Google Drive
-connect/disconnect, sync-now, copy-link, download/import file.
+is the control panel: Telegram sign-in (Login Widget), Sign in with Google,
+sync-now, sign-out, copy-link, download/import file.
 
 ## Configuration (site, build-time, all optional)
 
@@ -112,9 +154,15 @@ connect/disconnect, sync-now, copy-link, download/import file.
   Login Widget on the plain site. One-time BotFather step: `/setdomain` to
   the site's domain.
 - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` — a Google OAuth **web** client id; enables
-  Drive sync. Uses only the non-sensitive `drive.appdata` scope (basic OAuth
-  verification, no security assessment). No secret — token requests run
-  entirely client-side via Google Identity Services.
+  Sign in with Google. The **ID-token** flow is used (identity only, no scopes,
+  no Drive), so there is no consent-screen scope review — but the site's origin
+  must be listed under the client's **Authorized JavaScript origins**. Requires
+  `NEXT_PUBLIC_TG_BOT_API_URL` too: the bot verifies the token and stores the
+  settings, so Google login does nothing without it. The bot needs the same id
+  in its `GOOGLE_CLIENT_ID` to check the token's `aud`, and — if it sits behind
+  a reverse proxy that overwrites `X-Forwarded-For` — `TRUST_PROXY_HEADERS=true`
+  so the sync endpoints' per-IP rate limit keys on the real client, not the
+  proxy (default off uses the socket peer, which can't be spoofed).
 
 Unset = the corresponding section simply doesn't render; link/file transfer
 always works.
@@ -134,10 +182,26 @@ JSON, stored verbatim on the user document); `/me` and `/sync` responses
 include it. Blob-only syncs don't trigger the chat confirmation message —
 only the structured fields do.
 
+For website users **without** Telegram, two more endpoints back Sign in with
+Google (no `User` document; own `web_sync` collection):
+
+- `/google-key` — `{credential}` (a Google ID token) → `{key, sig, email,
+  name, picture}`. Verifies the token and returns the sync credential; the
+  Google id is never stored.
+- `/websync` — `{key, sig, web_prefs?}` → `{web_prefs}`. `sig` =
+  `HMAC(bot_token, key)` authenticates the call, so only keys the bot issued
+  can read or create a row. Sending `web_prefs` stores it (atomic upsert);
+  omitting it reads. Both endpoints are per-IP rate-limited; abandoned rows
+  carry a TTL.
+
 ## Privacy notes
 
 - Custom dates (birthdays, yahrzeits) ride in the blob; connecting a sync
   store uploads them to it. The link/file path keeps everything user-held.
 - The Login Widget payload is a bearer credential in localStorage; it
   expires bot-side after 90 days and "Disconnect" drops it.
-- Google tokens are ~1 h, memory-only; only a "connected" flag persists.
+- Google sign-in holds no access token at all — only the bot sync credential
+  (`key` + `sig`) and the display profile, in `zmanim:google-account:v2`. The
+  settings blob lives in the bot's `web_sync` collection, keyed by `key`.
+  "Sign out" drops the local record (and clears the old Drive-flow keys) and
+  stops Google auto-select.

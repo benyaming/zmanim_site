@@ -20,7 +20,7 @@ COPY . .
 # optional feature switches — empty simply keeps that feature off:
 #   TG_BOT_API_URL   Mini App profile sync + settings sync through the bot
 #   TG_BOT_USERNAME  "Sign in with Telegram" on the plain site (Login Widget)
-#   GOOGLE_CLIENT_ID Google Drive settings sync
+#   GOOGLE_CLIENT_ID Sign in with Google (identity only; bot stores settings)
 # See docs/settings-sync.md.
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ARG NEXT_PUBLIC_TG_BOT_API_URL=

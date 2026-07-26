@@ -22,6 +22,15 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.24',
+    date: '2026-07-26',
+    notes: {
+      en: ['Sign in with Google — your settings sync across devices without Telegram.'],
+      he: ['התחברות עם Google — ההגדרות מסתנכרנות בין המכשירים גם בלי טלגרם.'],
+      ru: ['Вход через Google — настройки синхронизируются между устройствами и без Telegram.'],
+    },
+  },
+  {
     version: '1.23',
     date: '2026-07-21',
     notes: {

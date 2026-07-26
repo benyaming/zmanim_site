@@ -4,7 +4,7 @@ import { PREFS_STORAGE_KEY } from '@/components/providers/app-state';
 import { THEME_STORAGE_KEY } from '@/lib/theme';
 import { installMemoryLocalStorage, installMemorySessionStorage } from '@/test/memory-storage';
 
-import { markUserEdit, SECTION_NAMES, stampSection, type SettingsBlob } from './blob';
+import { dirtySections, markUserEdit, PULL_FAILED, SECTION_NAMES, stampSection, type SettingsBlob } from './blob';
 import { consumeStartupReload, localizedPath, reconcileTargets, type SyncTarget } from './engine';
 
 const EPOCH = new Date(0).toISOString();
@@ -36,7 +36,69 @@ beforeEach(() => {
   document.documentElement.lang = '';
 });
 
+/** A target whose pull failed (couldn't read the store); records push attempts. */
+function failedPullTarget() {
+  const pushes: SettingsBlob[] = [];
+  const target: SyncTarget = {
+    id: 'google-websync',
+    pull: async () => PULL_FAILED,
+    push: async (b) => {
+      pushes.push(b);
+      return true;
+    },
+  };
+  return { target, pushes };
+}
+
 describe('reconcileTargets', () => {
+  it('never pushes over a store whose pull failed', async () => {
+    // The data-loss guard: a fresh device with default local settings must not
+    // overwrite a store it couldn't read (its remote copy may be the only one).
+    const { target, pushes } = failedPullTarget();
+
+    const result = await reconcileTargets([target]);
+
+    expect(pushes).toEqual([]); // nothing pushed to the unreadable store
+    expect(result.outcome).toBe('none'); // all targets unreachable → reported as failure, not "synced"
+  });
+
+  it('still pushes to a readable store when another target failed to pull', async () => {
+    const failed = failedPullTarget();
+    const readable = memoryTarget(null); // reachable, empty
+    markUserEdit('theme');
+
+    await reconcileTargets([failed.target, readable.target]);
+
+    expect(failed.pushes).toEqual([]); // skipped — unreadable
+    expect(readable.state.pushes.length).toBe(1); // the empty-but-reachable store gets the local blob
+  });
+
+  it('keeps an edit dirty when any target was unreadable, even after a push elsewhere', async () => {
+    // The multi-store data-loss guard: pushing to a reachable store must NOT
+    // clear dirty while another store was unreadable, or when that store comes
+    // back holding a higher-stamped stale value the edit is no longer re-stamped
+    // and gets reverted and propagated back out.
+    const failed = failedPullTarget();
+    const readable = memoryTarget(null);
+    markUserEdit('theme');
+    expect(dirtySections()).toContain('theme');
+
+    await reconcileTargets([failed.target, readable.target]);
+
+    expect(readable.state.pushes.length).toBe(1); // reached the readable store
+    expect(dirtySections()).toContain('theme'); // but stays dirty — a store was unreadable
+  });
+
+  it('clears dirty once the edit reaches all stores with none failing', async () => {
+    const readable = memoryTarget(null);
+    markUserEdit('theme');
+    expect(dirtySections()).toContain('theme');
+
+    await reconcileTargets([readable.target]);
+
+    expect(dirtySections()).not.toContain('theme'); // confirmed everywhere → cleared
+  });
+
   it('adopts a newer remote section and writes it locally', async () => {
     window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify({ candleLightingOffset: 18 }));
     stampSection('prefs', '2026-07-20T10:00:00.000Z');
