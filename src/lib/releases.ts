@@ -22,33 +22,24 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
-    version: '1.25',
-    date: '2026-07-27',
-    notes: {
-      en: [
-        'One sync account per device — Telegram or Google, not both.',
-        'Sync no longer overwrites an account’s settings, or drops personal dates, without asking.',
-        'In Telegram, choosing a location in the app no longer changes the bot’s own location.',
-      ],
-      he: [
-        'חשבון סנכרון אחד למכשיר — טלגרם או Google, לא שניהם.',
-        'הסנכרון כבר לא דורס הגדרות של חשבון ולא מוחק תאריכים אישיים בלי לשאול.',
-        'בטלגרם, בחירת מיקום באפליקציה כבר לא משנה את המיקום של הבוט.',
-      ],
-      ru: [
-        'Один аккаунт синхронизации на устройство — Telegram или Google, но не оба.',
-        'Синхронизация больше не перезаписывает настройки аккаунта и не удаляет личные даты без вопроса.',
-        'В Telegram выбор места в приложении больше не меняет место, выбранное в боте.',
-      ],
-    },
-  },
-  {
     version: '1.24',
     date: '2026-07-26',
     notes: {
-      en: ['Sign in with Google — your settings sync across devices without Telegram.'],
-      he: ['התחברות עם Google — ההגדרות מסתנכרנות בין המכשירים גם בלי טלגרם.'],
-      ru: ['Вход через Google — настройки синхронизируются между устройствами и без Telegram.'],
+      en: [
+        'Sign in with Google — your settings sync across devices without Telegram.',
+        'One sync account per device — and sync never overwrites or drops your data without asking.',
+        'In Telegram, choosing a location in the app no longer changes the bot’s own location.',
+      ],
+      he: [
+        'התחברות עם Google — ההגדרות מסתנכרנות בין המכשירים גם בלי טלגרם.',
+        'חשבון סנכרון אחד למכשיר — והסנכרון לא דורס ולא מוחק נתונים בלי לשאול.',
+        'בטלגרם, בחירת מיקום באפליקציה כבר לא משנה את המיקום של הבוט.',
+      ],
+      ru: [
+        'Вход через Google — настройки синхронизируются между устройствами и без Telegram.',
+        'Один аккаунт синхронизации на устройство — и синхронизация ничего не перезапишет и не удалит без вопроса.',
+        'В Telegram выбор места в приложении больше не меняет место, выбранное в боте.',
+      ],
     },
   },
   {
