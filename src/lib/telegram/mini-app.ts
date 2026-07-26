@@ -87,6 +87,23 @@ export function telegramInitData(): string | null {
   return window.Telegram?.WebApp?.initData || null;
 }
 
+/**
+ * The launching user's Telegram id from a signed initData string, or null when
+ * it can't be parsed. Used as the account identity for sync lineage — Telegram
+ * multi-account shares one webview localStorage, so the store's owner can
+ * change between launches without any sign-in/sign-out event.
+ */
+export function telegramUserId(initData: string): string | null {
+  try {
+    const user = new URLSearchParams(initData).get('user');
+    if (!user) return null;
+    const id = (JSON.parse(user) as { id?: unknown }).id;
+    return typeof id === 'number' || typeof id === 'string' ? String(id) : null;
+  } catch {
+    return null;
+  }
+}
+
 let sdkPromise: Promise<TelegramWebApp | null> | null = null;
 
 /** Inject the official SDK (idempotent). Resolves null if it can't load. */

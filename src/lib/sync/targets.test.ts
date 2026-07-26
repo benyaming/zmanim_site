@@ -17,9 +17,11 @@ vi.mock('@/lib/telegram/mini-app', () => ({
   isTelegramMiniApp: () => isTelegramMiniApp(),
   initTelegramMiniApp: () => Promise.resolve(null),
   telegramInitData: () => 'init-data',
+  telegramUserId: () => '12345',
 }));
 vi.mock('@/lib/google/web-login', () => ({
   loadGoogleAccount: () => loadGoogleAccount(),
+  googleAccountDisplayName: () => '',
 }));
 vi.mock('@/lib/telegram/bot-sync', () => ({
   botSyncEnabled: () => true,

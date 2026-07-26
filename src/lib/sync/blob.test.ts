@@ -6,6 +6,7 @@ import { THEME_STORAGE_KEY } from '@/lib/theme';
 import { installMemoryLocalStorage } from '@/test/memory-storage';
 
 import {
+  a11yHoldsUserData,
   applyBlobSections,
   changedSections,
   collectSettingsBlob,
@@ -14,6 +15,7 @@ import {
   mergeBlobs,
   observeStamps,
   parseSettingsBlob,
+  prefsHoldUserData,
   sectionFingerprint,
   SECTION_NAMES,
   serializeSettingsBlob,
@@ -183,5 +185,40 @@ describe('parse / serialize', () => {
   it('enforces the size cap', () => {
     const huge = blob({ prefs: { data: { x: 'y'.repeat(MAX_BLOB_CHARS) }, t: EPOCH } });
     expect(parseSettingsBlob(huge)).toBeNull();
+  });
+});
+
+describe('prefsHoldUserData (legacy connect-gate content check)', () => {
+  it('is false for absent prefs and for mount-written defaults', () => {
+    expect(prefsHoldUserData(null)).toBe(false);
+    expect(prefsHoldUserData({ candleLightingOffset: 18, useElevation: false, hiddenLearning: [] })).toBe(false);
+  });
+
+  it('spots every deliberate choice a pre-stamp device can carry', () => {
+    expect(prefsHoldUserData({ personalDates: { people: [{ id: 'p' }], occasions: [] } })).toBe(true);
+    expect(prefsHoldUserData({ personalDates: { people: [], occasions: [{ id: 'o' }] } })).toBe(true);
+    expect(prefsHoldUserData({ customDates: [{ id: 'legacy' }] })).toBe(true); // pre-1.23 shape
+    expect(prefsHoldUserData({ savedLocations: [{ id: 's' }] })).toBe(true);
+    expect(prefsHoldUserData({ zmanimCustomized: true })).toBe(true);
+    expect(prefsHoldUserData({ lehumraCustomized: true })).toBe(true);
+    expect(prefsHoldUserData({ lehumra: true })).toBe(true); // enabled before the marker existed
+    expect(prefsHoldUserData({ fastEndCustomized: true })).toBe(true);
+    expect(prefsHoldUserData({ candleLightingOffset: 30 })).toBe(true);
+    expect(prefsHoldUserData({ useElevation: true })).toBe(true);
+    expect(prefsHoldUserData({ havdalahOpinion: 'tzeis_42_minutes' })).toBe(true);
+    expect(prefsHoldUserData({ hiddenZmanim: ['sunrise'] })).toBe(true); // list edited pre-flag-era
+    expect(prefsHoldUserData({ hiddenLearning: ['dafYomi'] })).toBe(true);
+    expect(prefsHoldUserData({ hiddenFastEnd: ['some-opinion'] })).toBe(true);
+    expect(prefsHoldUserData({ location: { lat: 32.08, lng: 34.78 } })).toBe(true); // not the default city
+  });
+});
+
+describe('a11yHoldsUserData', () => {
+  it('ignores the defaults every mount writes, spots any deliberate choice', () => {
+    expect(a11yHoldsUserData(null)).toBe(false);
+    expect(a11yHoldsUserData({ fontScale: 'default', reduceMotion: false, highContrast: false })).toBe(false);
+    expect(a11yHoldsUserData({ fontScale: 'xl' })).toBe(true);
+    expect(a11yHoldsUserData({ fontScale: 'default', reduceMotion: true, highContrast: false })).toBe(true);
+    expect(a11yHoldsUserData({ fontScale: 'default', reduceMotion: false, highContrast: true })).toBe(true);
   });
 });

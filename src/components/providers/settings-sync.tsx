@@ -16,8 +16,19 @@ import {
   type SettingsBlob,
 } from '@/lib/sync/blob';
 import { GOOGLE_AUTH_EVENT, loadGoogleAccount } from '@/lib/google/web-login';
-import { applyImportedSettings, consumeStartupReload, pushLocalSettings, reloadForSync, runSync } from '@/lib/sync/engine';
+import {
+  adoptAccountSettings,
+  applyImportedSettings,
+  consumeStartupReload,
+  keepDeviceSettings,
+  pushLocalSettings,
+  reloadForSync,
+  runSync,
+  SYNC_CONFLICT_EVENT,
+  type SyncConflict,
+} from '@/lib/sync/engine';
 import { settingsFromHash } from '@/lib/sync/transfer';
+import { showToast } from '@/lib/toast';
 
 /**
  * Captured at module load, before the app-state URL-reflect effect rewrites
@@ -63,6 +74,19 @@ export function SettingsSync() {
 
   // A settings link opened on this device — confirm before overwriting.
   const [pendingImport, setPendingImport] = useState<SettingsBlob | null>(() => settingsFromHash(launchHash));
+
+  // A freshly connected account holds settings that clash with this device's —
+  // the engine quarantined the store and the user picks a side here. Announced
+  // via SYNC_CONFLICT_EVENT so it surfaces no matter which run found it
+  // (startup, sign-in event, the panel's Sync now). Dismissing decides nothing:
+  // the store stays quarantined and the next reconcile asks again.
+  const [conflicts, setConflicts] = useState<SyncConflict[] | null>(null);
+  const [resolvingConflict, setResolvingConflict] = useState(false);
+  useEffect(() => {
+    const onConflict = (event: Event) => setConflicts((event as CustomEvent<SyncConflict[]>).detail);
+    window.addEventListener(SYNC_CONFLICT_EVENT, onConflict);
+    return () => window.removeEventListener(SYNC_CONFLICT_EVENT, onConflict);
+  }, []);
 
   // Startup reconcile. Adopting newer remote sections reloads the page so the
   // providers re-read them; a pending import skips this — the user decides
@@ -145,33 +169,103 @@ export function SettingsSync() {
     return () => clearTimeout(timer);
   }, [changeFingerprint]);
 
-  if (!pendingImport) return null;
+  if (pendingImport) {
+    const dismiss = () => {
+      setPendingImport(null);
+      // Drop the fragment so a reload doesn't re-offer the same import.
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    };
+    const apply = () => {
+      const language = pendingImport.sections.language.data;
+      applyImportedSettings(pendingImport);
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      reloadForSync(typeof language === 'string' ? language : null);
+    };
 
-  const dismiss = () => {
-    setPendingImport(null);
-    // Drop the fragment so a reload doesn't re-offer the same import.
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    return (
+      <Dialog open onOpenChange={(open) => !open && dismiss()}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('importTitle')}</DialogTitle>
+            <DialogDescription>{t('importBody')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={dismiss}>
+              {t('importCancel')}
+            </Button>
+            <Button onClick={apply}>{t('importApply')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!conflicts || conflicts.length === 0) return null;
+
+  // One account per dialog: the engine's resolution helpers act on the first
+  // conflict's account only. A second conflicting account (Telegram + Google
+  // both freshly connected) resurfaces on the follow-up run and asks again.
+  const group = conflicts.filter((c) => c.account === conflicts[0].account);
+  const accountName =
+    group.find((c) => c.label)?.label ?? (group[0].targetId === 'google-websync' ? 'Google' : 'Telegram');
+  const useAccount = () => {
+    setResolvingConflict(true);
+    // The choice wins everywhere via its fresh stamps; the post-reload
+    // reconcile pushes it out to every connected store.
+    void adoptAccountSettings(group).then(({ ok, language }) => {
+      // The account couldn't be re-read, so nothing was adopted — a stale
+      // snapshot could overwrite a newer update from another device. The
+      // dialog stays for a retry.
+      if (!ok) {
+        setResolvingConflict(false);
+        showToast('sync.syncFailed');
+        return;
+      }
+      reloadForSync(language);
+    });
   };
-  const apply = () => {
-    const language = pendingImport.sections.language.data;
-    applyImportedSettings(pendingImport);
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    reloadForSync(typeof language === 'string' ? language : null);
+  const useDevice = () => {
+    setResolvingConflict(true);
+    keepDeviceSettings(group);
+    void runSync().then(({ outcome, appliedLanguage }) => {
+      // 'applied' = the account had sections this device never set (absence
+      // loses to presence) — they were just written locally, so reload.
+      if (outcome === 'applied') {
+        reloadForSync(appliedLanguage);
+        return;
+      }
+      setResolvingConflict(false);
+      // Another connected store raised its own conflict during this run — the
+      // event listener already refreshed the dialog with it; keep it open.
+      if (outcome === 'conflict') return;
+      setConflicts(null);
+      // A failed push isn't lost — the choice is stamped dirty and re-sent on
+      // the next run — but say so instead of claiming success.
+      showToast(outcome === 'pushed' ? 'sync.synced' : 'sync.syncFailed');
+    });
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && dismiss()}>
+    <Dialog open onOpenChange={(open) => !open && !resolvingConflict && setConflicts(null)}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{t('importTitle')}</DialogTitle>
-          <DialogDescription>{t('importBody')}</DialogDescription>
+          <DialogTitle>{t('conflictTitle')}</DialogTitle>
+          <DialogDescription>{t('conflictBody', { account: accountName })}</DialogDescription>
         </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={dismiss}>
-            {t('importCancel')}
-          </Button>
-          <Button onClick={apply}>{t('importApply')}</Button>
-        </DialogFooter>
+        <div className="grid gap-3">
+          <div className="space-y-1">
+            <Button className="w-full" disabled={resolvingConflict} onClick={useAccount}>
+              {t('conflictUseAccount')}
+            </Button>
+            <p className="text-muted-foreground text-xs">{t('conflictUseAccountHint')}</p>
+          </div>
+          <div className="space-y-1">
+            <Button variant="outline" className="w-full" disabled={resolvingConflict} onClick={useDevice}>
+              {t('conflictKeepDevice')}
+            </Button>
+            <p className="text-muted-foreground text-xs">{t('conflictKeepDeviceHint')}</p>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

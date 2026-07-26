@@ -13,7 +13,14 @@
 
 import type { TelegramCloudStorage, TelegramWebApp } from '@/lib/telegram/mini-app';
 
-import { deserializeSettingsBlob, SECTION_NAMES, serializeSettingsBlob, type SettingsBlob } from './blob';
+import {
+  deserializeSettingsBlob,
+  PULL_FAILED,
+  SECTION_NAMES,
+  serializeSettingsBlob,
+  type PullResult,
+  type SettingsBlob,
+} from './blob';
 
 /** The newest section stamp — cosmetic bookkeeping for the chunk meta. */
 function newestStamp(blob: SettingsBlob): string {
@@ -40,22 +47,34 @@ export function splitIntoChunks(raw: string, size: number = CLOUD_CHUNK_CHARS): 
   return chunks.length > 0 ? chunks : [''];
 }
 
-function getItem(storage: TelegramCloudStorage, key: string): Promise<string | null> {
+/**
+ * A read the SDK errored on — distinct from a key that is genuinely absent.
+ * The reconcile must not treat "couldn't read" as "confirmed empty", or a
+ * transient CloudStorage failure would let it seed (overwrite) a store that
+ * actually holds the account's only snapshot.
+ */
+const READ_FAILED = Symbol('cloud-read-failed');
+
+function getItem(storage: TelegramCloudStorage, key: string): Promise<string | null | typeof READ_FAILED> {
   return new Promise((resolve) => {
     try {
-      storage.getItem(key, (error, value) => resolve(error ? null : (value ?? null)));
+      storage.getItem(key, (error, value) => resolve(error ? READ_FAILED : (value ?? null)));
     } catch {
-      resolve(null);
+      resolve(READ_FAILED);
     }
   });
 }
 
-function getItems(storage: TelegramCloudStorage, keys: string[]): Promise<Record<string, string> | null> {
+function getItems(
+  storage: TelegramCloudStorage,
+  keys: string[],
+): Promise<Record<string, string> | typeof READ_FAILED> {
   return new Promise((resolve) => {
     try {
-      storage.getItems(keys, (error, values) => resolve(error ? null : (values ?? null)));
+      // No values object without an error is off-contract — treat as a failure.
+      storage.getItems(keys, (error, values) => resolve(error || !values ? READ_FAILED : values));
     } catch {
-      resolve(null);
+      resolve(READ_FAILED);
     }
   });
 }
@@ -101,15 +120,22 @@ function parseMeta(raw: string | null): CloudMeta | null {
   }
 }
 
-/** Read the stored blob; null when absent, torn, or CloudStorage errors out. */
-export async function pullFromTelegramCloud(webApp: TelegramWebApp | null): Promise<SettingsBlob | null> {
+/**
+ * Read the stored blob. `null` = definitively empty or torn/garbage (bytes we
+ * DID read but can't use — a later push may repair them, losing nothing
+ * readable); `PULL_FAILED` = the SDK errored, contents unknown — the reconcile
+ * must not push over it.
+ */
+export async function pullFromTelegramCloud(webApp: TelegramWebApp | null): Promise<PullResult> {
   if (!cloudStorageAvailable(webApp)) return null;
   const storage = webApp!.CloudStorage!;
-  const meta = parseMeta(await getItem(storage, META_KEY));
+  const metaRaw = await getItem(storage, META_KEY);
+  if (metaRaw === READ_FAILED) return PULL_FAILED;
+  const meta = parseMeta(metaRaw);
   if (!meta) return null;
   const keys = Array.from({ length: meta.chunks }, (_, i) => `${CHUNK_KEY_PREFIX}${i}`);
   const values = await getItems(storage, keys);
-  if (!values) return null;
+  if (values === READ_FAILED) return PULL_FAILED;
   let raw = '';
   for (const key of keys) {
     const part = values[key];
@@ -126,7 +152,9 @@ export async function pushToTelegramCloud(webApp: TelegramWebApp | null, blob: S
   const raw = serializeSettingsBlob(blob);
   if (raw === null) return false;
 
-  const previous = parseMeta(await getItem(storage, META_KEY));
+  // Cleanup bookkeeping only — a failed read just means no stale-chunk sweep.
+  const previousRaw = await getItem(storage, META_KEY);
+  const previous = previousRaw === READ_FAILED ? null : parseMeta(previousRaw);
   const chunks = splitIntoChunks(raw);
   for (let i = 0; i < chunks.length; i += 1) {
     if (!(await setItem(storage, `${CHUNK_KEY_PREFIX}${i}`, chunks[i]))) return false;

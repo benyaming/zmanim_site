@@ -11,6 +11,8 @@
  * once via BotFather's /setdomain.
  */
 
+import { clearLineage } from '@/lib/sync/blob';
+
 import { botSyncEnabled } from './bot-sync';
 
 /** The Login Widget's signed payload, stored verbatim — the bot re-checks it. */
@@ -80,6 +82,9 @@ export function clearTelegramWebAuth(): void {
   } catch {
     // Nothing to clear.
   }
+  // Disconnecting ends this account's sync lineage: the next sign-in — even to
+  // the same account — is a fresh connect and must reconcile before pushing.
+  clearLineage('telegram-bot');
 }
 
 /** A short display name for the "connected as" line. */
