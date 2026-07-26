@@ -67,6 +67,9 @@ export function SyncBackupTool() {
         reloadForSync(appliedLanguage);
         return;
       }
+      // 'conflict': the account's data clashes with this device's — the sync
+      // provider's dialog takes over, so no toast here.
+      if (outcome === 'conflict') return;
       showToast(outcome === 'none' ? 'sync.syncFailed' : connectFlow ? 'sync.connected' : 'sync.synced');
     } finally {
       setBusy(false);

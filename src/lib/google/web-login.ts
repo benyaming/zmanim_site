@@ -19,6 +19,7 @@
  * set — the bot is where the data goes, so Google login is useless without it.
  */
 
+import { clearLineage } from '@/lib/sync/blob';
 import { botApiBase } from '@/lib/telegram/bot-sync';
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
@@ -241,6 +242,7 @@ export function invalidateGoogleAccount(): void {
   } catch {
     // Nothing to clean up.
   }
+  clearLineage('google-websync');
   window.dispatchEvent(new Event(GOOGLE_AUTH_EVENT));
 }
 
@@ -253,6 +255,9 @@ export function signOutFromGoogle(): void {
   } catch {
     // Nothing to clean up.
   }
+  // Signing out ends this account's sync lineage: the next sign-in — even to
+  // the same account — is a fresh connect and must reconcile before pushing.
+  clearLineage('google-websync');
   try {
     window.google?.accounts?.id?.disableAutoSelect();
   } catch {

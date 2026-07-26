@@ -16,9 +16,12 @@
  * section is just writing its raw data back to the same key.
  */
 
-import { PREFS_STORAGE_KEY } from '@/components/providers/app-state';
+import { DEFAULT_CANDLE_OFFSET, PREFS_STORAGE_KEY } from '@/components/providers/app-state';
 import { A11Y_STORAGE_KEY } from '@/components/providers/accessibility-provider';
+import { DEFAULT_HIDDEN_FAST_END } from '@/lib/calendar';
+import { DEFAULT_LOCATION } from '@/lib/location';
 import { THEME_STORAGE_KEY } from '@/lib/theme';
+import { DEFAULT_HAVDALAH_OPINION, DEFAULT_HIDDEN_ZMANIM } from '@/lib/zmanim';
 
 /** UI languages that may ride in the blob (the app's routing locales). */
 const LANGUAGES = ['en', 'he', 'ru'];
@@ -60,6 +63,8 @@ const SYNCED_KEY = 'zmanim:sync-synced:v1';
 const CLOCK_KEY = 'zmanim:sync-clock:v1';
 /** Sections the user edited locally that aren't confirmed pushed yet. */
 const DIRTY_KEY = 'zmanim:sync-dirty:v1';
+/** Which account each store last reconciled with (target id → account id). */
+const LINEAGE_KEY = 'zmanim:sync-lineage:v1';
 
 /** A section never explicitly changed dates to the epoch, so any real edit wins. */
 const EPOCH = new Date(0).toISOString();
@@ -215,6 +220,102 @@ export function clearDirty(names: SectionName[]): void {
  */
 export function restampDirtySections(): { name: SectionName; t: string }[] {
   return dirtySections().map((name) => ({ name, t: stampSection(name) }));
+}
+
+/**
+ * Whether a prefs section holds things the user would miss, judged by CONTENT
+ * — the stamp-based history check alone misses devices whose prefs predate the
+ * sync metadata (v1.22): they can carry custom dates and real customizations
+ * with no stamp at all, and must not be silently overwritten on connect. The
+ * mount-time defaults every fresh device writes come back false. The field
+ * list is best-effort; a field not listed errs toward "pristine" (the account
+ * wins silently, today's behavior for fresh devices).
+ */
+export function prefsHoldUserData(data: SectionData): boolean {
+  if (data === null || typeof data !== 'object') return false;
+  const prefs = data as Record<string, unknown>;
+  const personal = prefs.personalDates as { people?: unknown[]; occasions?: unknown[] } | undefined;
+  if ((personal?.people?.length ?? 0) > 0 || (personal?.occasions?.length ?? 0) > 0) return true;
+  if (Array.isArray(prefs.customDates) && prefs.customDates.length > 0) return true; // pre-1.23 shape
+  if (Array.isArray(prefs.savedLocations) && prefs.savedLocations.length > 0) return true;
+  if (prefs.zmanimCustomized === true || prefs.lehumraCustomized === true || prefs.fastEndCustomized === true) {
+    return true;
+  }
+  // Deliberate on the web, where this check runs (default off there; the Mini
+  // App defaults it on, but Mini App stores never take the content path).
+  // Covers devices that enabled it before the lehumraCustomized marker existed.
+  if (prefs.lehumra === true) return true;
+  if (typeof prefs.candleLightingOffset === 'number' && prefs.candleLightingOffset !== DEFAULT_CANDLE_OFFSET) {
+    return true;
+  }
+  if (prefs.useElevation === true) return true;
+  if (typeof prefs.havdalahOpinion === 'string' && prefs.havdalahOpinion !== DEFAULT_HAVDALAH_OPINION) return true;
+  // Pre-flag-era devices customized these lists without a *Customized marker.
+  const differsFromDefault = (value: unknown, defaults: readonly string[]): boolean =>
+    Array.isArray(value) && [...value].sort().join('\n') !== [...defaults].sort().join('\n');
+  if (differsFromDefault(prefs.hiddenZmanim, DEFAULT_HIDDEN_ZMANIM)) return true;
+  if (Array.isArray(prefs.hiddenLearning) && prefs.hiddenLearning.length > 0) return true;
+  if (differsFromDefault(prefs.hiddenFastEnd, DEFAULT_HIDDEN_FAST_END)) return true;
+  const location = prefs.location as { lat?: unknown; lng?: unknown } | undefined;
+  if (
+    typeof location?.lat === 'number' &&
+    typeof location.lng === 'number' &&
+    (location.lat !== DEFAULT_LOCATION.lat || location.lng !== DEFAULT_LOCATION.lng)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Whether an a11y section holds deliberate choices. The accessibility provider
+ * writes its DEFAULTS to localStorage on every mount, so presence alone means
+ * nothing — only a non-default value does. Mirrors prefsHoldUserData for
+ * pre-v1.22 devices whose choices carry no sync stamp.
+ */
+export function a11yHoldsUserData(data: SectionData): boolean {
+  if (data === null || typeof data !== 'object') return false;
+  const a11y = data as Record<string, unknown>;
+  return (
+    (typeof a11y.fontScale === 'string' && a11y.fontScale !== 'default') ||
+    a11y.reduceMotion === true ||
+    a11y.highContrast === true
+  );
+}
+
+/**
+ * The account a store last reconciled with. Timestamps only order edits within
+ * one account's history — comparing them across accounts is meaningless — so
+ * the engine treats a store whose account doesn't match this record as a fresh
+ * connect: it must not be pushed to (or merged from) until the lineage is
+ * re-established, by an empty/equal reconcile or by the user's explicit choice.
+ */
+export function lineageAccount(targetId: string): string | null {
+  const record = readJson(LINEAGE_KEY);
+  const account = record?.[targetId];
+  return typeof account === 'string' ? account : null;
+}
+
+export function recordLineage(targetId: string, account: string): void {
+  try {
+    const record = readJson(LINEAGE_KEY) ?? {};
+    record[targetId] = account;
+    window.localStorage.setItem(LINEAGE_KEY, JSON.stringify(record));
+  } catch {
+    // Ignore storage errors — worst case the connect question is asked again.
+  }
+}
+
+/** Forget a store's lineage (on disconnect — the next sign-in is a fresh connect). */
+export function clearLineage(targetId: string): void {
+  try {
+    const record = readJson(LINEAGE_KEY);
+    if (!record || !(targetId in record)) return;
+    delete record[targetId];
+    window.localStorage.setItem(LINEAGE_KEY, JSON.stringify(record));
+  } catch {
+    // Nothing to clear.
+  }
 }
 
 /** Snapshot the device's current settings as a blob. */

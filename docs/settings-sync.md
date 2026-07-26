@@ -56,6 +56,33 @@ agreed on lives in `zmanim:sync-synced:v1`.
   `sessionStorage` flag) caps the automatic startup reconcile to **one reload per
   tab session**; the residual difference then converges silently via the normal
   push. Manual "Sync now" and imports don't go through the guard.
+- **Connecting an account never silently overwrites its stored settings.**
+  Stamps only order edits within one account's history, so comparing them
+  across accounts is meaningless — without a guard, signing in right after
+  using another account (or none) would push this device's leftovers over the
+  account's data. A lineage record (`zmanim:sync-lineage:v1`, store → account
+  id) tracks which account each store last reconciled with; sign-out clears it.
+  On a mismatch the store is **quarantined** — not merged from, not pushed to
+  (including the debounced change push) — until the reconcile is lossless or
+  the user chooses. Empty store → local seeds it; equal content or a
+  section-disjoint blob → merges silently; both sides holding real, differing
+  data → a dialog asks which side wins ("use account" re-pulls the store —
+  the snapshot behind a long-open dialog may be stale — and adopts every
+  section the account holds *now*; a failed re-pull aborts the choice rather
+  than adopt a stale snapshot; "keep device" re-stamps local as a fresh edit).
+  Lineage is only ever recorded once a run (or choice) settles — recording is
+  what re-enables blind pushes, so doing it mid-run would let the debounced
+  change push race the merge. Either choice resolves ONE account per dialog —
+  conflicts from a second account (stamps across accounts are incomparable)
+  resurface on the next run. "Real" local data means a section stamped on
+  this device: one still at the EPOCH (the URL-derived default language, a
+  blank device) has nothing to lose, so the account's copy wins silently —
+  unless content vouches for it, covering pre-v1.22 devices whose choices
+  carry no stamp: prefs via `prefsHoldUserData` (web only — the Mini App
+  writes the bot's location into prefs each mount), a11y via non-default
+  values (`a11yHoldsUserData`), theme by mere presence (it is only ever
+  persisted by an explicit pick). Mount-written defaults and the URL language
+  never count, keeping fresh devices silent.
 - **Only *genuine* changes stamp a section.** Theme, a11y and language stamp
   their own section directly in their setter (they're always deliberate), so a
   lost debounced push can't strand them at an equal stamp. The prefs section is
@@ -135,7 +162,10 @@ confirmations).
 - **On load**: pull every connected store; if the newest remote beats the
   local stamp *and differs in content*, apply it and reload once (a
   sessionStorage guard makes reload loops impossible). Otherwise push the
-  local blob to any store that's absent or stale.
+  local blob to any store that's absent or stale. A store failing the lineage
+  check is quarantined instead (see the connect rule above); when both sides
+  hold clashing data the run reports a conflict, announced app-wide
+  (`SYNC_CONFLICT_EVENT`) and resolved by the provider's choice dialog.
 - **On change**: any synced setting changing stamps `updatedAt` and pushes
   the fresh localStorage snapshot to all stores, debounced (the providers'
   own persist effects run first, so the pushed blob is never stale).

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { TelegramCloudStorage, TelegramWebApp } from '@/lib/telegram/mini-app';
 
-import type { SettingsBlob } from './blob';
+import { PULL_FAILED, type SettingsBlob } from './blob';
 import {
   CLOUD_CHUNK_CHARS,
   cloudStorageAvailable,
@@ -105,5 +105,20 @@ describe('push / pull roundtrip', () => {
     await pushToTelegramCloud(webApp, blobWithPrefs({ note: 'z'.repeat(CLOUD_CHUNK_CHARS + 1) }));
     store.delete('settings-1'); // lose a chunk
     expect(await pullFromTelegramCloud(webApp)).toBeNull();
+  });
+
+  it('reports PULL_FAILED on an SDK read error — never "empty"', async () => {
+    // A transient CloudStorage failure must not read as a confirmed empty
+    // store: the reconcile would record lineage and seed (overwrite) a store
+    // that actually holds the account's only snapshot.
+    const store = new Map<string, string>();
+    const webApp = fakeWebApp(store);
+    await pushToTelegramCloud(webApp, blobWithPrefs({ note: 'kept' }));
+
+    const failingMeta = { ...fakeWebApp(store), CloudStorage: { ...fakeStorage(store), getItem: (_k, cb) => cb('INTERNAL_ERROR') } as TelegramCloudStorage };
+    expect(await pullFromTelegramCloud(failingMeta)).toBe(PULL_FAILED);
+
+    const failingChunks = { ...fakeWebApp(store), CloudStorage: { ...fakeStorage(store), getItems: (_k, cb) => cb('INTERNAL_ERROR') } as TelegramCloudStorage };
+    expect(await pullFromTelegramCloud(failingChunks)).toBe(PULL_FAILED);
   });
 });
