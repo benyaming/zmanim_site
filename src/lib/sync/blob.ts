@@ -10,7 +10,8 @@
  * did exactly that, which is the bug this shape fixes.)
  *
  * The blob stays opaque to every store that holds it (Telegram CloudStorage,
- * the bot's Mongo, Google Drive, a link/file export): stores keep the bytes
+ * the bot's Mongo — `web_prefs` for Telegram accounts, `web_sync` for Google
+ * ones — and a link/file export): stores keep the bytes
  * and never model the sections. Content validation stays where it always was —
  * the providers sanitize what they load from localStorage — so applying a
  * section is just writing its raw data back to the same key.
@@ -373,12 +374,75 @@ export function recordSyncedPrefs(fingerprint: string): void {
 }
 
 /**
+ * How much irreplaceable, user-authored content a section carries: personal-date
+ * people and occasions, saved locations, and the pre-1.23 flat custom-date list.
+ * These are the parts of a blob nobody can reconstruct — a yahrzeit someone
+ * typed in exists nowhere else — as opposed to a theme or a hidden-zman list,
+ * which is a preference the user can set again in seconds. Only prefs holds
+ * any; every other section counts zero.
+ */
+function userItemIds(name: SectionName, data: SectionData): Set<string> {
+  const ids = new Set<string>();
+  if (name !== 'prefs' || data === null || typeof data !== 'object') return ids;
+  const prefs = data as Record<string, unknown>;
+  const collect = (kind: string, value: unknown): void => {
+    if (!Array.isArray(value)) return;
+    for (const item of value) {
+      const id = (item as { id?: unknown } | null)?.id;
+      // Identity, not position: an item's index shifts when an earlier one is
+      // deleted, which would read as "everything after it changed". Rows with
+      // no id (legacy shapes) fall back to their content, which is still stable
+      // across devices — an edit to such a row reads as remove + add, the safe
+      // direction (it asks rather than dropping something).
+      ids.add(`${kind}:${typeof id === 'string' ? id : JSON.stringify(item)}`);
+    }
+  };
+  const personal = prefs.personalDates as { people?: unknown; occasions?: unknown } | undefined;
+  collect('person', personal?.people);
+  collect('occasion', personal?.occasions);
+  collect('date', prefs.customDates); // pre-1.23 flat list
+  collect('location', prefs.savedLocations);
+  return ids;
+}
+
+/** How many such items a section carries. */
+function userItemCount(name: SectionName, data: SectionData): number {
+  return userItemIds(name, data).size;
+}
+
+/**
+ * How many user items `from` holds that `to` does not — what writing `to` over
+ * `from` would destroy. Renaming a person keeps its id, so an edit counts as
+ * zero; only actually dropping a row counts.
+ */
+export function removedUserItems(from: SettingsBlob, to: SettingsBlob): number {
+  let removed = 0;
+  for (const name of SECTION_NAMES) {
+    const kept = userItemIds(name, to.sections[name].data);
+    for (const id of userItemIds(name, from.sections[name].data)) {
+      if (!kept.has(id)) removed++;
+    }
+  }
+  return removed;
+}
+
+/**
  * A total order over a section's two versions: a present value always beats an
- * absent one; otherwise newer stamp wins, and on an equal stamp the larger
- * fingerprint wins. The tie-break guarantees two diverged devices converge on
- * the same winner instead of each re-pushing its own copy forever (equal stamps
- * happen when one device adopts a section, then a change whose debounced push is
- * lost leaves the stamp unbumped).
+ * absent one; otherwise newer stamp wins, then the side holding more
+ * irreplaceable user content, then the larger fingerprint. The tie-break
+ * guarantees two diverged devices converge on the same winner instead of each
+ * re-pushing its own copy forever (equal stamps happen when one device adopts a
+ * section, then a change whose debounced push is lost leaves the stamp
+ * unbumped).
+ *
+ * Why content counts before the fingerprint: an equal stamp means two versions
+ * claiming the same moment, with no history to order them, and fingerprint
+ * order is just content sorting — a coin flip. Losing it cost real data: a
+ * device's mount-written defaults sorted above an account's blob and erased its
+ * personal dates. Every genuine deletion bumps the stamp (the change watcher
+ * stamps prefs whenever the persisted content differs from the last synced
+ * one), so a side that is *poorer at an equal stamp* is never someone's
+ * deliberate delete — it is a copy that never had the data.
  *
  * `null` data means the section is ABSENT (there is no UI to set a section to
  * null — a reset writes a real default like theme `system`), so it must never
@@ -397,6 +461,11 @@ function sectionIsNewer(name: SectionName, a: BlobSection, b: BlobSection): bool
   const ta = Date.parse(a.t);
   const tb = Date.parse(b.t);
   if (ta !== tb) return ta > tb;
+
+  const ia = userItemCount(name, a.data);
+  const ib = userItemCount(name, b.data);
+  if (ia !== ib) return ia > ib;
+
   return sectionFingerprint(name, a.data) > sectionFingerprint(name, b.data);
 }
 

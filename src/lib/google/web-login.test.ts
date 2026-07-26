@@ -134,6 +134,30 @@ describe('google web login', () => {
     expect(onResult).not.toHaveBeenCalled(); // a cancel is not an error — stay silent
   });
 
+  it('refuses to sign in while a Telegram account is connected', async () => {
+    // One sync account per device (engine.activeSyncTargets syncs Telegram and
+    // sidelines Google). Storing a second credential would show "signed in" for
+    // an account that never syncs — and the token must not reach the bot, which
+    // would create a row for an account nobody is going to use.
+    const { mountGoogleSignInButton, googleSignedIn } = await freshModule();
+    const gis = fakeGis();
+    const fetchMock = keyFetch();
+    const onResult = vi.fn();
+    window.localStorage.setItem(
+      'zmanim:tg-web-auth:v1',
+      JSON.stringify({ id: 42, auth_date: Math.floor(Date.now() / 1000), hash: 'h' }),
+    );
+
+    mountGoogleSignInButton(document.createElement('div'), onResult);
+    await tick();
+    gis.fireCredential('id-token-jwt');
+    await tick();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(googleSignedIn()).toBe(false);
+    expect(onResult).toHaveBeenCalledWith(null);
+  });
+
   it('loads and reports a stored account', async () => {
     const { loadGoogleAccount, googleSignedIn, googleAccountDisplayName } = await freshModule();
     window.localStorage.setItem('zmanim:google-account:v2', JSON.stringify(KEYED));
@@ -154,21 +178,41 @@ describe('google web login', () => {
     expect(googleAccountDisplayName({ key: 'k', sig: 's' })).toBe('');
   });
 
-  it('signs out: drops the account and legacy keys, disables auto-select, notifies', async () => {
+  it('signs out: drops the account, disables auto-select, notifies', async () => {
     const { signOutFromGoogle, googleSignedIn, GOOGLE_AUTH_EVENT } = await freshModule();
     const gis = fakeGis();
     window.localStorage.setItem('zmanim:google-account:v2', JSON.stringify(KEYED));
-    window.localStorage.setItem('zmanim:google-token:v1', 'legacy-bearer'); // from the old Drive flow
     const authEvent = vi.fn();
     window.addEventListener(GOOGLE_AUTH_EVENT, authEvent);
 
     signOutFromGoogle();
 
     expect(googleSignedIn()).toBe(false);
-    expect(window.localStorage.getItem('zmanim:google-token:v1')).toBeNull();
     expect(gis.id.disableAutoSelect).toHaveBeenCalled();
     expect(authEvent).toHaveBeenCalled();
     window.removeEventListener(GOOGLE_AUTH_EVENT, authEvent);
+  });
+
+  it('purges the Drive-era keys on any load, signed in or not', async () => {
+    // The old flow is gone; nothing reads these, and one held an access token.
+    // A device that used it may never sign in with Google again, so the purge
+    // must not depend on a sign-out (it runs from the settings-sync provider).
+    const { clearLegacyGoogleKeys } = await freshModule();
+    window.localStorage.setItem('zmanim:google-token:v1', 'legacy-bearer');
+    window.localStorage.setItem('zmanim:google-account:v1', '{}');
+    window.localStorage.setItem('zmanim:google-sync:v1', '{}');
+    window.localStorage.setItem('zmanim:google-silent-denied:v1', '1');
+
+    clearLegacyGoogleKeys();
+
+    for (const key of [
+      'zmanim:google-token:v1',
+      'zmanim:google-account:v1',
+      'zmanim:google-sync:v1',
+      'zmanim:google-silent-denied:v1',
+    ]) {
+      expect(window.localStorage.getItem(key)).toBeNull();
+    }
   });
 
   it('does not return a stale in-memory account after a cross-tab sign-out', async () => {

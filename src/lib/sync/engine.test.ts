@@ -7,6 +7,7 @@ import { installMemoryLocalStorage, installMemorySessionStorage } from '@/test/m
 
 import {
   dirtySections,
+  lineageAccount,
   markUserEdit,
   PULL_FAILED,
   recordLineage,
@@ -16,7 +17,6 @@ import {
 } from './blob';
 import {
   adoptAccountSettings,
-  canPushBlind,
   consumeStartupReload,
   keepDeviceSettings,
   localizedPath,
@@ -332,6 +332,96 @@ describe('connect-time account protection (lineage)', () => {
     expect(result.appliedLanguage).toBe('he');
   });
 
+  it('never overwrites a freshly connected account with a pristine device on an equal stamp', async () => {
+    // The reported data loss. Both sides sit at the EPOCH: the account's blob
+    // was pushed by a device that never re-stamped prefs (the common case —
+    // prefs is stamped only when the change watcher sees a real edit), and this
+    // device never stamped anything either.
+    //
+    // The gate waves this through: the local section is unstamped and holds
+    // nothing but mount-written defaults, so there is "nothing to lose" and no
+    // dialog is raised. The merge must then hand the section to the ACCOUNT.
+    // It used to fall through to the equal-stamp fingerprint tie-break, which
+    // is content order — arbitrary — and when the device's defaults sorted
+    // higher they were pushed straight over the account's real settings
+    // (personal dates and all), silently.
+    const pristine = { location: { lat: 31.778, lng: 35.2354, timeZoneId: 'Asia/Jerusalem', inIsrael: true } };
+    const real = {
+      location: { lat: 29.5581, lng: 34.9482, timeZoneId: 'Asia/Jerusalem', inIsrael: true },
+      personalDates: { people: [{ id: 'p1', name: 'Yahrzeit' }], occasions: [] },
+    };
+    // Pin the premise: the device's defaults really do sort above the account's
+    // data, so the tie-break would pick the device.
+    expect(JSON.stringify(pristine) > JSON.stringify(real)).toBe(true);
+
+    window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(pristine));
+    const { target, state } = memoryTarget(blob({ prefs: { data: real, t: EPOCH } }), 'account-b');
+
+    const result = await reconcileTargets([target]);
+
+    expect(state.pushes).toEqual([]); // the account's settings were NOT overwritten
+    expect(result.outcome).toBe('applied'); // the device took the account's copy instead
+    expect(JSON.parse(window.localStorage.getItem(PREFS_STORAGE_KEY)!)).toEqual(real);
+  });
+
+  it('an equal stamp never costs personal dates — the richer side wins, not the higher-sorting one', async () => {
+    // Same account (lineage recorded), both sides stamped at the same moment
+    // with no history to order them. A deletion always bumps the stamp, so a
+    // side that is poorer at an EQUAL stamp never deleted anything — it simply
+    // never had the data, and must not win a fingerprint coin flip.
+    const t = '2026-07-21T10:00:00.000Z';
+    const withDates = {
+      location: { lat: 32.08, lng: 34.78 },
+      personalDates: { people: [{ id: 'p1', name: 'Yahrzeit' }], occasions: [{ id: 'o1' }] },
+    };
+    const empty = { location: { lat: 41.0, lng: 34.78 }, personalDates: { people: [], occasions: [] } };
+    expect(JSON.stringify(empty) > JSON.stringify(withDates)).toBe(true); // the device would win on order
+
+    recordLineage('telegram-bot', 'account-b');
+    window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(empty));
+    stampSection('prefs', t);
+    const { target, state } = memoryTarget(blob({ prefs: { data: withDates, t } }), 'account-b');
+
+    const result = await reconcileTargets([target]);
+
+    expect(state.pushes).toEqual([]);
+    expect(result.outcome).toBe('applied');
+    expect(JSON.parse(window.localStorage.getItem(PREFS_STORAGE_KEY)!)).toEqual(withDates);
+  });
+
+  it('asks before a push drops a personal date the account holds, then obeys the answer', async () => {
+    // A newer local prefs wins its section WHOLE, so it carries away any item
+    // the account has that this device never saw. That is unrecoverable, so the
+    // push is withheld and the user is asked — even though the store is settled
+    // and this device is genuinely newer.
+    const withDates = { personalDates: { people: [{ id: 'p1', name: 'Yahrzeit' }], occasions: [] } };
+    const without = { personalDates: { people: [], occasions: [] } };
+
+    recordLineage('telegram-bot', 'account-b');
+    window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(without));
+    stampSection('prefs', '2026-07-22T10:00:00.000Z');
+    const { target, state } = memoryTarget(
+      blob({ prefs: { data: withDates, t: '2026-07-21T10:00:00.000Z' } }),
+      'account-b',
+    );
+
+    const first = await reconcileTargets([target]);
+
+    expect(first.outcome).toBe('conflict');
+    expect(first.conflicts[0].reason).toBe('removes-data');
+    expect(state.pushes).toEqual([]); // the account keeps its personal date for now
+    expect(state.blob?.sections.prefs.data).toEqual(withDates);
+
+    // "Keep this device's settings" — the deletion WAS deliberate. The answer
+    // marks the sections as user edits, which exempts them from the guard, so
+    // the deletion now propagates instead of being asked about forever.
+    keepDeviceSettings(first.conflicts);
+    const second = await reconcileTargets([target]);
+
+    expect(second.outcome).toBe('pushed');
+    expect(state.blob?.sections.prefs.data).toEqual(without);
+  });
+
   it('does not conflict when the account holds only sections this device never set', async () => {
     // Device: only a theme. Account: only prefs. Nothing overlaps — the merge
     // fills both sides losslessly (present beats absent).
@@ -504,7 +594,7 @@ describe('connect-time account protection (lineage)', () => {
     const result = await adoptAccountSettings(first.conflicts, [failing]);
     expect(result.ok).toBe(false);
     expect(JSON.parse(window.localStorage.getItem(PREFS_STORAGE_KEY)!)).toEqual({ candleLightingOffset: 18 });
-    expect(canPushBlind(target)).toBe(false); // still quarantined — retry later
+    expect(lineageAccount(target.id)).toBeNull(); // still quarantined — retry later
   });
 
   it('adopts nothing when the account was emptied while the dialog sat open', async () => {
@@ -520,14 +610,14 @@ describe('connect-time account protection (lineage)', () => {
     const result = await adoptAccountSettings(first.conflicts, [target]);
     expect(result).toEqual({ ok: true, language: null });
     expect(JSON.parse(window.localStorage.getItem(PREFS_STORAGE_KEY)!)).toEqual({ candleLightingOffset: 18 });
-    expect(canPushBlind(target)).toBe(true); // resolved — the next push may seed it
+    expect(lineageAccount(target.id)).toBe('account-b'); // resolved — the next push may seed it
   });
 
-  it('records lineage only after the connect run settles — blind pushes stay blocked mid-run', async () => {
+  it('records lineage only after the connect run settles', async () => {
     // Lossless connect (device: theme; account: prefs). While the merged push
-    // is still in flight, the lineage must not be recorded yet: it is what
-    // un-gates canPushBlind, and a change-watcher push slipping through
-    // mid-run would land its pre-merge snapshot over the store.
+    // is still in flight, the lineage must not be recorded yet: recording is
+    // what un-quarantines the store, and doing it mid-run would let a
+    // concurrent run treat the store as settled before this merge landed.
     window.localStorage.setItem(THEME_STORAGE_KEY, 'dark');
     stampSection('theme', '2026-07-21T10:00:00.000Z');
     let releasePush!: () => void;
@@ -548,22 +638,11 @@ describe('connect-time account protection (lineage)', () => {
 
     const run = reconcileTargets([target]);
     await new Promise((resolve) => setTimeout(resolve, 0)); // pull done; push parked on the gate
-    expect(canPushBlind(target)).toBe(false); // mid-run: still quarantined
+    expect(lineageAccount(target.id)).toBeNull(); // mid-run: still quarantined
 
     releasePush();
     await run;
-    expect(canPushBlind(target)).toBe(true); // settled: lineage recorded
-  });
-
-  it('canPushBlind blocks blind pushes until the lineage is recorded', () => {
-    const { target } = memoryTarget(accountBlob(), 'account-b');
-    expect(canPushBlind(target)).toBe(false); // fresh connect — must reconcile first
-
-    recordLineage(target.id, 'account-b');
-    expect(canPushBlind(target)).toBe(true);
-
-    const { target: anonymous } = memoryTarget(null, null);
-    expect(canPushBlind(anonymous)).toBe(true); // no identity — legacy behavior
+    expect(lineageAccount(target.id)).toBe('account-b'); // settled: lineage recorded
   });
 });
 
@@ -575,8 +654,9 @@ describe('consumeStartupReload (startup-reconcile reload guard)', () => {
   it('allows the first startup reload but not a second in the same session', () => {
     // First mount: a newer remote was adopted, so the reconcile reloads once.
     expect(consumeStartupReload()).toBe(true);
-    // After the reload, the Mini App re-applies the bot profile and the reconcile
-    // wants to adopt+reload again — this is the loop, and the guard blocks it.
+    // If anything re-writes prefs at mount, the reconcile wants to adopt+reload
+    // again — that is the loop, and the guard blocks it. (The Mini App's
+    // location re-apply used to be exactly that; it now only seeds.)
     expect(consumeStartupReload()).toBe(false);
     expect(consumeStartupReload()).toBe(false);
   });

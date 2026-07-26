@@ -42,14 +42,25 @@ at module load before the calendar's URL-reflect effect rewrites the URL, and
 remembered in `sessionStorage` for in-webview reloads. Outside Telegram every
 piece is a no-op and the SDK script is never loaded.
 
-**Sync semantics** (see `TelegramMiniApp`): inside Telegram the bot profile is
-the source of truth — on open it overrides the locally persisted location,
-candle offset, and havdalah opinion, but never a change the user just made in
-the app (`applyBotProfile` skips values touched this session). After a
-successful `/me`, drift between the app state and the bot baseline is pushed
-back debounced; the baseline only advances on confirmed syncs, so failed
-pushes retry on the next change. The un-chosen default location is never
-pushed. Every applied sync is confirmed with a silent bot message ("Changed
+**Sync semantics** (see `TelegramMiniApp`): on open, the bot profile's candle
+offset and havdalah opinion override the locally persisted ones — but never a
+change the user just made in the app (`applyBotProfile` skips values touched
+this session). After a successful `/me`, drift between those two values and the
+bot baseline is pushed back debounced; the baseline only advances on confirmed
+syncs, so failed pushes retry on the next change.
+
+**The location is the exception, in both directions.** The bot's location only
+**seeds** a device that has no location of its own (`applyBotProfile` checks
+`locationLocked`: a URL deep link, a restored non-default pref, a precise fix,
+or a pick made here all count as having one), and it is **never written back**.
+The two are not the same act: the bot's location decides where its daily
+messages come from, while the app's is whatever times the user is looking at
+right now — so browsing another city must not move the bot, and a location
+chosen in the app must not be undone at the next launch. The app's own location
+travels between devices in the settings blob like every other setting. This
+also removed a reload loop: re-applying the bot's location on every mount
+rewrote prefs each time, which the settings reconcile then kept adopting (see
+[`settings-sync.md`](settings-sync.md)). Every applied sync is confirmed with a silent bot message ("Changed
 from the calendar app: …", localized), so bot-side state never changes
 invisibly. The shared havdalah opinion keys and the candle-offset semantics are
 identical in both projects by design (`src/lib/zmanim/havdalah.ts`).

@@ -8,24 +8,23 @@ import {
   makeLocation,
   useAppState,
 } from '@/components/providers/app-state';
-import { isDefaultLocation } from '@/lib/location';
 import type { SavedLocation } from '@/lib/saved-locations';
 import { botSyncEnabled, fetchBotProfile, pushBotSync, type BotProfile, type BotSyncPatch } from '@/lib/telegram/bot-sync';
 import { initTelegramMiniApp, isTelegramMiniApp, telegramInitData } from '@/lib/telegram/mini-app';
 import { isHavdalahOpinion } from '@/lib/zmanim';
 
-/** The bot-side values as of the last successful exchange — the sync baseline. */
+/**
+ * The bot-side values as of the last successful exchange — the sync baseline.
+ * Location is absent on purpose: the app never writes the bot's location, so
+ * there is nothing to compare it against (see the write-back below).
+ */
 interface SyncedState {
-  lat: number | null;
-  lng: number | null;
   clOffset: number | null;
   havdalaOpinion: string | null;
 }
 
 function baselineOf(profile: BotProfile): SyncedState {
   return {
-    lat: profile.location?.lat ?? null,
-    lng: profile.location?.lng ?? null,
     clOffset: profile.clOffset,
     havdalaOpinion: profile.havdalaOpinion,
   };
@@ -49,15 +48,20 @@ export function botLocationEntries(profile: BotProfile): SavedLocation[] {
  * Telegram Mini App bridge (renders nothing; see docs/telegram-mini-app.md).
  *
  * On launch inside Telegram it configures the webview (expand, no
- * swipe-to-minimize) and, when the bot API is configured, mirrors the bot
- * profile into the app — the bot is the source of truth in this context, so
- * its location/candle-offset/havdalah override the locally persisted ones
- * (but never an explicit change the user just made here; see
- * applyBotProfile). Afterwards, in-app changes to those settings are pushed
- * back, debounced, so the bot and the mini app stay in step.
+ * swipe-to-minimize) and, when the bot API is configured, brings the bot
+ * profile into the app: candle offset and havdalah opinion override the local
+ * copies (and in-app changes to them are pushed back, debounced, so bot and
+ * mini app stay in step), while the bot's location only ever **seeds** a device
+ * that has no location of its own and is never written back.
+ *
+ * The location is one-way-and-only-once because the two acts differ: the bot's
+ * location decides where its daily messages come from, whereas the app's is
+ * whatever times you are looking at right now. Making them one value meant
+ * browsing another city silently moved the bot — and made every launch rewrite
+ * prefs, which is what used to put the settings reconcile in a reload loop.
  */
 export function TelegramMiniApp() {
-  const { applyBotProfile, location, candleLightingOffset, havdalahOpinion } = useAppState();
+  const { applyBotProfile, candleLightingOffset, havdalahOpinion } = useAppState();
   // Null until /me succeeds — write-back stays off unless authenticated.
   const synced = useRef<SyncedState | null>(null);
   // The initData that authenticated /me, reused for write-back pushes.
@@ -113,24 +117,21 @@ export function TelegramMiniApp() {
   // push it after a short debounce (rapid stepper clicks collapse into one
   // request). The baseline only advances on a confirmed sync, so a failed
   // push retries on the next change instead of being lost silently.
+  //
+  // The LOCATION is deliberately not among them. Picking a place to look at
+  // times for is not the same act as telling the bot where you live — the bot
+  // sends its daily messages from its own location, and browsing another city
+  // here must not silently move them. The app's location travels between
+  // devices in the settings blob like every other setting; the bot's stays the
+  // bot's, changed in the bot. (It is still *read*: see the seed above.)
   useEffect(() => {
     const base = synced.current;
     if (!base) return;
 
     const patch: BotSyncPatch = {};
-    // The un-chosen default (fallback Jerusalem) is not a location choice —
-    // never push it over the bot's saved location.
-    if (!isDefaultLocation(location) && (location.lat !== base.lat || location.lng !== base.lng)) {
-      patch.location = {
-        lat: location.lat,
-        lng: location.lng,
-        name: location.customLabel || location.label,
-        elevation: location.elevation,
-      };
-    }
     if (candleLightingOffset !== base.clOffset) patch.clOffset = candleLightingOffset;
     if (havdalahOpinion !== base.havdalaOpinion) patch.havdalaOpinion = havdalahOpinion;
-    if (!patch.location && patch.clOffset === undefined && patch.havdalaOpinion === undefined) return;
+    if (patch.clOffset === undefined && patch.havdalaOpinion === undefined) return;
 
     const initData = auth.current;
     if (!initData) return;
@@ -143,7 +144,7 @@ export function TelegramMiniApp() {
       });
     }, 800);
     return () => clearTimeout(timer);
-  }, [location, candleLightingOffset, havdalahOpinion, applyBotProfile]);
+  }, [candleLightingOffset, havdalahOpinion, applyBotProfile]);
 
   return null;
 }

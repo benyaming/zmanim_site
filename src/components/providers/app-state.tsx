@@ -226,10 +226,11 @@ export function AppStateProvider({
   const locationLocked = useRef(urlProvided);
   // What the user explicitly changed *this session* — the Telegram bot profile
   // must not override these (unlike locationLocked, a restored save or URL
-  // param doesn't count: the bot profile is fresher than both).
-  const sessionTouched = useRef({ location: false, candleOffset: false, havdalah: false });
+  // param doesn't count: the bot profile is fresher than both). Location isn't
+  // tracked here: the bot's copy never overrides a device that has one at all,
+  // which locationLocked already answers.
+  const sessionTouched = useRef({ candleOffset: false, havdalah: false });
   const setLocation = (loc: AppLocation) => {
-    sessionTouched.current.location = true;
     locationLocked.current = true;
     setLocationState(loc);
   };
@@ -316,7 +317,14 @@ export function AppStateProvider({
     havdalahOpinion?: HavdalahOpinion;
     botLocations?: SavedLocation[];
   }) => {
-    if (profile.location && !sessionTouched.current.location) {
+    // The bot's location SEEDS a device that has none of its own; it never
+    // overrides one. `locationLocked` is exactly that test — a URL deep link, a
+    // restored non-default pref, a precise fix, or a pick made here. Re-applying
+    // it on every launch used to undo a location chosen in the app (and rewrote
+    // prefs each mount, which drove the settings reconcile into a reload loop).
+    // The reverse direction is gone too: the app never writes the bot's
+    // location back (see TelegramMiniApp).
+    if (profile.location && !locationLocked.current) {
       locationLocked.current = true;
       setLocationState(profile.location);
     }
