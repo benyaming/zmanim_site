@@ -42,22 +42,21 @@ export const LEGAL_CONTACT_ISSUES = 'https://github.com/benyaming/zmanim_site/is
 export const PRIVACY: Record<LegalLocale, LegalDoc> = {
   en: {
     title: 'Privacy',
-    lede: 'Zmanim has no user accounts of its own and keeps no database of its users. Everything you configure stays in your browser. Signing in is optional, and all it ever does is move your own settings into an account you already have.',
+    lede: 'Zmanim has no user accounts of its own. Everything you configure stays in your browser. Signing in with Google or Telegram is optional; it syncs your settings across your devices through the Zmanim bot service, and does nothing else.',
     sections: [
       {
         heading: 'What is stored on your device',
         body: [
           'Your location (coordinates, timezone, elevation and the name shown for it), which zmanim and opinions you display, any personal dates you add — names, birthdays, weddings, yahrzeits — and your language, theme and accessibility settings are saved in your browser’s local storage.',
-          'None of it is sent to a server belonging to this site; the site has no user-data backend at all. Clearing this site’s data in your browser erases every bit of it.',
+          'Unless you sign in to sync it (see below), none of this leaves your device — on its own the site has no user-data backend. Clearing this site’s data in your browser erases everything held locally.',
         ],
       },
       {
         heading: 'Signing in with Google',
         body: [
-          'Signing in with Google is optional. When you do, Google gives the site your name, email address and profile picture, and — only if you leave the Drive permission ticked — access to a hidden per-application folder inside your own Google Drive.',
-          'Your name, email address and picture are kept in your browser alone, to show which account you are signed in as. Your settings are written as a single file into that hidden folder in your Drive. Because the site has no server of its own, none of this data is ever transmitted to us, stored by us, or shared with anyone else, and it is never used for advertising or sold.',
-          'The application folder does not appear among your Drive files, and the permission granted cannot see, read or change any other file in your Drive.',
-          'Access tokens last about an hour and are held in memory only — never written to disk. Signing out deletes the stored profile and asks Google to revoke the token. You can also withdraw access at any time under “Manage apps” in your Google Drive settings.',
+          'Signing in with Google is optional. When you do, Google gives the site your name, email address, profile picture, and a one-time token proving who you are.',
+          'The site sends that token once to the Zmanim bot service — the same backend that runs the Telegram bot — which verifies it and returns an identifier for your settings. Your name, email and picture stay in your browser, only to show which account you are signed in as. The bot receives the sign-in token (which carries your Google id and email) in order to verify it, but keeps only the identifier it derives — not your Google id or email themselves.',
+          'From then on your settings are stored by that service under the identifier so they sync across your devices; this can include the personal dates you add — names, birthdays, anniversaries. The data is never used for advertising and never sold, and the site does not contact Google again after you sign in. Signing out removes the identifier and profile from this browser.',
         ],
       },
       {
@@ -85,8 +84,8 @@ export const PRIVACY: Record<LegalLocale, LegalDoc> = {
       {
         heading: 'Removing your data',
         body: [
-          'Sign out of Google or disconnect Telegram to drop the stored credential and stop syncing. Clearing this site’s data in your browser removes everything held on the device.',
-          'To delete the settings file from your Drive, open your Google Drive settings, go to “Manage apps”, find Zmanim and choose “Delete hidden app data” from its Options menu. Disconnecting the app only withdraws its access — it leaves the stored file in place.',
+          'Sign out of Google or disconnect Telegram to remove the stored credential from this device and stop syncing. Clearing this site’s data in your browser removes everything held locally.',
+          'If you signed in with Google, your synced settings are held by the Zmanim bot service under an identifier derived from your account — not your Google id or email. While signed in, “Delete synced data” in Sync & backup erases them from the server for you; settings no device has synced for a long time are also removed automatically.',
           'Signing in with Telegram stores your settings in zmanim_bot under your Telegram user id, along with the name and username Telegram supplies. Saved locations can be deleted one by one in the bot’s /location menu; to have everything erased, ask through /report in the bot or through the contacts below.',
         ],
       },
@@ -101,22 +100,21 @@ export const PRIVACY: Record<LegalLocale, LegalDoc> = {
   },
   he: {
     title: 'פרטיות',
-    lede: 'ל‑Zmanim אין חשבונות משלו ואין מסד נתונים של משתמשים. כל מה שמגדירים נשמר בדפדפן שלכם. ההתחברות היא רשות, וכל תפקידה הוא להעביר את ההגדרות שלכם לחשבון שכבר יש לכם.',
+    lede: 'ל‑Zmanim אין חשבונות משלו. כל מה שמגדירים נשמר בדפדפן שלכם. ההתחברות — עם Google או עם טלגרם — היא רשות; היא מסנכרנת את ההגדרות שלכם בין המכשירים דרך שירות הבוט של Zmanim, ותו לא.',
     sections: [
       {
         heading: 'מה נשמר במכשיר שלכם',
         body: [
           'המיקום (נקודות ציון, אזור זמן, גובה והשם המוצג עבורו), הזמנים והשיטות שבחרתם להציג, תאריכים אישיים שהוספתם — שמות, ימי הולדת, נישואין, יום השנה — וכן שפה, ערכת נושא והגדרות נגישות, נשמרים באחסון המקומי של הדפדפן.',
-          'שום פרט מזה אינו נשלח לשרת של האתר; לאתר אין כלל שרת לנתוני משתמשים. מחיקת נתוני האתר בדפדפן מוחקת את הכול.',
+          'אלא אם תתחברו כדי לסנכרן (ראו להלן), שום פרט מזה אינו יוצא מהמכשיר — לאתר עצמו אין שרת לנתוני משתמשים. מחיקת נתוני האתר בדפדפן מוחקת את כל השמור מקומית.',
         ],
       },
       {
         heading: 'התחברות עם Google',
         body: [
-          'ההתחברות עם Google היא רשות. כשמתחברים, Google מוסרת לאתר את השם, כתובת הדוא״ל ותמונת הפרופיל — ואם משאירים את ההרשאה ל‑Drive מסומנת, גם גישה לתיקייה נסתרת ייעודית לאפליקציה בתוך ה‑Drive הפרטי שלכם.',
-          'השם, הדוא״ל והתמונה נשמרים בדפדפן שלכם בלבד, כדי להציג באיזה חשבון אתם מחוברים. ההגדרות נכתבות כקובץ אחד לאותה תיקייה נסתרת ב‑Drive. מכיוון שלאתר אין שרת משלו, שום נתון מאלה אינו מועבר אלינו, אינו נשמר אצלנו ואינו נמסר לאף גורם אחר; הוא אינו משמש לפרסום ואינו נמכר.',
-          'תיקיית האפליקציה אינה מופיעה בין הקבצים שלכם ב‑Drive, וההרשאה שניתנה אינה יכולה לראות, לקרוא או לשנות שום קובץ אחר ב‑Drive.',
-          'אסימוני הגישה תקפים כשעה ונשמרים בזיכרון בלבד — לעולם לא לדיסק. יציאה מהחשבון מוחקת את הפרופיל השמור ומבקשת מ‑Google לבטל את האסימון. אפשר גם לשלול את הגישה בכל עת דרך «ניהול אפליקציות» בהגדרות Google Drive.',
+          'ההתחברות עם Google היא רשות. כשמתחברים, Google מוסרת לאתר את השם, כתובת הדוא״ל, תמונת הפרופיל ואסימון חד‑פעמי המאמת מי אתם.',
+          'האתר שולח את האסימון פעם אחת לשירות הבוט של Zmanim — אותו שרת שמריץ את בוט הטלגרם — שמאמת אותו ומחזיר מזהה עבור ההגדרות שלכם. השם, הדוא״ל והתמונה נשמרים בדפדפן שלכם בלבד, כדי להציג באיזה חשבון אתם מחוברים. הבוט מקבל את אסימון ההתחברות (הכולל את מזהה Google והדוא״ל שלכם) כדי לאמת אותו, אך שומר רק את המזהה הנגזר — לא את המזהה או הדוא״ל עצמם.',
+          'מכאן ואילך ההגדרות שלכם נשמרות באותו שירות תחת המזהה, כדי שיסתנכרנו בין המכשירים; זה כולל תאריכים אישיים שאתם מוסיפים — שמות, ימי הולדת, ימי שנה. הנתונים אינם משמשים לפרסום ואינם נמכרים, והאתר אינו פונה שוב ל‑Google לאחר ההתחברות. יציאה מהחשבון מסירה את המזהה ואת הפרופיל מהדפדפן הזה.',
         ],
       },
       {
@@ -144,8 +142,8 @@ export const PRIVACY: Record<LegalLocale, LegalDoc> = {
       {
         heading: 'מחיקת הנתונים',
         body: [
-          'יציאה מחשבון Google או ניתוק טלגרם מוחקים את פרטי ההזדהות השמורים ומפסיקים את הסנכרון. מחיקת נתוני האתר בדפדפן מסירה את כל מה ששמור במכשיר.',
-          'כדי למחוק את קובץ ההגדרות מה‑Drive: היכנסו להגדרות Google Drive, עברו ל«ניהול אפליקציות», אתרו את Zmanim ובחרו «מחיקת נתוני אפליקציה מוסתרים» בתפריט האפשרויות שלה. ניתוק האפליקציה שולל ממנה את הגישה בלבד — הקובץ השמור נשאר במקומו.',
+          'יציאה מחשבון Google או ניתוק טלגרם מסירים את פרטי ההזדהות מהמכשיר ומפסיקים את הסנכרון. מחיקת נתוני האתר בדפדפן מסירה את כל השמור מקומית.',
+          'אם התחברתם עם Google, ההגדרות המסונכרנות שלכם נשמרות בשירות הבוט של Zmanim תחת מזהה הנגזר מהחשבון שלכם — לא מזהה Google או הדוא״ל עצמם. בזמן שאתם מחוברים, «מחיקת הנתונים המסונכרנים» ב«סנכרון וגיבוי» מוחקת אותן מהשרת עבורכם; הגדרות שאף מכשיר לא סנכרן זמן רב מוסרות גם אוטומטית.',
           'ההתחברות עם טלגרם שומרת את ההגדרות ב‑zmanim_bot תחת מזהה המשתמש שלכם בטלגרם, יחד עם השם ושם המשתמש שטלגרם מספקת. מיקומים שמורים ניתן למחוק אחד‑אחד בתפריט /location של הבוט; למחיקה מלאה יש לפנות דרך /report בבוט או דרך פרטי הקשר שלהלן.',
         ],
       },
@@ -160,22 +158,21 @@ export const PRIVACY: Record<LegalLocale, LegalDoc> = {
   },
   ru: {
     title: 'Конфиденциальность',
-    lede: 'У Zmanim нет собственных учётных записей и нет базы данных пользователей. Всё, что вы настраиваете, остаётся в вашем браузере. Вход необязателен и нужен лишь для того, чтобы перенести ваши настройки в аккаунт, который у вас уже есть.',
+    lede: 'У Zmanim нет собственных учётных записей. Всё, что вы настраиваете, остаётся в вашем браузере. Вход — через Google или Telegram — необязателен; он лишь синхронизирует ваши настройки между устройствами через сервис бота Zmanim, и ничего больше.',
     sections: [
       {
         heading: 'Что хранится на вашем устройстве',
         body: [
           'Локация (координаты, часовой пояс, высота и отображаемое название), выбранные зманим и мнения, добавленные личные даты — имена, дни рождения, свадьбы, йорцайты — а также язык, тема и настройки доступности сохраняются в локальном хранилище браузера.',
-          'Ничего из этого не отправляется на сервер сайта: у сайта вообще нет бэкенда для пользовательских данных. Очистка данных сайта в браузере удаляет всё без остатка.',
+          'Пока вы не войдёте для синхронизации (см. ниже), ничего из этого не покидает ваше устройство — у самого сайта нет бэкенда для пользовательских данных. Очистка данных сайта в браузере удаляет всё, что хранится локально.',
         ],
       },
       {
         heading: 'Вход через Google',
         body: [
-          'Вход через Google необязателен. При входе Google передаёт сайту ваше имя, адрес электронной почты и фотографию профиля, а также — только если вы оставите отмеченным разрешение для Drive — доступ к скрытой служебной папке приложения в вашем собственном Google Drive.',
-          'Имя, почта и фотография хранятся только в вашем браузере, чтобы показать, под каким аккаунтом выполнен вход. Настройки записываются одним файлом в эту скрытую папку в вашем Drive. Поскольку у сайта нет собственного сервера, эти данные никогда не передаются нам, не хранятся у нас и не передаются третьим лицам; они не используются для рекламы и не продаются.',
-          'Папка приложения не отображается среди ваших файлов в Drive, а выданное разрешение не позволяет видеть, читать или изменять любой другой файл в вашем Drive.',
-          'Токены доступа живут около часа и хранятся только в памяти — никогда на диске. Выход из аккаунта удаляет сохранённый профиль и просит Google отозвать токен. Отозвать доступ можно в любой момент в разделе «Управление приложениями» настроек Google Drive.',
+          'Вход через Google необязателен. При входе Google передаёт сайту ваше имя, адрес электронной почты, фотографию профиля и одноразовый токен, подтверждающий, кто вы.',
+          'Сайт один раз отправляет этот токен сервису бота Zmanim — тому же серверу, что обслуживает бота Telegram, — который проверяет его и возвращает идентификатор для ваших настроек. Имя, почта и фотография остаются в вашем браузере только для того, чтобы показать, под каким аккаунтом выполнен вход. Бот получает токен входа (в котором есть ваш идентификатор Google и почта), чтобы проверить его, но хранит только производный идентификатор — не сам идентификатор Google и не почту.',
+          'С этого момента ваши настройки хранятся этим сервисом под идентификатором, чтобы синхронизироваться между устройствами; это может включать добавленные вами личные даты — имена, дни рождения, годовщины. Данные никогда не используются для рекламы и не продаются, а сайт после входа больше не обращается к Google. Выход из аккаунта удаляет идентификатор и профиль из этого браузера.',
         ],
       },
       {
@@ -203,8 +200,8 @@ export const PRIVACY: Record<LegalLocale, LegalDoc> = {
       {
         heading: 'Удаление данных',
         body: [
-          'Выход из Google или отключение Telegram удаляет сохранённые учётные данные и прекращает синхронизацию. Очистка данных сайта в браузере убирает всё, что хранится на устройстве.',
-          'Чтобы удалить файл настроек из Drive, откройте настройки Google Drive, перейдите в «Управление приложениями», найдите Zmanim и выберите «Удалить скрытые данные приложения» в меню параметров. Отключение приложения лишь отзывает доступ — сохранённый файл при этом остаётся.',
+          'Выход из Google или отключение Telegram удаляет сохранённые учётные данные с устройства и прекращает синхронизацию. Очистка данных сайта в браузере убирает всё, что хранится локально.',
+          'Если вы вошли через Google, ваши синхронизированные настройки хранятся сервисом бота Zmanim под идентификатором, производным от вашего аккаунта, — не самим идентификатором Google или почтой. Пока вы в аккаунте, «Удалить синхронизированные данные» в «Синхронизации и резервной копии» удаляет их с сервера; настройки, которые ни одно устройство долго не синхронизировало, удаляются автоматически.',
           'Вход через Telegram сохраняет ваши настройки в zmanim_bot под вашим идентификатором пользователя Telegram, вместе с именем и username, которые предоставляет Telegram. Сохранённые локации можно удалять по одной в меню /location бота; чтобы удалить всё, попросите об этом через /report в боте или по контактам ниже.',
         ],
       },

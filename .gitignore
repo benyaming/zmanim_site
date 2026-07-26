@@ -49,3 +49,7 @@ next-env.d.ts
 
 # IDE
 /.idea/
+
+# Claude Code local state (worktrees with absolute-path gitlinks, machine-local
+# settings, lock files) — never commit; a blanket `git add -A` would sweep it in.
+/.claude/

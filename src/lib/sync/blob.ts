@@ -41,6 +41,17 @@ export interface SettingsBlob {
   sections: Record<SectionName, BlobSection>;
 }
 
+/**
+ * A pull that couldn't read the store (network/HTTP error) — distinct from a
+ * pull that read it and found nothing (`null`). The reconcile must NOT push
+ * over a store whose contents it couldn't read, or a transient read failure on
+ * a fresh device would overwrite good remote settings with local defaults.
+ */
+export const PULL_FAILED = Symbol('pull-failed');
+
+/** A target's pull result: the blob, `null` (definitively empty), or a read failure. */
+export type PullResult = SettingsBlob | null | typeof PULL_FAILED;
+
 /** Per-section change stamps: { prefs?, a11y?, theme?, language? } (ISO). */
 const META_KEY = 'zmanim:sync-meta:v1';
 /** The prefs fingerprint this device last agreed on (gates the prefs watcher). */

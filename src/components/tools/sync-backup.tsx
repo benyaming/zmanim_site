@@ -5,16 +5,22 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useIsMiniApp } from '@/hooks/use-mini-app';
+import { Link } from '@/i18n/navigation';
 import { downloadBlob } from '@/lib/export/download';
-import { applyImportedSettings, reloadForSync, runSync } from '@/lib/sync/engine';
 import {
-  connectGoogleDrive,
-  disconnectGoogleDrive,
-  googleSyncConfigured,
-  googleSyncConnected,
-} from '@/lib/sync/google-drive';
+  GOOGLE_AUTH_EVENT,
+  googleAccountDisplayName,
+  googleLoginConfigured,
+  loadGoogleAccount,
+  mountGoogleSignInButton,
+  signOutFromGoogle,
+  type GoogleAccount,
+} from '@/lib/google/web-login';
+import { applyImportedSettings, reloadForSync, runSync } from '@/lib/sync/engine';
+import { deleteGoogleWebSync } from '@/lib/sync/google-websync';
 import {
   buildSettingsLink,
   parseSettingsFile,
@@ -35,27 +41,28 @@ import { showToast } from '@/lib/toast';
 import type { SettingsBlob } from '@/lib/sync/blob';
 
 /**
- * Sync & backup tool: connect a sync account (Telegram / Google Drive) and
- * move settings between devices with a link or a file. The sync engine
- * itself runs app-wide (see providers/settings-sync.tsx); this tool is its
- * control panel.
+ * Sync & backup tool: connect a sync account (Telegram / Google) and move
+ * settings between devices with a link or a file. The sync engine itself runs
+ * app-wide (see providers/settings-sync.tsx); this tool is its control panel.
  */
 export function SyncBackupTool() {
   const t = useTranslations('sync');
   const isMiniApp = useIsMiniApp();
 
   const [webAuth, setWebAuth] = useState<TelegramWebAuth | null>(() => loadTelegramWebAuth());
-  const [googleOn, setGoogleOn] = useState(() => googleSyncConnected());
+  const [googleAccount, setGoogleAccount] = useState<GoogleAccount | null>(() => loadGoogleAccount());
   const [busy, setBusy] = useState(false);
   const [pendingFile, setPendingFile] = useState<SettingsBlob | null>(null);
+  const [confirmingGoogleDelete, setConfirmingGoogleDelete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const widgetRef = useRef<HTMLDivElement | null>(null);
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
 
-  /** Reconcile now; a user gesture, so Google may open its popup. */
+  /** Reconcile now (a user gesture). */
   const syncNow = async (connectFlow: boolean) => {
     setBusy(true);
     try {
-      const { outcome, appliedLanguage } = await runSync({ interactive: true });
+      const { outcome, appliedLanguage } = await runSync();
       if (outcome === 'applied') {
         reloadForSync(appliedLanguage);
         return;
@@ -76,6 +83,58 @@ export function SyncBackupTool() {
       void syncNow(true);
     });
   }, [showTelegramLogin]);
+
+  /**
+   * The Google account is a plain-website affair. Inside the Mini App the
+   * Telegram account already syncs everything through the bot.
+   */
+  const showGoogleSection = !isMiniApp && googleLoginConfigured();
+
+  // React to sign-in / sign-out / invalidation from anywhere (e.g. a sync that
+  // hit a 401 after a bot-token rotation drops the credential) so an open panel
+  // reflects it live instead of showing a stale "signed in".
+  useEffect(() => {
+    const refresh = () => setGoogleAccount(loadGoogleAccount());
+    window.addEventListener(GOOGLE_AUTH_EVENT, refresh);
+    return () => window.removeEventListener(GOOGLE_AUTH_EVENT, refresh);
+  }, []);
+
+  // Render Google's official sign-in button while signed out. Signing in is
+  // the only Google interaction — after it, syncs go through the bot.
+  const showGoogleSignIn = showGoogleSection && !googleAccount;
+  useEffect(() => {
+    if (!showGoogleSignIn || !googleButtonRef.current) return;
+    return mountGoogleSignInButton(googleButtonRef.current, (account) => {
+      if (!account) {
+        showToast('sync.syncFailed'); // exchange with the bot failed after the chooser
+        return;
+      }
+      setGoogleAccount(account);
+      // The reconcile after sign-in is done by the settings-sync provider on
+      // GOOGLE_AUTH_EVENT, so it runs even if this panel is closed mid-flow.
+    });
+  }, [showGoogleSignIn]);
+
+  // Erase the account's settings from the bot, then sign out. This is the only
+  // deletion path for a Google user — support can't locate their opaque row,
+  // so it must be self-service while the credential is still on the device.
+  const deleteGoogleData = async () => {
+    if (!googleAccount) return;
+    setBusy(true);
+    try {
+      const ok = await deleteGoogleWebSync(googleAccount);
+      setConfirmingGoogleDelete(false);
+      if (!ok) {
+        showToast('sync.syncFailed');
+        return;
+      }
+      signOutFromGoogle();
+      setGoogleAccount(null);
+      showToast('sync.googleDeleted');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const onImportFile = async (file: File) => {
     const blob = parseSettingsFile(await file.text());
@@ -149,14 +208,35 @@ export function SyncBackupTool() {
         </div>
       )}
 
-      {googleSyncConfigured() && (
+      {showGoogleSection && (
         <>
           {showTelegramSection && <Separator />}
           <div className="space-y-2">
             <p className="text-sm font-semibold">{t('googleTitle')}</p>
-            {googleOn ? (
+            {googleAccount ? (
               <>
-                <p className="text-muted-foreground text-sm">{t('googleConnected')}</p>
+                <div className="flex items-center gap-2">
+                  {/* Initials, not the remote Google avatar: rendering that URL
+                      would hit Google's image servers and leak the user's IP
+                      every time the panel opens — contradicting the privacy
+                      promise that the site never contacts Google after sign-in. */}
+                  <div
+                    aria-hidden
+                    className="bg-muted text-muted-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-medium"
+                  >
+                    {(googleAccountDisplayName(googleAccount)[0] || '?').toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm">
+                      {googleAccountDisplayName(googleAccount)
+                        ? t('googleSignedInAs', { name: googleAccountDisplayName(googleAccount) })
+                        : t('googleSignedIn')}
+                    </p>
+                    {googleAccount.name && googleAccount.email && (
+                      <p className="text-muted-foreground truncate text-xs">{googleAccount.email}</p>
+                    )}
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1" disabled={busy} onClick={() => void syncNow(false)}>
                     <RefreshCw className="size-4" />
@@ -167,45 +247,48 @@ export function SyncBackupTool() {
                     size="sm"
                     className="flex-1"
                     onClick={() => {
-                      disconnectGoogleDrive();
-                      setGoogleOn(false);
+                      signOutFromGoogle();
+                      setGoogleAccount(null);
                     }}
                   >
-                    {t('disconnect')}
+                    {t('signOut')}
                   </Button>
                 </div>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setConfirmingGoogleDelete(true)}
+                  className="text-muted-foreground hover:text-destructive self-start text-xs underline underline-offset-2 disabled:opacity-50"
+                >
+                  {t('googleDelete')}
+                </button>
               </>
             ) : (
               <>
                 <p className="text-muted-foreground text-sm">{t('googleHint')}</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  disabled={busy}
-                  onClick={() => {
-                    setBusy(true);
-                    void connectGoogleDrive()
-                      .then((ok) => {
-                        setBusy(false);
-                        if (!ok) {
-                          showToast('sync.syncFailed');
-                          return;
-                        }
-                        setGoogleOn(true);
-                        return syncNow(true);
-                      });
-                  }}
-                >
-                  {t('googleConnect')}
-                </Button>
+                {/* Google's own rendered button owns the sign-in gesture. */}
+                <div ref={googleButtonRef} className="flex justify-center" />
+                <p className="text-muted-foreground text-xs">
+                  {t.rich('googleStored', {
+                    link: (chunks) => (
+                      <Link
+                        href="/privacy"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:text-foreground underline underline-offset-2"
+                      >
+                        {chunks}
+                      </Link>
+                    ),
+                  })}
+                </p>
               </>
             )}
           </div>
         </>
       )}
 
-      {(showTelegramSection || googleSyncConfigured()) && <Separator />}
+      {(showTelegramSection || showGoogleSection) && <Separator />}
 
       <div className="space-y-2">
         <p className="text-sm font-semibold">{t('transferTitle')}</p>
@@ -261,6 +344,23 @@ export function SyncBackupTool() {
           </div>
         )}
       </div>
+
+      <Dialog open={confirmingGoogleDelete} onOpenChange={(open) => !busy && setConfirmingGoogleDelete(open)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('googleDeleteTitle')}</DialogTitle>
+            <DialogDescription>{t('googleDeleteBody')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" disabled={busy} onClick={() => setConfirmingGoogleDelete(false)}>
+              {t('importCancel')}
+            </Button>
+            <Button variant="destructive" disabled={busy} onClick={() => void deleteGoogleData()}>
+              {t('googleDeleteConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
