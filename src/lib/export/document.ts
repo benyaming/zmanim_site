@@ -34,16 +34,19 @@ import {
   fitColumnWeights,
   fitFontSize,
   fitRowPadding,
+  MAX_TABLE_FONT_PX,
   MIN_TABLE_FONT_PX,
   pickColumns,
   rawFontSize,
   rowLineCounts,
   sheetBodyHeight,
   sliceRows,
+  tableDemandWidthPx,
   transposeExportGrid,
   WEEK_MAX_FONT_PX,
 } from './grid';
 import { defaultMeasurer, type TextMeasurer } from './measure';
+import { CONTENT_WIDTH_PX } from './page';
 import { pageFootnotes, type ZmanimTable, type ZmanimTableRow } from './table';
 
 export interface ExportDocumentInput {
@@ -67,6 +70,15 @@ export interface ExportDocSheet {
   kind: 'times' | 'learning' | 'week';
   /** Fitted grid — weights are final; the renderer derives widths from them. */
   grid: ExportGrid;
+  /**
+   * A sparse month flowed into side-by-side halves (first half of the month,
+   * then the rest), each a row-slice of `grid`. Set only when the columns ask
+   * for well under half the page — a one-cycle learning list, a two-zman
+   * selection — where one full-width table would be mostly whitespace.
+   */
+  flowGrids?: ExportGrid[];
+  /** Table width per flowed half, in px. */
+  flowWidthPx?: number;
   /** Body font size the layout was fitted at. */
   fontPx: number;
   /** Per-side vertical cell padding spending the sheet's leftover height. */
@@ -87,6 +99,14 @@ const LINE_HEIGHT = 1.35;
 const ROW_PADDING_PX = 4;
 /** Height one footnote line costs the sheet's body. */
 const FOOTNOTE_LINE_PX = 12;
+/** Gap between the side-by-side halves of a flowed sparse sheet. */
+const FLOW_GAP_PX = 32;
+/** Don't flow a sheet shorter than this — a handful of rows reads fine as one table. */
+const FLOW_MIN_ROWS = 14;
+/** A flowed half may stretch this far past its measured demand, and no farther. */
+const FLOW_MAX_STRETCH = 1.5;
+/** Floor width for a flowed half, so a two-column table doesn't shrink to a sliver. */
+const FLOW_MIN_WIDTH_PX = 300;
 
 interface Slice {
   start: number;
@@ -300,11 +320,18 @@ function monthSheets(
     const grid = sliceRows(fitted, s.start, s.end);
     const sliceLines = lines.slice(s.start, s.end);
     const footnotes = kind === 'times' ? footnotesFor(table, grid, includeFasts) : [];
+    // A single-slice month may flow into halves; `budget` already accounts for
+    // this sheet's footnotes (they equal the month's when nothing was split).
+    const flow = slices.length === 1 ? flowSparseSheet(grid, fontPx, budget, m) : null;
+    const padRows = flow ? Math.max(...flow.grids.map((g) => g.rows.length)) : grid.rows.length;
+    const padLines = flow ? Math.max(...flow.grids.map((g) => g.lineTotal ?? g.rows.length)) : sum(sliceLines);
     return {
       kind,
       grid: { ...grid, lineTotal: sum(sliceLines) },
+      flowGrids: flow?.grids,
+      flowWidthPx: flow?.widthPx,
       fontPx,
-      rowPaddingPx: fitRowPadding(fontPx, grid.rows.length, sum(sliceLines), grid, footnotes.length * FOOTNOTE_LINE_PX, m),
+      rowPaddingPx: fitRowPadding(fontPx, padRows, padLines, grid, footnotes.length * FOOTNOTE_LINE_PX, m),
       startIso: grid.rowKeys[0] ?? '',
       endIso: grid.rowKeys[grid.rowKeys.length - 1] ?? '',
       part: 1,
@@ -312,6 +339,53 @@ function monthSheets(
       footnotes,
     };
   });
+}
+
+/**
+ * Flow a sparse month into two side-by-side halves — the pocket-luach answer
+ * to a two-column table on landscape paper. Applies only when the columns ask
+ * for well under half the page at full size; the halves break between weeks,
+ * and each half is capped at a modest stretch past its measured demand so the
+ * columns stay set rather than dissolving into whitespace.
+ */
+function flowSparseSheet(
+  grid: ExportGrid,
+  fontPx: number,
+  budgetPx: number,
+  m: TextMeasurer,
+): { grids: ExportGrid[]; widthPx: number } | null {
+  if (grid.rows.length < FLOW_MIN_ROWS || fontPx < MAX_TABLE_FONT_PX) return null;
+  const demand = tableDemandWidthPx(grid.weights, fontPx, m);
+  if (demand * 2 + FLOW_GAP_PX > CONTENT_WIDTH_PX) return null;
+
+  const widthPx = Math.min((CONTENT_WIDTH_PX - FLOW_GAP_PX) / 2, Math.max(demand * FLOW_MAX_STRETCH, FLOW_MIN_WIDTH_PX));
+  // Wrapped lines RE-COUNTED at the half width: a Rambam reading that sat on
+  // one line across the full page takes two or three in a half-width column,
+  // and cutting by the full-width counts overflowed the page and clipped the
+  // month's last days.
+  const lines = rowLineCounts(grid, grid.weights, fontPx, m, widthPx);
+
+  // Choose the week boundary whose taller half is shortest; if even that half
+  // cannot fit the page, the sheet stays a single table — never clipped.
+  const total = rowsHeight(lines, fontPx);
+  let cut = 0;
+  let best = Infinity;
+  for (const week of weekSlices(grid)) {
+    if (week.start === 0) continue;
+    const left = rowsHeight(lines.slice(0, week.start), fontPx);
+    const taller = Math.max(left, total - left);
+    if (taller < best) {
+      best = taller;
+      cut = week.start;
+    }
+  }
+  if (cut === 0 || best > budgetPx) return null;
+
+  const halves = [sliceRows(grid, 0, cut), sliceRows(grid, cut, grid.rows.length)];
+  return {
+    grids: halves.map((g, i) => ({ ...g, lineTotal: sum(i === 0 ? lines.slice(0, cut) : lines.slice(cut)) })),
+    widthPx,
+  };
 }
 
 /**

@@ -73,14 +73,39 @@ export function ExportTablePage({
       className="export-light flex flex-col overflow-hidden bg-white font-sans text-neutral-900"
       style={{ width: PAGE_WIDTH_PX, height: PAGE_HEIGHT_PX, padding: PAGE_PADDING_PX }}
     >
+      {/* bdi + nowrap: the title mixes scripts (a Hebrew report over a
+          Cyrillic place name), and without isolation the bidi algorithm
+          scrambles the word order and breaks the name across lines. */}
       <div className="mb-2 flex shrink-0 items-baseline justify-between gap-4">
-        <h1 className="text-[15px] leading-none font-semibold tracking-tight">{title}</h1>
-        <p className="text-[11px] leading-none text-neutral-600">
-          {subtitle} <span className="text-neutral-400">· {pageLabel}</span>
+        <h1 className="text-[15px] leading-none font-semibold tracking-tight whitespace-nowrap">
+          <bdi>{title}</bdi>
+        </h1>
+        <p className="text-[11px] leading-none whitespace-nowrap text-neutral-600">
+          <bdi>{subtitle}</bdi>
+          <span dir="ltr" className="ms-3 text-neutral-400">
+            {pageLabel}
+          </span>
         </p>
       </div>
 
-      <SheetTable grid={sheet.grid} fontSize={sheet.fontPx} rowPadding={sheet.rowPaddingPx} />
+      {sheet.flowGrids ? (
+        // A sparse month flowed into side-by-side halves — first half of the
+        // month, then the rest — instead of two columns stretched across the
+        // whole page with whitespace between them.
+        <div className="flex items-start justify-center" style={{ gap: 32 }}>
+          {sheet.flowGrids.map((grid, i) => (
+            <SheetTable
+              key={i}
+              grid={grid}
+              fontSize={sheet.fontPx}
+              rowPadding={sheet.rowPaddingPx}
+              tableWidth={sheet.flowWidthPx}
+            />
+          ))}
+        </div>
+      ) : (
+        <SheetTable grid={sheet.grid} fontSize={sheet.fontPx} rowPadding={sheet.rowPaddingPx} />
+      )}
 
       <div className="mt-auto shrink-0 pt-2">
         {/* Values that occur once or twice a month — the fast bookends, the
@@ -106,20 +131,34 @@ export function ExportTablePage({
  * being avoided, and clipping to the content box leaves the cell's own padding as
  * the gap between neighbouring rules.
  */
-function SheetTable({ grid, fontSize, rowPadding }: { grid: ExportGrid; fontSize: number; rowPadding: number }) {
+function SheetTable({
+  grid,
+  fontSize,
+  rowPadding,
+  tableWidth,
+}: {
+  grid: ExportGrid;
+  fontSize: number;
+  rowPadding: number;
+  /** Fixed table width for a flowed half; full content width when omitted. */
+  tableWidth?: number;
+}) {
   const runs = headerRuns(grid);
   const hasSubTier = grid.subHeaders.some((sub) => sub !== '');
   // Widths from the fitted per-column weights, so a column is as wide as its
   // longest value needs and no wider. Padding is allocated per column rather
   // than pro-rata — see fitColumnWidths, which exists because the pro-rata
   // version silently truncated clock times on wide sheets.
-  const widths = fitColumnWidths(grid.weights).map((f) => `${(f * 100).toFixed(3)}%`);
+  const widths = fitColumnWidths(grid.weights, tableWidth).map((f) => `${(f * 100).toFixed(3)}%`);
   const mayWrap = (row: number, col: number) =>
     (grid.proseRows?.[row] === true && !grid.text[col]) ||
     (grid.wrapTextColumns === true && grid.text[col] && col >= (grid.keyColumns ?? 0));
 
   return (
-    <table className="w-full table-fixed border-collapse" style={{ fontSize, lineHeight: 1.35 }}>
+    <table
+      className={cn('table-fixed border-collapse', tableWidth === undefined && 'w-full')}
+      style={{ fontSize, lineHeight: 1.35, width: tableWidth }}
+    >
       <colgroup>
         {widths.map((width, i) => (
           <col key={i} style={{ width }} />
@@ -130,7 +169,12 @@ function SheetTable({ grid, fontSize, rowPadding }: { grid: ExportGrid; fontSize
             row of captions hanging off the rule. The opinions below stay
             TOP-aligned: that is what holds every rule the same distance from its
             own label. */}
-        <tr style={{ fontSize: fontSize * HEADER_FONT_SCALE }}>
+        {/* The header block always closes with a rule before the body — the
+            opinion tier carries it when present, the name tier otherwise. */}
+        <tr
+          className={cn(!hasSubTier && 'border-b border-neutral-400')}
+          style={{ fontSize: fontSize * HEADER_FONT_SCALE }}
+        >
           {runs.map((run) => (
             <th
               key={run.start}
@@ -147,7 +191,7 @@ function SheetTable({ grid, fontSize, rowPadding }: { grid: ExportGrid; fontSize
           ))}
         </tr>
         {hasSubTier && (
-          <tr style={{ fontSize: fontSize * SUB_HEADER_FONT_SCALE }}>
+          <tr className="border-b border-neutral-400" style={{ fontSize: fontSize * SUB_HEADER_FONT_SCALE }}>
             {grid.subHeaders.map((sub, i) => (
               <th
                 key={i}

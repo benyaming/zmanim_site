@@ -471,10 +471,23 @@ export function rawFontSize(weights: number[], m: TextMeasurer = defaultMeasurer
  * Giving each column its padding up front and dividing only what is left keeps
  * every column's text space exactly the width it was measured to need.
  */
-export function fitColumnWidths(weights: number[]): number[] {
+export function fitColumnWidths(weights: number[], tableWidthPx = CONTENT_WIDTH_PX): number[] {
   const total = weights.reduce((sum, w) => sum + w, 0) || 1;
-  const textSpace = Math.max(1, CONTENT_WIDTH_PX - CELL_PADDING_PX * weights.length);
-  return weights.map((w) => (CELL_PADDING_PX + (w / total) * textSpace) / CONTENT_WIDTH_PX);
+  const textSpace = Math.max(1, tableWidthPx - CELL_PADDING_PX * weights.length);
+  return weights.map((w) => (CELL_PADDING_PX + (w / total) * textSpace) / tableWidthPx);
+}
+
+/**
+ * The width the fitted columns actually ask for at this font, in px — cells,
+ * headers and padding. When this comes to well under the page, the sheet is
+ * SPARSE: stretching two columns across a landscape page is how a Daf Yomi
+ * list ends up with a half-metre of white between the date and the daf, so the
+ * document builder uses this to flow a sparse month into side-by-side halves.
+ */
+export function tableDemandWidthPx(weights: number[], fontPx: number, m: TextMeasurer = defaultMeasurer()): number {
+  const unit = m.width(UNIT_TEXT, REFERENCE_FONT_PX) || 1;
+  const total = weights.reduce((sum, w) => sum + w, 0);
+  return total * unit * (fontPx / REFERENCE_FONT_PX) + weights.length * CELL_PADDING_PX;
 }
 
 /**
@@ -533,8 +546,9 @@ export function rowLineCounts(
   weights: number[],
   fontPx: number,
   m: TextMeasurer = defaultMeasurer(),
+  tableWidthPx = CONTENT_WIDTH_PX,
 ): number[] {
-  const widths = fitColumnWidths(weights).map((f) => f * CONTENT_WIDTH_PX - CELL_PADDING_PX);
+  const widths = fitColumnWidths(weights, tableWidthPx).map((f) => f * tableWidthPx - CELL_PADDING_PX);
   const scale = fontPx / REFERENCE_FONT_PX;
   return grid.rows.map((row, r) => {
     const proseRow = grid.proseRows?.[r] === true;

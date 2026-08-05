@@ -23,21 +23,21 @@ export interface Release {
 export const RELEASES: readonly Release[] = [
   {
     version: '1.25',
-    date: '2026-07-28',
+    date: '2026-08-06',
     notes: {
       en: [
-        'The zmanim PDF is far more compact — a whole month on one sheet, with each zman’s opinions under one heading.',
-        'Print headings name every opinion in full, each under a rule of its own.',
+        'The zmanim PDF is rebuilt: one month per sheet, opinions grouped under shared headings, fasts and the molad in the footer.',
+        'Daily learning prints on its own sheet, and a live preview in the export dialog shows every page before you download.',
         'The zmanim export remembers your last selection.',
       ],
       he: [
-        'טבלת הזמנים ב־PDF קומפקטית הרבה יותר — חודש שלם בעמוד אחד, וכל השיטות של זמן תחת כותרת אחת.',
-        'כותרות ההדפסה מציינות כל שיטה בשמה המלא, כל אחת עם קו הפרדה משלה.',
+        'ה־PDF של הזמנים נבנה מחדש: חודש בכל עמוד, השיטות מקובצות תחת כותרת משותפת, הצומות והמולד בתחתית העמוד.',
+        'הלימוד היומי מודפס בעמוד משלו, ותצוגה מקדימה בחלון הייצוא מציגה כל עמוד לפני ההורדה.',
         'ייצוא הזמנים זוכר את הבחירה האחרונה שלך.',
       ],
       ru: [
-        'PDF-таблица зманим стала намного компактнее — целый месяц на одном листе, все мнения змана под общим заголовком.',
-        'В заголовках печати каждое мнение названо полностью и отделено своей линией.',
+        'PDF зманим полностью переработан: месяц на листе, мнения сгруппированы под общими заголовками, посты и молад — внизу листа.',
+        'Ежедневная учёба печатается отдельным листом, а предпросмотр в окне экспорта показывает каждый лист до скачивания.',
         'Экспорт зманим запоминает последний выбор.',
       ],
     },
