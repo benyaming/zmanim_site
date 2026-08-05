@@ -19,9 +19,10 @@ export interface ExportColumn {
   /** Widest this column may grow, in weight units. Defaults by column kind. */
   maxWeight?: number;
   /**
-   * This column IDENTIFIES the row (the date) rather than carrying data about it.
-   * Stacked blocks repeat these and nothing else: a holiday name, a candle time or
-   * a Daf Yomi reading belongs to exactly one block, printed once.
+   * This column IDENTIFIES the row (the date) rather than carrying data about
+   * it. When a wide selection splits into column parts, these are the only
+   * columns repeated on every part: a holiday name or a candle time belongs to
+   * exactly one sheet, printed once.
    */
   identity?: boolean;
   /**
@@ -75,67 +76,40 @@ export interface ExportGrid {
   weekStarts: boolean[];
   /**
    * Per ROW: this row holds prose rather than clock times, so its cells may wrap
-   * and demand only their longest word. Set by the transposed layout ONLY, where
-   * a row is a former column and its kind is therefore known exactly.
+   * and demand only a fraction of their full width. Set by the transposed layout
+   * ONLY, where a row is a former column and its kind is therefore known exactly.
    *
    * Deliberately structural rather than sniffed from the text: an English time
    * prints as "4:23 AM", which contains letters, so a content heuristic would
    * call it prose and break it across two lines — where it reads as two numbers.
    */
   proseRows?: boolean[];
-  /**
-   * How many leading columns are day columns rather than zmanim.
-   */
+  /** How many leading columns are day columns rather than zmanim. */
   leadColumns?: number;
-  /**
-   * How many leading columns identify the row — in practice the date. These are the
-   * ONLY columns a stacked block repeats; everything else, day column or zman, is
-   * data and is printed in exactly one block. Repeating all the day columns instead
-   * duplicated seven learning readings across three blocks, which both wasted the
-   * width the stacking was meant to buy and read as an error.
-   */
+  /** How many leading columns identify the row (the date) — see `ExportColumn.identity`. */
   keyColumns?: number;
   /**
-   * Per COLUMN: this column is the first day of a calendar week. Set by the
-   * transposed layout, where a column is a day — it is what lets the paginator
-   * break bands of days on week boundaries instead of at an arbitrary count.
-   */
-  columnWeekStarts?: boolean[];
-  /**
-   * Body font size the paginator settled on for this page, when it is not simply
-   * the widest that fits. Set for a turned sheet whose type was brought DOWN so
-   * that every zman fits on one page: the renderer must draw the size that was
-   * measured, not re-derive a larger one from the widths.
-   */
-  fontPx?: number;
-  /**
-   * Text columns on this grid may WRAP rather than truncate, and therefore demand
-   * only their longest word. Set on stacked blocks, where a page carrying one week
-   * has height to spare: a Rambam Yomi reading ("Laws of sanctifying the month 6")
-   * wants twice the 3-unit ceiling a text column gets, and truncating it loses the
-   * reading. Left off for a normal upright sheet, where taller rows would cost it
-   * days per page.
+   * Text columns on this grid may WRAP (to a line cap) rather than truncate,
+   * and therefore demand only a fraction of their longest value. On for print
+   * grids; off for the flat CSV/Excel grid, where wrapping has no meaning.
    */
   wrapTextColumns?: boolean;
   /**
-   * Total wrapped LINES this page's rows occupy. Set by the paginator when any row
-   * wraps; `fitRowPadding` spends leftover height per LINE, and counting rows
-   * instead would over-pad a page of multi-line rows straight off the paper.
+   * Total wrapped LINES this sheet's rows occupy — set by the document builder;
+   * `fitRowPadding` spends leftover height per LINE, and counting rows instead
+   * would over-pad a sheet of multi-line rows straight off the paper.
    */
   lineTotal?: number;
   /**
-   * Per row: the day's ISO date. Lets the caller map a paginated page back to
-   * the days on it, for footer material (fast times, the molad) that belongs
-   * once per page rather than in a column of its own.
+   * Per row: the day's ISO date. Lets the document map a sheet back to the days
+   * on it, for footer material (fast times, the molad) that belongs once per
+   * sheet rather than in a column of its own.
    */
   rowKeys: string[];
   /**
-   * Per COLUMN: the day's ISO date, for the transposed layout where a column IS a
-   * day. The pivot leaves `rowKeys` empty — rows are fields there — so without
-   * this the page could not say which days it holds, and every fast bookend and
-   * molad line silently vanished from a transposed sheet.
-   *
-   * Read through `dayKeys`, which picks whichever axis the days are on.
+   * Per COLUMN: the day's ISO date, for the transposed layout where a column IS
+   * a day ('' for the label column). `rowKeys` are all '' there — rows are
+   * fields — so this is what says which days a weekly sheet holds.
    */
   columnKeys?: string[];
 }
@@ -190,17 +164,8 @@ function leadingIdentityCount(columns: ExportColumn[]): number {
   return firstOther === -1 ? columns.length : firstOther;
 }
 
-/**
- * The ISO dates a page holds, from whichever axis the days are on: rows for an
- * upright sheet, columns for a transposed one. What page footnotes key off.
- */
-export function dayKeys(grid: ExportGrid): string[] {
-  const keys = grid.columnKeys ?? grid.rowKeys;
-  return keys.filter((key) => key !== '');
-}
-
 /** Project a grid onto a subset of its columns (order preserved by `cols`). */
-function pickColumns(grid: ExportGrid, cols: number[]): ExportGrid {
+export function pickColumns(grid: ExportGrid, cols: number[]): ExportGrid {
   return {
     headers: cols.map((c) => grid.headers[c]),
     groupLabels: cols.map((c) => grid.groupLabels[c]),
@@ -213,8 +178,7 @@ function pickColumns(grid: ExportGrid, cols: number[]): ExportGrid {
     rows: grid.rows.map((r) => cols.map((c) => r[c])),
     weekStarts: grid.weekStarts,
     proseRows: grid.proseRows,
-    columnWeekStarts: grid.columnWeekStarts && cols.map((c) => grid.columnWeekStarts![c]),
-    // Banding splits the days, so a band must carry only its own.
+    wrapTextColumns: grid.wrapTextColumns,
     columnKeys: grid.columnKeys && cols.map((c) => grid.columnKeys![c]),
     // Recounted, not copied: dropEmptyColumns can remove a lead column too.
     leadColumns: grid.leadColumns === undefined ? undefined : cols.filter((c) => c < grid.leadColumns!).length,
@@ -224,7 +188,7 @@ function pickColumns(grid: ExportGrid, cols: number[]): ExportGrid {
 }
 
 /** Slice a grid's rows (keeping the aligned per-row flags in step). */
-function sliceRows(grid: ExportGrid, from: number, to: number): ExportGrid {
+export function sliceRows(grid: ExportGrid, from: number, to: number): ExportGrid {
   return {
     ...grid,
     rows: grid.rows.slice(from, to),
@@ -239,21 +203,26 @@ function sliceRows(grid: ExportGrid, from: number, to: number): ExportGrid {
 /**
  * Pivot a grid: each original column becomes a row (led by its header in a wide
  * first column), each original row becomes a column (headed by `rowLabels[i]`,
- * the day's date). `cornerLabel` fills the top-left cell.
+ * the day's date, over `rowSubLabels[i]`, its Hebrew date). `cornerLabel` fills
+ * the top-left cell.
  */
-export function transposeExportGrid(grid: ExportGrid, cornerLabel: string, rowLabels: string[]): ExportGrid {
+export function transposeExportGrid(
+  grid: ExportGrid,
+  cornerLabel: string,
+  rowLabels: string[],
+  rowSubLabels?: string[],
+): ExportGrid {
   const columns = [cornerLabel, ...rowLabels];
   return {
     headers: columns,
     groupLabels: columns,
-    subHeaders: columns.map(() => ''),
+    subHeaders: ['', ...rowLabels.map((_, i) => rowSubLabels?.[i] ?? '')],
     groupKeys: columns.map(() => null),
     weights: [2.6, ...rowLabels.map(() => 1)],
     // The label column carries every row's whole identity ("Zman Shma · Magen
-    // Avraham 16.1°") and is the ONLY place it appears, so the 3-unit ceiling a
-    // text column normally gets truncated it to "Zman Shma · M…" — unreadable,
-    // and worst of all in the transposed layout, which exists precisely to give
-    // those labels room. Day columns hold clock times and keep the default.
+    // Avraham 16.1°") and is the ONLY place it appears, so it gets a generous
+    // ceiling; day columns hold clock times and short prose and keep a tighter
+    // one — wide enough for a long word to wrap on, no wider.
     maxWeights: [TRANSPOSED_LABEL_MAX_WEIGHT, ...rowLabels.map(() => TRANSPOSED_DAY_MAX_WEIGHT)],
     text: [true, ...rowLabels.map(() => false)],
     emphasis: columns.map(() => false),
@@ -264,23 +233,24 @@ export function transposeExportGrid(grid: ExportGrid, cornerLabel: string, rowLa
     // A transposed row IS an original column, so the original's text flags carry
     // over one-for-one: the parsha row is prose, a zman's row is times.
     proseRows: [...grid.text],
+    // The label column may wrap to two lines: it is the only place a row's
+    // full "name · spelled-out shita" appears, and truncating it loses the
+    // one thing the row exists to say.
+    wrapTextColumns: true,
     // The days move to the column axis with the label column leading.
     columnKeys: ['', ...grid.rowKeys],
-    // The original's per-ROW week flags are per-COLUMN once pivoted. The label
-    // column leads and is never a week start.
-    columnWeekStarts: [false, ...grid.weekStarts],
     rowKeys: grid.headers.map(() => ''),
   };
 }
 
 // ---------------------------------------------------------------------------
-// Fitting the grid onto A4 landscape
+// Fitting a sheet
 //
-// The PDF sizes itself to its content rather than to fixed constants: column
-// widths come from the longest value each column actually holds, and the font
-// then shrinks — to a legibility floor — until every selected column fits one
-// sheet. Only when even the floor can't fit does the table spill onto further
-// column-pages. This is what keeps a normal month's selection on a single page.
+// The sheet sizes itself to its content: column widths come from the longest
+// value each column actually holds, and the font then falls out of the page
+// width — clamped to a legibility floor. What happens when the floor is not
+// enough (splitting into column parts) is the document builder's business
+// (document.ts); these are the shared measuring primitives.
 // ---------------------------------------------------------------------------
 
 /**
@@ -309,6 +279,13 @@ export const HEADER_FONT_SCALE = 0.85;
  * the table's width.
  */
 export const SUB_HEADER_FONT_SCALE = 0.72;
+/**
+ * Lines a wrapping text CELL may demand its width from: a value is granted
+ * enough width to fit on two lines, and the width fitter charges it half its
+ * full length. (The renderer lets a pathological value run to a third line
+ * rather than clipping it — see `rowLineCounts`.)
+ */
+const CELL_WRAP_LINES = 2;
 /** A hair of slack on every demand, so a word landing exactly on the column edge still fits. */
 const DEMAND_SLACK_PX = 1;
 /** Horizontal cell padding, both sides (px). */
@@ -324,83 +301,34 @@ const FIT_SAFETY = 0.96;
 
 /**
  * Width ceiling for the transposed layout's label column, in weight units. Wide
- * enough for the longest "base · shita" label; a month of days alongside it still
- * fits at the maximum body size, so the room costs nothing in practice.
+ * enough for the longest "base · spelled-out shita" label; the seven day
+ * columns beside it still get over 100 px each.
  */
-const TRANSPOSED_LABEL_MAX_WEIGHT = 8;
+const TRANSPOSED_LABEL_MAX_WEIGHT = 9;
 /**
- * Width ceiling for a transposed DAY column. Wider than a tabular column's usual
- * 1.8 because a prose row's longest word has to fit inside it — a Russian
- * "освящения" is about 2.25 units, and at the tabular cap it broke mid-word.
- * Column banding, not truncation, is what keeps the sheet legible once these add
- * up past a page.
+ * Width ceiling for a transposed DAY column. Wider than a tabular column's
+ * usual cap because a prose cell's longest word has to fit inside it — a
+ * Russian "освящения" is about 2.25 units, and at the tabular cap it broke
+ * mid-word.
  */
 const TRANSPOSED_DAY_MAX_WEIGHT = 4;
 
 /** Smallest legible body size; below this the table stops shrinking and splits instead. */
-export const MIN_TABLE_FONT_PX = 6.5;
+export const MIN_TABLE_FONT_PX = 7;
 /**
- * Largest body size. Capped so that even a sparse table's rows stay short
- * enough for a full 31-day month to land on one sheet — the month, not the
- * font, is what the reader is looking for. `fitRowsPerPage` pins this.
+ * Largest body size for month sheets. Capped so that even a sparse table's
+ * rows stay short enough for a full 31-day month to land on one sheet — the
+ * month, not the font, is what the reader is looking for.
  */
 export const MAX_TABLE_FONT_PX = 10;
+/**
+ * Largest body size for the weekly layout, whose eight columns would otherwise
+ * fit grotesquely large type.
+ */
+export const WEEK_MAX_FONT_PX = 11;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
-}
-
-/**
- * Smallest type the sheet may print, in CSS px. The page is placed on A4 at
- * 297 mm for 1123 px, so 1 px ≈ 0.75 pt: this floor is about 4.9 pt, which is
- * fine print but readable. Below it the header stops being text and becomes
- * texture — the state a 30-zman selection used to reach (opinion labels at
- * 5.1 px) and the reason this gate exists.
- */
-export const MIN_LEGIBLE_PX = 6.5;
-
-/**
- * Selected-zman count past which the dialog warns, before anything is built.
- *
- * Advisory only — `layoutLegibility` is the authority, and it measures the real
- * grid. This number is where the opinion tier crosses MIN_LEGIBLE_PX in Russian,
- * whose spelled-out labels are the widest of the three languages, so the hint
- * errs toward appearing slightly early in Hebrew and English.
- */
-export const LEGIBLE_ZMAN_HINT = 27;
-
-export interface LayoutLegibility {
-  /** Fitted body font size. */
-  fontPx: number;
-  /** Size the zman names print at. */
-  namePx: number;
-  /** Size the opinion labels print at — the smallest type on the sheet. */
-  subPx: number;
-  /** The smallest type this layout would actually print. */
-  smallestPx: number;
-  /** True when every label on the sheet clears MIN_LEGIBLE_PX. */
-  legible: boolean;
-}
-
-/**
- * What this column set would print at, and whether that is readable. Pass a page
- * from `paginateExportGrid`, whose weights are the fitted ones; handed an
- * unfitted grid it fits a copy, which is the same answer but slower.
- *
- * The binding constraint is the opinion tier, the smallest text on the sheet —
- * but only when some column actually carries an opinion; a selection of
- * single-opinion zmanim is limited by the names instead. Both scale with the
- * body font, which is set by the table's WIDTH, so this is really a verdict on
- * how many columns were asked for.
- */
-export function layoutLegibility(grid: ExportGrid, m: TextMeasurer = defaultMeasurer()): LayoutLegibility {
-  const weights = grid.weights.length ? grid.weights : fitColumnWeights(grid, m);
-  const fontPx = fitFontSize(weights, m);
-  const namePx = fontPx * HEADER_FONT_SCALE;
-  const subPx = fontPx * SUB_HEADER_FONT_SCALE;
-  const hasOpinions = grid.subHeaders.some((s) => s !== '');
-  const smallestPx = hasOpinions ? subPx : namePx;
-  return { fontPx, namePx, subPx, smallestPx, legible: smallestPx >= MIN_LEGIBLE_PX };
 }
 
 /** A tier-1 header run: consecutive columns printed under one spanning label. */
@@ -457,24 +385,23 @@ export function fitColumnWeights(grid: ExportGrid, m: TextMeasurer = defaultMeas
   const unit = m.width(UNIT_TEXT, REFERENCE_FONT_PX) || 1;
   return grid.headers.map((_, i) => {
     /**
-     * A cell in a prose row demands only its longest WORD, exactly as a wrapping
-     * header does, because it is allowed to wrap. Without this one
-     * "Re'eh · Shabbat Mevarchim" in a single day's column forced EVERY day
-     * column to its cap, and a month of those dragged the sheet's type to the
-     * legibility floor. The label column keeps its own generous budget and is
-     * measured whole.
+     * A wrapping cell demands the width that fits it on CELL_WRAP_LINES lines —
+     * or its longest word, whichever is more. Without this one
+     * "Re'eh · Shabbat Mevarchim" in a single day's cell forces the whole
+     * column to its full length, and the sheet's type down with it.
      */
     const demandOf = (text: string, row: number) => {
       if (!text) return 0;
       // The identity column is deliberately excluded: it is compact by design
-      // ("5 Aug · 22 Av · Wed") and naming the row is its whole job, so wrapping it
-      // to three lines inflated every row and cost the page a third of its days.
+      // ("1 Aug · 18 Av · Wed") and naming the row is its whole job, so wrapping
+      // it would inflate every row of the sheet.
       const isKey = i < (grid.keyColumns ?? 0);
       const mayWrap =
-        (grid.proseRows?.[row] === true && !grid.text[i]) ||
-        (grid.wrapTextColumns === true && grid.text[i] && !isKey);
-      if (!mayWrap) return m.width(text, REFERENCE_FONT_PX);
-      return text.split(/\s+/).reduce((max, word) => Math.max(max, m.width(word, REFERENCE_FONT_PX)), 0);
+        (grid.proseRows?.[row] === true && !grid.text[i]) || (grid.wrapTextColumns === true && grid.text[i] && !isKey);
+      const full = m.width(text, REFERENCE_FONT_PX);
+      if (!mayWrap) return full;
+      const word = text.split(/\s+/).reduce((max, w) => Math.max(max, m.width(w, REFERENCE_FONT_PX)), 0);
+      return Math.max(word, full / CELL_WRAP_LINES);
     };
     // The widest value this column actually holds — measured, so a column of
     // short month names doesn't reserve room for the language's longest one.
@@ -483,7 +410,7 @@ export function fitColumnWeights(grid: ExportGrid, m: TextMeasurer = defaultMeas
     const group = headerDemandPx(m, grid.groupLabels[i], runs[i], HEADER_FONT_SCALE);
     const demand = Math.max(cell, sub, group) + DEMAND_SLACK_PX;
     // Text columns may run long (a parsha with a special-Shabbat suffix); they
-    // are capped and truncate rather than starving every time column.
+    // are capped — wrapping past the cap — rather than starving every time column.
     const cap = grid.maxWeights[i] || (grid.text[i] ? 3 : 1.8);
     return clamp(demand / unit, 0.7, cap);
   });
@@ -502,10 +429,10 @@ export function dropEmptyColumns(grid: ExportGrid): ExportGrid {
 }
 
 /**
- * Width a header needs, in body characters, spread over the columns it spans.
- * Headers wrap, so the whole label need not fit on one line — but a single WORD
- * must, or the label breaks mid-word ("Празд/ник"), which is what a narrow
- * column does to a long Russian or Hebrew caption.
+ * Width a header needs, spread over the columns it spans. Headers wrap, so the
+ * whole label need not fit on one line — but a single WORD must, or the label
+ * breaks mid-word ("Празд/ник"), which is what a narrow column does to a long
+ * Russian or Hebrew caption.
  */
 function headerDemandPx(m: TextMeasurer, text: string, span: number, scale: number): number {
   if (!text) return 0;
@@ -522,11 +449,11 @@ function headerDemandPx(m: TextMeasurer, text: string, span: number, scale: numb
  * is `total × unit` px at that size; text advance being proportional to font
  * size, the size that exactly fills the row is a straight ratio.
  */
-function rawFontSize(weights: number[], m: TextMeasurer): number {
+export function rawFontSize(weights: number[], m: TextMeasurer = defaultMeasurer()): number {
   const total = weights.reduce((sum, w) => sum + w, 0) || 1;
   const unit = m.width(UNIT_TEXT, REFERENCE_FONT_PX) || 1;
   const available = Math.max(1, CONTENT_WIDTH_PX - CELL_PADDING_PX * weights.length);
-  return (available / (total * unit)) * REFERENCE_FONT_PX;
+  return (available / (total * unit)) * REFERENCE_FONT_PX * FIT_SAFETY;
 }
 
 /**
@@ -551,75 +478,62 @@ export function fitColumnWidths(weights: number[]): number[] {
 }
 
 /**
- * Body font size for a page of these columns: as large as the content allows,
- * capped for sparse tables and floored at the legibility limit. The renderer
- * calls this with the same weights the paginator used, so the layout it draws
- * is exactly the one that was fitted.
+ * Body font size for a sheet of these columns: as large as the width allows,
+ * capped for sparse tables and floored at the legibility limit.
  */
 export function fitFontSize(weights: number[], m: TextMeasurer = defaultMeasurer()): number {
-  return clamp(rawFontSize(weights, m) * FIT_SAFETY, MIN_TABLE_FONT_PX, MAX_TABLE_FONT_PX);
+  return clamp(rawFontSize(weights, m), MIN_TABLE_FONT_PX, MAX_TABLE_FONT_PX);
 }
 
 /**
- * Height the two wrapped header tiers occupy at this body font size. The tiers
- * are measured separately because they print at different sizes; the constant
- * covers their paddings and the rule between them.
+ * Height the header tiers occupy at this body font size, measured from the
+ * actual labels: each run's tier-1 label wraps within the width its columns
+ * add up to, and the tallest run sets the tier. A grid with no tier-2 labels
+ * at all (a learning sheet) pays for one tier only.
  */
-function headerHeight(fontPx: number): number {
-  const names = fontPx * HEADER_FONT_SCALE * LINE_HEIGHT * HEADER_LINES;
-  const opinions = fontPx * SUB_HEADER_FONT_SCALE * LINE_HEIGHT * HEADER_LINES;
-  return names + opinions + 10;
+export function fittedHeaderHeight(grid: ExportGrid, fontPx: number, m: TextMeasurer = defaultMeasurer()): number {
+  const widths = fitColumnWidths(grid.weights.length ? grid.weights : grid.headers.map(() => 1));
+  const px = (f: number) => f * CONTENT_WIDTH_PX - CELL_PADDING_PX;
+  const lineCount = (text: string, width: number, scaledPx: number) => {
+    if (!text || width <= 0) return 0;
+    const needed = m.width(text, REFERENCE_FONT_PX, true) * (scaledPx / REFERENCE_FONT_PX);
+    return Math.min(HEADER_LINES, Math.max(1, Math.ceil(needed / width)));
+  };
+
+  const namePx = fontPx * HEADER_FONT_SCALE;
+  const nameLines = headerRuns(grid).reduce((max, run) => {
+    const width = widths.slice(run.start, run.start + run.span).reduce((sum, f) => sum + px(f), 0);
+    return Math.max(max, lineCount(run.label, width, namePx));
+  }, 1);
+
+  const subPx = fontPx * SUB_HEADER_FONT_SCALE;
+  const subLines = grid.subHeaders.reduce((max, sub, i) => Math.max(max, lineCount(sub, px(widths[i]), subPx)), 0);
+
+  const names = nameLines * namePx * LINE_HEIGHT;
+  const subs = subLines > 0 ? subLines * subPx * LINE_HEIGHT + 4 : 0;
+  return names + subs + 8;
 }
 
-/** Vertical space a page has for body rows at this body font size. */
-function bodyHeight(fontPx: number): number {
-  return CONTENT_HEIGHT_PX - TITLE_BAND_PX - FOOTER_BAND_PX - headerHeight(fontPx);
-}
-
-/** How many body rows fit under the header at this font size. */
-export function fitRowsPerPage(fontPx: number): number {
-  const rowPx = fitRowHeight(fontPx);
-  return Math.max(8, Math.floor((bodyHeight(fontPx) * FIT_SAFETY) / rowPx));
-}
-
-/**
- * Largest font size, within the legibility clamps, at which `rowCount` rows all
- * fit one page — or null when even the floor cannot hold them.
- *
- * Turned sheets want this: a page carrying every zman for a week or two is the
- * layout being asked for, and it is worth spending type size on. Bisected because
- * the body's height budget itself shrinks as the font grows (the header grows with
- * it), so there is no closed form.
- */
-function fontFittingRows(rowCount: number): number | null {
-  const fits = (f: number) => rowCount * fitRowHeight(f) <= bodyHeight(f) * FIT_SAFETY;
-  if (!fits(MIN_TABLE_FONT_PX)) return null;
-  if (fits(MAX_TABLE_FONT_PX)) return MAX_TABLE_FONT_PX;
-  let lo = MIN_TABLE_FONT_PX;
-  let hi = MAX_TABLE_FONT_PX;
-  for (let i = 0; i < 30 && hi - lo > 0.01; i++) {
-    const mid = (lo + hi) / 2;
-    if (fits(mid)) lo = mid;
-    else hi = mid;
-  }
-  return lo;
-}
-
-/** Height of a single-line body row at this font size. */
-function fitRowHeight(fontPx: number): number {
-  return fontPx * LINE_HEIGHT + ROW_PADDING_PX + WEEK_RULE_PX / 7;
+/** Vertical space a sheet has for body rows at this body font size. */
+export function sheetBodyHeight(fontPx: number, grid: ExportGrid, m: TextMeasurer = defaultMeasurer()): number {
+  return (CONTENT_HEIGHT_PX - TITLE_BAND_PX - FOOTER_BAND_PX - fittedHeaderHeight(grid, fontPx, m)) * FIT_SAFETY;
 }
 
 /**
  * How many lines each row will actually occupy once its wrapping cells wrap.
  *
- * `fitRowsPerPage` alone assumes every row is one line tall, which is true until
- * a prose row wraps: a transposed sheet's learning rows run three and four lines
- * each, so a page counted as fitting 36 rows overflowed and the sheet — reporting
- * "1 / 1" — silently clipped everything past the paper's edge. Estimated from the
- * same measurements the widths came from, so the count matches what gets drawn.
+ * Estimated from the same measurements the widths came from, so the count
+ * matches what gets drawn. Word-based wrapping means this over-estimates a cell
+ * that happens to break cleanly — erring toward a shorter page, never a clipped
+ * one. The estimate runs one line past CELL_WRAP_LINES because the renderer
+ * lets a pathological value take a third line rather than clipping it.
  */
-function rowLineCounts(grid: ExportGrid, weights: number[], fontPx: number, m: TextMeasurer): number[] {
+export function rowLineCounts(
+  grid: ExportGrid,
+  weights: number[],
+  fontPx: number,
+  m: TextMeasurer = defaultMeasurer(),
+): number[] {
   const widths = fitColumnWidths(weights).map((f) => f * CONTENT_WIDTH_PX - CELL_PADDING_PX);
   const scale = fontPx / REFERENCE_FONT_PX;
   return grid.rows.map((row, r) => {
@@ -629,366 +543,31 @@ function rowLineCounts(grid: ExportGrid, weights: number[], fontPx: number, m: T
     row.forEach((cell, i) => {
       if (!cell || widths[i] <= 0) return;
       // Only the cells that actually wrap count toward the row's height.
-      if (!proseRow && !(grid.text[i] && i >= (grid.keyColumns ?? 0))) return;
+      const isKey = i < (grid.keyColumns ?? 0);
+      if (!(proseRow && !grid.text[i]) && !(grid.wrapTextColumns && grid.text[i] && !isKey)) return;
       const needed = m.width(cell, REFERENCE_FONT_PX) * scale;
-      // Wrapping is word-based, so this over-estimates a cell that happens to
-      // break cleanly — erring toward a shorter page, never a clipped one.
-      lines = Math.max(lines, Math.min(HEADER_LINES + 1, Math.ceil(needed / widths[i])));
+      lines = Math.max(lines, Math.min(CELL_WRAP_LINES + 1, Math.ceil(needed / widths[i])));
     });
     return lines;
   });
 }
 
 /**
- * Per-side vertical cell padding. The body font is set by the table's WIDTH, so
+ * Per-side vertical cell padding. The body font is set by the sheet's WIDTH, so
  * a wide selection leaves vertical slack — this spends it on row spacing so the
  * table fills the sheet instead of stranding a blank half-page under it.
  */
-export function fitRowPadding(fontPx: number, rowCount: number, lineTotal = rowCount): number {
+export function fitRowPadding(
+  fontPx: number,
+  rowCount: number,
+  lineTotal: number,
+  grid: ExportGrid,
+  extraPx = 0,
+  m: TextMeasurer = defaultMeasurer(),
+): number {
   const min = ROW_PADDING_PX / 2;
   if (rowCount <= 0) return min;
-  const used = lineTotal * fontPx * LINE_HEIGHT + rowCount * ROW_PADDING_PX;
-  const slack = bodyHeight(fontPx) * FIT_SAFETY - used;
+  const used = lineTotal * fontPx * LINE_HEIGHT + rowCount * (ROW_PADDING_PX + WEEK_RULE_PX / 7);
+  const slack = sheetBodyHeight(fontPx, grid, m) - extraPx - used;
   return clamp(min + slack / rowCount / 2, min, 6);
-}
-
-/**
- * Split a grid into A4-landscape pages.
- *
- * A day is never split across sheets: every selected column for a date stays on
- * that date's page, so the reader holds ONE sheet to read one day. Pages
- * therefore divide by ROWS only, and the font shrinks to fit the whole column
- * set across the width. Past the legibility floor the widest text columns
- * truncate rather than the table breaking apart — the deliberate trade, since a
- * cramped but complete row beats one you must reassemble from two sheets.
- *
- * Empty columns are dropped first, so nothing spends width on a bare header.
- */
-export function paginateExportGrid(grid: ExportGrid, m: TextMeasurer = defaultMeasurer()): ExportGrid[] {
-  const trimmed = dropEmptyColumns(grid);
-  if (trimmed.rows.length === 0) return [{ ...trimmed, weights: fitColumnWeights(trimmed, m) }];
-
-  // Transposed sheets divide by columns first. A column there is a DAY, so this
-  // splits by date — the safe axis, since a date's whole column still lands on
-  // one sheet. It is also the only axis that can widen a column: without it a
-  // month of days leaves each one narrower than a single Russian word, which then
-  // breaks mid-word ("освящени|я").
-  const bands = trimmed.proseRows ? splitColumnBands(trimmed, m) : [trimmed];
-
-  return bands.flatMap((band) => {
-    const fitted: ExportGrid = { ...band, weights: fitColumnWeights(band, m) };
-    const widthFont = fitFontSize(fitted.weights, m);
-    // A turned sheet exists to answer for whole days, so keeping every zman on the
-    // page beats printing them larger across two: if a smaller (still legible) size
-    // fits them all, take it. Untouched for upright sheets, where rows are DAYS and
-    // paginating them is the normal, harmless thing.
-    const rowFont = fitted.proseRows ? fontFittingRows(fitted.rows.length) : null;
-    const fontPx = rowFont !== null && rowFont < widthFont ? rowFont : widthFont;
-    const page = fontPx === widthFont ? fitted : { ...fitted, fontPx };
-    return sliceByHeight(page, fontPx, m);
-  });
-}
-
-/**
- * Split a transposed grid's day columns into bands, repeating the label column on
- * each so every band reads on its own.
- *
- * Bands are whole CALENDAR WEEKS, and that is the point: a luach is read by the
- * week, so a sheet that ends mid-week is worse than one more sheet. Widest-first —
- * the whole range on one sheet, else a fortnight, else a single week — and the
- * first band that prints legibly wins. Splitting at an arbitrary column count
- * instead put a Wednesday-to-Wednesday band on a page, which is legible and still
- * wrong.
- */
-const BAND_WEEKS = [2, 1];
-
-function splitColumnBands(grid: ExportGrid, m: TextMeasurer): ExportGrid[] {
-  const dayCount = grid.headers.length - 1;
-  if (dayCount <= 1) return [grid];
-
-  // Same "smallest type on the sheet" rule as layoutLegibility: a transposed grid
-  // has no opinion tier, so its names are the smallest text.
-  const scale = grid.subHeaders.some((sub) => sub !== '') ? SUB_HEADER_FONT_SCALE : HEADER_FONT_SCALE;
-  const legible = (cols: number[]) =>
-    fitFontSize(fitColumnWeights(pickColumns(grid, cols), m), m) * scale >= MIN_LEGIBLE_PX;
-
-  const all = [0, ...range(1, dayCount + 1)];
-  if (legible(all)) return [grid];
-
-  // Day columns grouped into weeks. The first group may be a partial week when the
-  // range doesn't begin on a Sunday, and the last when it doesn't end on a Shabbat.
-  const weeks: number[][] = [];
-  for (let col = 1; col <= dayCount; col++) {
-    if (weeks.length === 0 || grid.columnWeekStarts?.[col]) weeks.push([]);
-    weeks[weeks.length - 1].push(col);
-  }
-
-  for (const perBand of BAND_WEEKS) {
-    const bands: number[][] = [];
-    for (let i = 0; i < weeks.length; i += perBand) bands.push(weeks.slice(i, i + perBand).flat());
-    // Judge the widest band — every band must print, not just the average one.
-    const widest = bands.reduce((a, b) => (b.length > a.length ? b : a), bands[0] ?? []);
-    if (perBand === BAND_WEEKS[BAND_WEEKS.length - 1] || legible([0, ...widest])) {
-      return bands.map((band) => pickColumns(grid, [0, ...band]));
-    }
-  }
-  return [grid];
-}
-
-function range(from: number, to: number): number[] {
-  return Array.from({ length: Math.max(0, to - from) }, (_, i) => from + i);
-}
-
-/**
- * Slice rows into pages by accumulated HEIGHT rather than by count, so a page
- * holding wrapped multi-line rows carries fewer of them instead of overflowing.
- */
-function sliceByHeight(grid: ExportGrid, fontPx: number, m: TextMeasurer): ExportGrid[] {
-  const lines = rowLineCounts(grid, grid.weights, fontPx, m);
-  const uniform = lines.every((l) => l === 1);
-  if (uniform) {
-    const perPage = fitRowsPerPage(fontPx);
-    const pages: ExportGrid[] = [];
-    for (let i = 0; i < grid.rows.length; i += perPage) pages.push(sliceRows(grid, i, i + perPage));
-    return pages;
-  }
-
-  const budget = bodyHeight(fontPx) * FIT_SAFETY;
-  const rowPx = (i: number) => lines[i] * fontPx * LINE_HEIGHT + ROW_PADDING_PX;
-  const sum = (from: number, to: number) => lines.slice(from, to).reduce((t, l) => t + l, 0);
-  const heights = grid.rows.map((_, i) => rowPx(i));
-
-  /** Row index each page starts at, filling greedily up to `limit`. */
-  const breaksFor = (limit: number): number[] => {
-    const starts = [0];
-    let used = 0;
-    for (let i = 0; i < heights.length; i++) {
-      // Always keep at least one row on a page, however tall it is.
-      if (used > 0 && used + heights[i] > limit) {
-        starts.push(i);
-        used = 0;
-      }
-      used += heights[i];
-    }
-    return starts;
-  };
-
-  // Filling greedily to the brim packs the first page and strands the remainder —
-  // a month of learning rows came out as 31 rows and then a single orphan row on a
-  // sheet of its own. Filling to an even share instead needs MORE pages than the
-  // budget requires, because each page then stops short of it.
-  //
-  // So: take the page count the budget forces, then find the smallest limit that
-  // still fits in that many pages. That is the classic "split into k parts,
-  // minimise the largest part", and bisection settles it — the pages come out as
-  // even as they can be without costing a sheet.
-  const pageCount = breaksFor(budget).length;
-  let lo = Math.max(...heights);
-  let hi = budget;
-  for (let i = 0; i < 40 && hi - lo > 0.5; i++) {
-    const mid = (lo + hi) / 2;
-    if (breaksFor(mid).length <= pageCount) hi = mid;
-    else lo = mid;
-  }
-
-  const starts = breaksFor(hi);
-  return starts.map((start, i) => {
-    const end = starts[i + 1] ?? grid.rows.length;
-    return { ...sliceRows(grid, start, end), lineTotal: sum(start, end) };
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Stacked sheets
-//
-// A selection too wide for one row of columns is printed as several STACKED
-// BLOCKS on the same page: the week's days appear once with the first slice of
-// zmanim, then again below with the next. Every day and every zman is on the one
-// page, and the columns get several times the width they would have had.
-//
-// This is what a printed luach does, and it is the only layout that satisfies all
-// three constraints at once — a date answered by one sheet, every selected zman
-// present, and type big enough to read. Turning the sheet keeps the days together
-// but splits the zmanim down the page; banding the zmanim splits the date. Only
-// stacking spends the page's spare HEIGHT to buy column WIDTH.
-// ---------------------------------------------------------------------------
-
-/** Vertical gap between two stacked blocks (px). */
-const BLOCK_GAP_PX = 10;
-/** Most blocks worth stacking; past this each band is too short to read as a table. */
-const MAX_BLOCKS = 6;
-/**
- * Days to try per page, widest first. Whole weeks are the point — a luach is read
- * by the week — but an extreme selection (every zman AND every learning cycle, whose
- * readings wrap to three lines) cannot fit even one week beside enough blocks, so
- * the ladder continues below a week rather than giving up. Giving up meant falling
- * back to ONE unstacked page with sixty columns, every cell truncated: the worst
- * sheet of all the options.
- */
-const DAYS_PER_SHEET = [14, 7, 4, 2, 1];
-
-export interface ExportSheet {
-  /** Tables stacked down one page: the same days, a different slice of zmanim. */
-  blocks: ExportGrid[];
-  /** Body font size shared by every block, so the page reads as one sheet. */
-  fontPx: number;
-}
-
-/** Vertical space a page has for stacked blocks. */
-function stackBudget(): number {
-  return (CONTENT_HEIGHT_PX - TITLE_BAND_PX - FOOTER_BAND_PX) * FIT_SAFETY;
-}
-
-/**
- * Pages for a grid, each as a list of stacked blocks. One block per page is the
- * normal case; a sheet only stacks when its columns cannot otherwise be read.
- */
-export function paginateExportSheets(grid: ExportGrid, m: TextMeasurer = defaultMeasurer()): ExportSheet[] {
-  const trimmed = dropEmptyColumns(grid);
-  const single = () =>
-    paginateExportGrid(grid, m).map((page) => ({
-      blocks: [page],
-      fontPx: page.fontPx ?? fitFontSize(page.weights, m),
-    }));
-
-  // Turned sheets have their own answer (days banded by the week), and a grid with
-  // no identity columns has nothing to repeat above each block.
-  if (trimmed.proseRows || !trimmed.leadColumns) return single();
-
-  const weights = fitColumnWeights(trimmed, m);
-  if (layoutLegibility({ ...trimmed, weights }, m).legible) return single();
-
-  return stackedSheets(trimmed, m) ?? single();
-}
-
-/**
- * Everything after the identity columns, in contiguous units: each day column
- * stands alone, and a base's opinions stay together.
- */
-function distributableUnits(grid: ExportGrid, from: number): number[][] {
-  const units: number[][] = [];
-  for (let col = from; col < grid.headers.length; col++) {
-    const key = grid.groupKeys[col];
-    const prev = units[units.length - 1];
-    if (prev && key !== null && grid.groupKeys[col - 1] === key) prev.push(col);
-    else units.push([col]);
-  }
-  return units;
-}
-
-/** Row index groups: the days of each calendar week. */
-function weekRows(grid: ExportGrid): number[][] {
-  const weeks: number[][] = [];
-  grid.rows.forEach((_, row) => {
-    if (weeks.length === 0 || grid.weekStarts[row]) weeks.push([]);
-    weeks[weeks.length - 1].push(row);
-  });
-  return weeks;
-}
-
-function stackedSheets(grid: ExportGrid, m: TextMeasurer): ExportSheet[] | null {
-  // Only the date repeats. Without one there is nothing to identify a block's rows
-  // by, so stacking would be unreadable — leave such a grid as a single block.
-  const keys = grid.keyColumns ?? 0;
-  if (keys === 0) return null;
-  // Balance the blocks by how much WIDTH each column wants, not by how many there
-  // are: seven spelled-out learning readings need far more room than seven clock
-  // times, and counting columns put them all in one block where they truncated.
-  const fullWeights = fitColumnWeights(grid, m);
-  const leadCols = range(0, keys);
-  const units = distributableUnits(grid, keys);
-  if (units.length < 2) return null;
-  const weeks = weekRows(grid);
-
-  // The last configuration tried, used when nothing fits outright: a slightly
-  // over-full stacked page still reads, where the unstacked fallback does not.
-  let fallback: ExportSheet[] | null = null;
-
-  for (const daysPerSheet of DAYS_PER_SHEET) {
-    const dayBands = dayBandsOf(weeks, daysPerSheet);
-    const tallest = dayBands.reduce((a, b) => (b.length > a.length ? b : a), dayBands[0]);
-
-    for (let blocks = 2; blocks <= Math.min(MAX_BLOCKS, units.length); blocks++) {
-      const slices = sliceUnits(units, blocks, fullWeights);
-      if (slices.length !== blocks) continue;
-
-      // One font for the whole page: the smallest any block needs, so the blocks
-      // line up as one sheet rather than reading as three unrelated tables.
-      const fonts = slices.map((slice) => fitFontSize(fitColumnWeights(pickColumns(grid, [...leadCols, ...slice]), m), m));
-      const fontPx = Math.min(...fonts);
-      const smallest = fontPx * (grid.subHeaders.some((sub) => sub !== '') ? SUB_HEADER_FONT_SCALE : HEADER_FONT_SCALE);
-      if (smallest < MIN_LEGIBLE_PX) continue;
-
-      // Build the tallest band's blocks for real, so the height check counts the
-      // lines a wrapped reading actually takes rather than assuming one apiece.
-      const build = (days: number[]) =>
-        slices.map((slice) => {
-          const columns = pickColumns(grid, [...leadCols, ...slice]);
-          const rows = sliceRows(columns, days[0], days[days.length - 1] + 1);
-          const block: ExportGrid = { ...rows, wrapTextColumns: true, fontPx };
-          block.weights = fitColumnWeights(block, m);
-          const lines = rowLineCounts(block, block.weights, fontPx, m);
-          return { block: { ...block, lineTotal: lines.reduce((t, l) => t + l, 0) }, lines };
-        });
-
-      const probe = build(tallest);
-      const needed =
-        probe.reduce(
-          (sum, { lines }) =>
-            sum + headerHeight(fontPx) + lines.reduce((t, l) => t + l * fontPx * LINE_HEIGHT + ROW_PADDING_PX, 0),
-          0,
-        ) + (blocks - 1) * BLOCK_GAP_PX;
-
-      const sheets = () => dayBands.map((days) => ({ fontPx, blocks: build(days).map(({ block }) => block) }));
-      // Remember the tightest arrangement seen, whether or not it fits.
-      fallback = sheets();
-      if (needed <= stackBudget()) return sheets();
-    }
-  }
-  return fallback;
-}
-
-/**
- * Group day rows into the bands one page carries. A week or more breaks on week
- * boundaries; below that the chunks are sequential, since there is no way to keep a
- * week whole on a page that cannot hold one.
- */
-function dayBandsOf(weeks: number[][], daysPerSheet: number): number[][] {
-  const bands: number[][] = [];
-  if (daysPerSheet >= 7) {
-    const perBand = Math.max(1, Math.floor(daysPerSheet / 7));
-    for (let i = 0; i < weeks.length; i += perBand) bands.push(weeks.slice(i, i + perBand).flat());
-    return bands;
-  }
-  const days = weeks.flat();
-  for (let i = 0; i < days.length; i += daysPerSheet) bands.push(days.slice(i, i + daysPerSheet));
-  return bands;
-}
-
-/**
- * Split units into `count` contiguous slices carrying roughly equal WIDTH DEMAND.
- * Balancing by column count instead leaves a slice of wide text columns starved
- * beside a slice of narrow times, and the wide one truncates.
- */
-function sliceUnits(units: number[][], count: number, weights: number[]): number[][] {
-  const demand = (unit: number[]) => unit.reduce((sum, col) => sum + (weights[col] ?? 1), 0);
-  const total = units.reduce((sum, u) => sum + demand(u), 0);
-  const target = total / count;
-  const slices: number[][] = [];
-  let current: number[] = [];
-  let used = 0;
-  for (const unit of units) {
-    const want = demand(unit);
-    // Cross the target only if this unit is more in than out of it — otherwise a
-    // wide unit lands in whichever slice it overflows least.
-    if (used > 0 && used + want / 2 > target && slices.length < count - 1) {
-      slices.push(current);
-      current = [];
-      used = 0;
-    }
-    current.push(...unit);
-    used += want;
-  }
-  if (current.length) slices.push(current);
-  return slices;
 }

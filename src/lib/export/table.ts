@@ -8,7 +8,7 @@ import {
   getDayInfo,
   localizedHolidayLabel,
 } from '@/lib/calendar';
-import { formatDuration, formatMoladParts, formatTime } from '@/lib/format';
+import { formatDuration, formatMoladParts, formatTime, formatTimePlain } from '@/lib/format';
 import { getDailyLearning, LEARNING_CYCLE_KEYS, type LearningCycleKey } from '@/lib/learning';
 import type { AppLocation } from '@/lib/location';
 import {
@@ -123,6 +123,12 @@ export interface ZmanimTableOptions {
   moladLabel?: (parts: { month: string; weekday: string; date: string; time: string; chalakim: number }) => string;
   /** Learning cycles to include as columns (empty = none, skips the lookup). */
   learningKeys?: LearningCycleKey[];
+  /**
+   * Print-style times: the locale's clock without its AM/PM suffix ("4:53"),
+   * the way a printed luach sets them. On for the PDF, off for CSV/Excel,
+   * whose cells are data and keep the full locale format.
+   */
+  plainTimes?: boolean;
 }
 
 export type ZmanimTableRow = {
@@ -191,7 +197,7 @@ export function orderedZmanKeys(keys: string[]): string[] {
  * rather than a column, because a column would be blank on 29 rows out of 30 —
  * and a page holding both 17 Tammuz and Tisha b'Av correctly yields two lines.
  */
-export function pageFootnotes(rows: ZmanimTableRow[], isoOnPage: ReadonlySet<string>): string[] {
+export function pageFootnotes(rows: ZmanimTableRow[], isoOnPage: ReadonlySet<string>, includeFasts = true): string[] {
   const lines: string[] = [];
   // A fast that begins the previous evening (Tisha b'Av, Yom Kippur) reports
   // its start on the erev row and its end — and its NAME — on the fast day. It
@@ -210,7 +216,9 @@ export function pageFootnotes(rows: ZmanimTableRow[], isoOnPage: ReadonlySet<str
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    if (row.fastStart) {
+    if (!includeFasts) {
+      // Fast lines suppressed (the "fast times" toggle is off) — molad only.
+    } else if (row.fastStart) {
       const next = rows[i + 1];
       const tail = row.fastEnd ? row : next && next.fastEnd && !next.fastStart ? next : undefined;
       if (isoOnPage.has(row.iso) || (tail && isoOnPage.has(tail.iso))) {
@@ -250,6 +258,7 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
   const havdalahOpinion = o.havdalahOpinion ?? DEFAULT_HAVDALAH_OPINION;
   const specialShabbat = o.specialShabbatLabel ?? ((name: string) => name);
   const learningKeys = o.learningKeys ?? [];
+  const clock = o.plainTimes ? formatTimePlain : formatTime;
   const rows: ZmanimTableRow[] = [];
   const days = Math.min(tableDayCount(o.start, o.end), MAX_TABLE_DAYS);
   // A two-year export can hit the same month name twice, so the compact month
@@ -302,7 +311,7 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
     const events = o.lehumra ? applyLehumraToEvents(rawEvents) : rawEvents;
     const eventTime = (type: string) => {
       const e = events.find((ev) => ev.type === type);
-      return e ? formatTime(e.time, o.locale) : '';
+      return e ? clock(e.time, o.locale) : '';
     };
 
     // Every learning key present as a column, empty by default; only the
@@ -349,7 +358,7 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       cells: keys.map((key) => {
         const z = byKey.get(key);
         if (!z) return '—';
-        return z.duration ? formatDuration(z.durationMillis) : formatTime(z.time, o.locale);
+        return z.duration ? formatDuration(z.durationMillis) : clock(z.time, o.locale);
       }),
       ...learning,
     });

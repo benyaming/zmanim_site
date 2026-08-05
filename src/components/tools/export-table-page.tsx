@@ -4,7 +4,6 @@ import type { CSSProperties } from 'react';
 
 import {
   fitColumnWidths,
-  fitRowPadding,
   HEADER_FONT_SCALE,
   headerRuns,
   PAGE_HEIGHT_PX,
@@ -12,7 +11,7 @@ import {
   PAGE_WIDTH_PX,
   SUB_HEADER_FONT_SCALE,
 } from '@/lib/export';
-import type { ExportGrid } from '@/lib/export';
+import type { ExportDocSheet, ExportGrid } from '@/lib/export';
 import { cn } from '@/lib/utils';
 
 /**
@@ -34,60 +33,37 @@ const COLUMN_RULE: CSSProperties = {
 };
 
 /**
- * One page of the zmanim-table PDF: a fixed-size A4-landscape sheet with a
- * title band, a slice of the grid and an attribution footer. The grid is
- * pre-materialized (headers + string cells + per-column width/text hints), so
- * this component just lays it out — the same renderer handles the normal and
- * transposed orientations. Neutral black-on-white styling; px sizes only.
+ * One page of the zmanim PDF: a fixed-size A4-landscape sheet with a title
+ * band, one fitted table and a footer. The sheet is pre-fitted by the document
+ * builder (`buildExportDocument`) — column weights, body font and row padding
+ * arrive as data, so this component only draws.
  *
  * The header is two-tier, and each tier holds exactly one kind of thing: tier 1
  * is every column's NAME (spanning its opinions where it has several), tier 2 is
- * the opinion labels. Nothing crosses between them — no `rowSpan` — so all the
- * names share one baseline and all the opinions share another, whether or not a
- * given column has opinions at all. A column with none simply leaves tier 2
- * blank; dropping its name down into tier 2 instead is what left "Chatzot" and
- * "Shkia" sitting a line below "Zman Shma" and "Alot ha-Shachar".
- *
- * The rule that divides a name from its opinions is drawn per COLUMN rather than
- * once across a whole base, so each opinion is visibly its own column. It is
- * painted as a clipped background gradient rather than a border: collapsed table
- * borders on adjacent cells merge into one continuous line, which is the thing
- * being avoided, and clipping to the content box leaves the cell's own padding as
- * the gap between neighbouring rules.
- *
- * Column widths and the body font size come from the same fit functions the
- * paginator used, so what is drawn is exactly the layout that was measured to fit.
+ * the opinion labels — or, on a weekly sheet, the date over its Hebrew date.
+ * Nothing crosses between them — no `rowSpan` — so all the names share one
+ * baseline and all the opinions share another.
  */
 export function ExportTablePage({
   title,
   subtitle,
   pageLabel,
-  blocks,
-  fontSize,
+  sheet,
   footer,
   notes,
-  pageNotes,
   dir,
 }: {
+  /** Sheet heading: what the table is, and where ("Zmanim · Yaroslavl"). */
   title: string;
+  /** The month (or week range) this sheet covers, with its part index. */
   subtitle: string;
-  /** "3 / 7" page indicator. */
+  /** "3 / 7" — position in the whole document. */
   pageLabel: string;
-  /**
-   * Tables stacked down this page. Usually one; a selection too wide for a single
-   * row of columns prints the same days two or three times over, each block
-   * carrying a different slice of the zmanim, so nothing has to be truncated or
-   * moved to another sheet.
-   */
-  blocks: ExportGrid[];
-  /** Body size shared by every block, so the page reads as one sheet. */
-  fontSize: number;
+  sheet: ExportDocSheet;
   /** Attribution line at the bottom of the page. */
   footer: string;
   /** Compute-option note (elevation / lehumra) above the footer; empty when none. */
   notes?: string;
-  /** Once-a-month facts for the days on THIS page: fast bookends, the molad. */
-  pageNotes?: string[];
   dir: 'ltr' | 'rtl';
 }) {
   return (
@@ -99,23 +75,19 @@ export function ExportTablePage({
     >
       <div className="mb-2 flex shrink-0 items-baseline justify-between gap-4">
         <h1 className="text-[15px] leading-none font-semibold tracking-tight">{title}</h1>
-        <p className="text-[10px] leading-none text-neutral-600">
-          {subtitle} · {pageLabel}
+        <p className="text-[11px] leading-none text-neutral-600">
+          {subtitle} <span className="text-neutral-400">· {pageLabel}</span>
         </p>
       </div>
 
-      <div className="flex flex-col gap-[10px]">
-        {blocks.map((block, i) => (
-          <GridBlock key={i} grid={block} fontSize={fontSize} />
-        ))}
-      </div>
+      <SheetTable grid={sheet.grid} fontSize={sheet.fontPx} rowPadding={sheet.rowPaddingPx} />
 
       <div className="mt-auto shrink-0 pt-2">
         {/* Values that occur once or twice a month — the fast bookends, the
             molad — ride here instead of holding a column that is blank on 29
             rows out of 30. */}
-        {pageNotes && pageNotes.length > 0 && (
-          <p className="pb-[2px] text-center text-[8px] text-neutral-700">{pageNotes.join('   ·   ')}</p>
+        {sheet.footnotes.length > 0 && (
+          <p className="pb-[2px] text-center text-[9px] text-neutral-700">{sheet.footnotes.join('   ·   ')}</p>
         )}
         {notes && <p className="pb-[2px] text-center text-[8px] text-neutral-500">{notes}</p>}
         <p className="text-center text-[8px] text-neutral-400">{footer}</p>
@@ -125,20 +97,26 @@ export function ExportTablePage({
 }
 
 /**
- * One table: a two-tier header over a slice of the grid. A page holds one of
- * these normally, or several stacked when the selection is too wide for a single
- * row of columns — each then repeats the day's identity columns beside its own
- * slice of the zmanim.
+ * The fitted table: a two-tier header over the sheet's rows.
+ *
+ * The rule that divides a name from its opinions is drawn per COLUMN rather than
+ * once across a whole base, so each opinion is visibly its own column. It is
+ * painted as a clipped background gradient rather than a border: collapsed table
+ * borders on adjacent cells merge into one continuous line, which is the thing
+ * being avoided, and clipping to the content box leaves the cell's own padding as
+ * the gap between neighbouring rules.
  */
-function GridBlock({ grid, fontSize }: { grid: ExportGrid; fontSize: number }) {
-  // Rows stretch to fill whatever vertical slack the (width-driven) font leaves.
-  const rowPadding = fitRowPadding(fontSize, grid.rows.length, grid.lineTotal ?? grid.rows.length);
+function SheetTable({ grid, fontSize, rowPadding }: { grid: ExportGrid; fontSize: number; rowPadding: number }) {
   const runs = headerRuns(grid);
+  const hasSubTier = grid.subHeaders.some((sub) => sub !== '');
   // Widths from the fitted per-column weights, so a column is as wide as its
   // longest value needs and no wider. Padding is allocated per column rather
   // than pro-rata — see fitColumnWidths, which exists because the pro-rata
   // version silently truncated clock times on wide sheets.
   const widths = fitColumnWidths(grid.weights).map((f) => `${(f * 100).toFixed(3)}%`);
+  const mayWrap = (row: number, col: number) =>
+    (grid.proseRows?.[row] === true && !grid.text[col]) ||
+    (grid.wrapTextColumns === true && grid.text[col] && col >= (grid.keyColumns ?? 0));
 
   return (
     <table className="w-full table-fixed border-collapse" style={{ fontSize, lineHeight: 1.35 }}>
@@ -168,28 +146,30 @@ function GridBlock({ grid, fontSize }: { grid: ExportGrid; fontSize: number }) {
             </th>
           ))}
         </tr>
-        <tr style={{ fontSize: fontSize * SUB_HEADER_FONT_SCALE }}>
-          {grid.subHeaders.map((sub, i) => (
-            <th
-              key={i}
-              // EVERY column is ruled, opinion or not: at a uniform height the
-              // rules become the header's spine, which is what holds a band of
-              // ragged-length captions together.
-              //
-              // No padding-top: the rule is painted at the content-box edge, so
-              // the gap below it belongs to the label, not the cell.
-              style={COLUMN_RULE}
-              className="px-[2px] pb-[2px] text-center align-top font-normal break-words text-neutral-700"
-            >
-              {sub && <span className="block pt-[3px]">{sub}</span>}
-            </th>
-          ))}
-        </tr>
+        {hasSubTier && (
+          <tr style={{ fontSize: fontSize * SUB_HEADER_FONT_SCALE }}>
+            {grid.subHeaders.map((sub, i) => (
+              <th
+                key={i}
+                // EVERY column is ruled, opinion or not: at a uniform height the
+                // rules become the header's spine, which is what holds a band of
+                // ragged-length captions together.
+                //
+                // No padding-top: the rule is painted at the content-box edge, so
+                // the gap below it belongs to the label, not the cell.
+                style={COLUMN_RULE}
+                className="px-[2px] pb-[2px] text-center align-top font-normal break-words text-neutral-700"
+              >
+                {sub && <span className="block pt-[3px]">{sub}</span>}
+              </th>
+            ))}
+          </tr>
+        )}
       </thead>
       <tbody>
         {/* A rule above each Sunday blocks the table into weeks — far easier to
-            scan down than zebra striping, and it lines up with how the sheet is
-            actually read (find the week, then the day). */}
+            scan down than zebra striping alone, and it lines up with how the
+            sheet is actually read (find the week, then the day). */}
         {grid.rows.map((row, i) => (
           <tr
             key={i}
@@ -206,14 +186,11 @@ function GridBlock({ grid, fontSize }: { grid: ExportGrid; fontSize: number }) {
                 style={{ paddingTop: rowPadding, paddingBottom: rowPadding }}
                 className={cn(
                   'px-[2px]',
-                  // A prose row may wrap; a row of clock times never does — a time
+                  // A prose cell may wrap; a clock time never does — a time
                   // broken over two lines reads as two numbers. The flag is
                   // structural (see ExportGrid.proseRows), because English times
                   // contain letters and would fool a content check.
-                  grid.proseRows?.[i] ||
-                    (grid.wrapTextColumns && grid.text[j] && j >= (grid.keyColumns ?? 0))
-                    ? 'break-words'
-                    : 'truncate',
+                  mayWrap(i, j) ? 'break-words' : 'truncate',
                   grid.text[j] ? 'text-start' : 'text-center tabular-nums',
                   grid.emphasis[j] && cell && 'font-semibold',
                 )}

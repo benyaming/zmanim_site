@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { buildExportGrid, type ExportGrid } from '@/lib/export';
+import { buildExportGrid, type ExportDocSheet, type ExportGrid } from '@/lib/export';
 
 import { ExportTablePage } from './export-table-page';
 
@@ -56,14 +56,27 @@ function sheet(): ExportGrid {
   return grid;
 }
 
+function docSheet(grid: ExportGrid): ExportDocSheet {
+  return {
+    kind: 'times',
+    grid,
+    fontPx: 10,
+    rowPaddingPx: 2,
+    startIso: '2026-01-04',
+    endIso: '2026-01-04',
+    part: 1,
+    parts: 1,
+    footnotes: [],
+  };
+}
+
 function renderSheet() {
   const { container } = render(
     <ExportTablePage
       title="Zmanim"
       subtitle="Jan 2026"
       pageLabel="1 / 1"
-      blocks={[sheet()]}
-      fontSize={10}
+      sheet={docSheet(sheet())}
       footer="zmanim.example"
       dir="ltr"
     />,
@@ -148,5 +161,42 @@ describe('ExportTablePage header', () => {
       expect(cell.className).not.toContain('border-s');
       expect(cell.className).not.toContain('border-e');
     }
+  });
+
+  it('omits the opinion tier entirely on a sheet with no opinions (a learning sheet)', () => {
+    const grid = buildExportGrid(
+      { keys: [], rows: [] },
+      [
+        { key: 'dayWithMonth', header: 'Date', identity: true },
+        { key: 'dafYomi', header: 'Daf Yomi' },
+      ],
+      [],
+    );
+    const { container } = render(
+      <ExportTablePage
+        title="Learning"
+        subtitle="Jan 2026"
+        pageLabel="1 / 1"
+        sheet={docSheet(grid)}
+        footer="zmanim.example"
+        dir="ltr"
+      />,
+    );
+    expect(container.querySelectorAll('thead tr')).toHaveLength(1);
+  });
+
+  it('prints the sheet footnotes above the attribution', () => {
+    const { container } = render(
+      <ExportTablePage
+        title="Zmanim"
+        subtitle="Jul 2026"
+        pageLabel="1 / 1"
+        sheet={{ ...docSheet(sheet()), footnotes: ['Fast of Tammuz: 4:12 – 20:11', 'Molad Av: Monday, 12:54'] }}
+        footer="zmanim.example"
+        dir="ltr"
+      />,
+    );
+    expect(container.textContent).toContain('Fast of Tammuz: 4:12 – 20:11');
+    expect(container.textContent).toContain('Molad Av: Monday, 12:54');
   });
 });

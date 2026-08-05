@@ -1,29 +1,21 @@
 export { exportGridToCsv, exportTableToCsv } from './csv';
+export { buildExportDocument, type ExportDocSheet, type ExportDocumentInput } from './document';
 export { downloadBlob } from './download';
 export { exportTableToExcel } from './excel';
 export {
   buildExportGrid,
-  dayKeys,
+  dropEmptyColumns,
   type ExportColumn,
   type ExportGrid,
   type ExportHeader,
   fitColumnWeights,
   fitColumnWidths,
   fitFontSize,
-  fitRowPadding,
-  fitRowsPerPage,
   HEADER_FONT_SCALE,
   type HeaderRun,
   headerRuns,
-  type LayoutLegibility,
-  layoutLegibility,
-  LEGIBLE_ZMAN_HINT,
   MAX_TABLE_FONT_PX,
-  MIN_LEGIBLE_PX,
   MIN_TABLE_FONT_PX,
-  type ExportSheet,
-  paginateExportGrid,
-  paginateExportSheets,
   SUB_HEADER_FONT_SCALE,
   transposeExportGrid,
 } from './grid';
