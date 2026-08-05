@@ -228,7 +228,9 @@ function partitionColumns(grid: ExportGrid, m: TextMeasurer): number[][] {
 
 /** Total rendered height of the rows at this font, given per-row line counts. */
 function rowsHeight(lines: number[], fontPx: number): number {
-  return sum(lines) * fontPx * LINE_HEIGHT + lines.length * ROW_PADDING_PX;
+  // +1 per row: the rendered border-top, which the font math otherwise ignores
+  // and which adds up to real pixels over thirty rows.
+  return sum(lines) * fontPx * LINE_HEIGHT + lines.length * (ROW_PADDING_PX + 1);
 }
 
 /**
