@@ -195,6 +195,7 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
       sheet={sheet}
       footer={footer}
       notes={notes}
+      notesLabel={tr('export.noteCalculation')}
       dir={dir}
     />
   ));

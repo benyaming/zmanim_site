@@ -210,14 +210,25 @@ export function orderedZmanKeys(keys: string[]): string[] {
   return ZMANIM.filter((z) => wanted.has(z.key)).map((z) => z.key);
 }
 
+/** One footer block: a bold lead label (the fast's name, "Molad Av") and its text. */
+export interface PageFootnote {
+  label: string;
+  text: string;
+}
+
 /**
  * The once-or-twice-a-month facts for the days on one printed page: the fast
- * bookends of any fast day, and the molad announcement. These get a footer line
- * rather than a column, because a column would be blank on 29 rows out of 30 —
- * and a page holding both 17 Tammuz and Tisha b'Av correctly yields two lines.
+ * bookends of any fast day, and the molad announcement. These get a footer
+ * block rather than a column, because a column would be blank on 29 rows out
+ * of 30 — and a page holding both 17 Tammuz and Tisha b'Av correctly yields
+ * two blocks.
  */
-export function pageFootnotes(rows: ZmanimTableRow[], isoOnPage: ReadonlySet<string>, includeFasts = true): string[] {
-  const lines: string[] = [];
+export function pageFootnotes(
+  rows: ZmanimTableRow[],
+  isoOnPage: ReadonlySet<string>,
+  includeFasts = true,
+): PageFootnote[] {
+  const lines: PageFootnote[] = [];
   // A fast that begins the previous evening (Tisha b'Av, Yom Kippur) reports
   // its start on the erev row and its end — and its NAME — on the fast day. It
   // is one event and gets one line; pairing also stops the erev row emitting a
@@ -246,19 +257,29 @@ export function pageFootnotes(rows: ZmanimTableRow[], isoOnPage: ReadonlySet<str
       const tail = row.fastEnd ? row : next && next.fastEnd && !next.fastStart ? next : undefined;
       if (isoOnPage.has(row.iso) || (tail && isoOnPage.has(tail.iso))) {
         const span = [row.fastStart, tail && endText(tail)].filter(Boolean).join(' – ');
-        const name = row.holiday || tail?.holiday || '';
-        lines.push(name ? `${name}: ${span}` : span);
+        lines.push({ label: row.holiday || tail?.holiday || '', text: span });
       }
     } else if (row.fastEnd && !pairedTail.has(i) && isoOnPage.has(row.iso)) {
       // An end with no start in range — the range itself began mid-fast.
-      lines.push(row.holiday ? `${row.holiday}: ${endText(row)}` : endText(row));
+      lines.push({ label: row.holiday, text: endText(row) });
     }
-    if (row.molad && isoOnPage.has(row.iso)) lines.push(row.molad);
+    if (row.molad && isoOnPage.has(row.iso)) {
+      // The molad sentence arrives as one localized string ("Molad Av: Monday,
+      // …"); its lead-up to the first colon is the block's label.
+      const at = row.molad.indexOf(': ');
+      lines.push(at > 0 ? { label: row.molad.slice(0, at), text: row.molad.slice(at + 2) } : { label: '', text: row.molad });
+    }
   }
   // One molad is announced on BOTH Shabbat Mevarchim and Rosh Chodesh, so the
-  // same sentence lands twice on a page holding both. Two different molads in
+  // same block lands twice on a page holding both. Two different molads in
   // one month differ in text and are kept.
-  return [...new Set(lines)];
+  const seen = new Set<string>();
+  return lines.filter((line) => {
+    const key = `${line.label} ${line.text}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /** Number of days from start to end inclusive (0 when end precedes start). */

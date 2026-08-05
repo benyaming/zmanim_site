@@ -49,7 +49,7 @@ import {
 } from './grid';
 import { defaultMeasurer, type TextMeasurer } from './measure';
 import { CONTENT_WIDTH_PX } from './page';
-import { pageFootnotes, type ZmanimTable, type ZmanimTableRow } from './table';
+import { type PageFootnote, pageFootnotes, type ZmanimTable, type ZmanimTableRow } from './table';
 
 export interface ExportDocumentInput {
   table: ZmanimTable;
@@ -91,16 +91,25 @@ export interface ExportDocSheet {
   /** 1-based sheet index within its month (or week) and kind, and the total. */
   part: number;
   parts: number;
-  /** Once-a-month facts for the days on this sheet (fasts, molad). */
-  footnotes: string[];
+  /** Once-a-month facts for the days on this sheet (fasts, molad), as labelled footer blocks. */
+  footnotes: PageFootnote[];
 }
 
 /** Rendered line height multiplier (must match the page renderer). */
 const LINE_HEIGHT = 1.35;
 /** Vertical cell padding budgeted per row before slack is distributed. */
 const ROW_PADDING_PX = 4;
-/** Height one footnote line costs the sheet's body. */
-const FOOTNOTE_LINE_PX = 12;
+/** Height of one row of footer blocks (bordered cards under the table). */
+const FOOTNOTE_ROW_PX = 36;
+
+/**
+ * Footer height the blocks will occupy: about three blocks fit a row, and the
+ * ever-present calculation block rides with them (hence +1). Zero blocks cost
+ * nothing extra — the calculation line lives inside the base footer band.
+ */
+function footnoteBandPx(count: number): number {
+  return count === 0 ? 0 : Math.ceil((count + 1) / 3) * FOOTNOTE_ROW_PX;
+}
 /** Gap between the side-by-side halves of a flowed sparse sheet. */
 const FLOW_GAP_PX = 32;
 /** Don't flow a sheet shorter than this — a handful of rows reads fine as one table. */
@@ -244,13 +253,13 @@ function rowsHeight(lines: number[], fontPx: number): number {
 function fitSheetFont(
   grid: ExportGrid,
   widthFontPx: number,
-  footnoteCount: number,
+  extraFooterPx: number,
   m: TextMeasurer,
 ): { fontPx: number; lines: number[] } {
   let fontPx = widthFontPx;
   for (;;) {
     const lines = rowLineCounts(grid, grid.weights, fontPx, m);
-    const budget = sheetBodyHeight(fontPx, grid, m) - footnoteCount * FOOTNOTE_LINE_PX;
+    const budget = sheetBodyHeight(fontPx, grid, m) - extraFooterPx;
     if (rowsHeight(lines, fontPx) <= budget || fontPx <= MIN_TABLE_FONT_PX) return { fontPx, lines };
     fontPx = Math.max(MIN_TABLE_FONT_PX, fontPx - 0.25);
   }
@@ -289,7 +298,7 @@ function splitRowsByHeight(lines: number[], fontPx: number, budget: number, brea
 }
 
 /** Footnotes for the days a grid covers (columns on a weekly sheet, rows otherwise). */
-function footnotesFor(table: ZmanimTable, grid: ExportGrid, includeFasts: boolean): string[] {
+function footnotesFor(table: ZmanimTable, grid: ExportGrid, includeFasts: boolean): PageFootnote[] {
   const keys = grid.columnKeys ?? grid.rowKeys;
   return pageFootnotes(table.rows, new Set(keys.filter((k) => k !== '')), includeFasts);
 }
@@ -312,8 +321,8 @@ function monthSheets(
   const fitted: ExportGrid = { ...trimmed, weights: fitColumnWeights(trimmed, m) };
   const widthFont = fitFontSize(fitted.weights, m);
   const monthNotes = kind === 'times' ? footnotesFor(table, fitted, includeFasts) : [];
-  const { fontPx, lines } = fitSheetFont(fitted, widthFont, monthNotes.length, m);
-  const budget = sheetBodyHeight(fontPx, fitted, m) - monthNotes.length * FOOTNOTE_LINE_PX;
+  const { fontPx, lines } = fitSheetFont(fitted, widthFont, footnoteBandPx(monthNotes.length), m);
+  const budget = sheetBodyHeight(fontPx, fitted, m) - footnoteBandPx(monthNotes.length);
 
   const slices =
     rowsHeight(lines, fontPx) <= budget
@@ -335,7 +344,7 @@ function monthSheets(
       flowGrids: flow?.grids,
       flowWidthPx: flow?.widthPx,
       fontPx,
-      rowPaddingPx: fitRowPadding(fontPx, padRows, padLines, grid, footnotes.length * FOOTNOTE_LINE_PX, m),
+      rowPaddingPx: fitRowPadding(fontPx, padRows, padLines, grid, footnoteBandPx(footnotes.length), m),
       startIso: grid.rowKeys[0] ?? '',
       endIso: grid.rowKeys[grid.rowKeys.length - 1] ?? '',
       part: 1,
@@ -431,8 +440,8 @@ function weeklySheets(input: ExportDocumentInput, m: TextMeasurer): ExportDocShe
     // Not fitFontSize: the weekly sheet has its own, higher ceiling — eight
     // wide columns deserve larger type than a month grid ever gets.
     const widthFont = Math.max(MIN_TABLE_FONT_PX, Math.min(WEEK_MAX_FONT_PX, rawFontSize(fitted.weights, m)));
-    const { fontPx, lines } = fitSheetFont(fitted, widthFont, footnotes.length, m);
-    const budget = sheetBodyHeight(fontPx, fitted, m) - footnotes.length * FOOTNOTE_LINE_PX;
+    const { fontPx, lines } = fitSheetFont(fitted, widthFont, footnoteBandPx(footnotes.length), m);
+    const budget = sheetBodyHeight(fontPx, fitted, m) - footnoteBandPx(footnotes.length);
 
     const slices =
       rowsHeight(lines, fontPx) <= budget
@@ -456,7 +465,7 @@ function weeklySheets(input: ExportDocumentInput, m: TextMeasurer): ExportDocShe
           grid.rows.length,
           sum(sliceLines),
           grid,
-          footnotes.length * FOOTNOTE_LINE_PX,
+          footnoteBandPx(footnotes.length),
           m,
         ),
         startIso: days[0]?.iso ?? '',

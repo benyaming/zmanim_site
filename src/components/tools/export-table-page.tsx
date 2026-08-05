@@ -51,6 +51,7 @@ export function ExportTablePage({
   sheet,
   footer,
   notes,
+  notesLabel,
   dir,
 }: {
   /** Sheet heading: what the table is, and where ("Zmanim · Yaroslavl"). */
@@ -62,8 +63,10 @@ export function ExportTablePage({
   sheet: ExportDocSheet;
   /** Attribution line at the bottom of the page. */
   footer: string;
-  /** Compute-option note (elevation / lehumra) above the footer; empty when none. */
+  /** The calculation block: candle offset, havdala opinion, elevation, lehumra. */
   notes?: string;
+  /** Bold lead label for the calculation block ("Calculation"). */
+  notesLabel?: string;
   dir: 'ltr' | 'rtl';
 }) {
   return (
@@ -108,17 +111,30 @@ export function ExportTablePage({
       )}
 
       <div className="mt-auto shrink-0 pt-2">
-        {/* The rich footer, top to bottom: the month's fasts (every visible
-            opinion) and the molad, one line each; then the calculation the
-            sheet was made with (candle offset, havdala opinion, elevation,
-            lehumra); then the attribution. Facts that occur once or twice a
-            month ride here instead of holding a column blank on 29 rows. */}
-        {sheet.footnotes.map((line, i) => (
-          <p key={i} className="pb-[2px] text-center text-[9px] text-neutral-700">
-            {line}
-          </p>
-        ))}
-        {notes && <p className="pb-[2px] text-center text-[8px] text-neutral-500">{notes}</p>}
+        {/* The rich footer: one bordered block per fact — each fast with every
+            visible end opinion, the molad, and the calculation the sheet was
+            made with — laid across the full width, then the attribution.
+            Facts that occur once or twice a month ride here instead of
+            holding a column blank on 29 rows. */}
+        {(sheet.footnotes.length > 0 || notes) && (
+          <div className="flex flex-wrap items-stretch gap-1.5 pb-1.5">
+            {sheet.footnotes.map((note, i) => (
+              <div
+                key={i}
+                className="flex-auto rounded-sm border border-neutral-300 px-2 py-1 text-[9px] leading-snug text-neutral-800"
+              >
+                {note.label && <span className="font-semibold">{note.label} · </span>}
+                {note.text}
+              </div>
+            ))}
+            {notes && (
+              <div className="flex-auto rounded-sm border border-neutral-200 px-2 py-1 text-[9px] leading-snug text-neutral-500">
+                {notesLabel && <span className="font-semibold">{notesLabel} · </span>}
+                {notes}
+              </div>
+            )}
+          </div>
+        )}
         <p className="text-center text-[8px] text-neutral-400">{footer}</p>
       </div>
     </div>

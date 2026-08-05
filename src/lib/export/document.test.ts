@@ -226,16 +226,17 @@ describe('buildExportDocument — footnotes', () => {
   it('rides fast times and the molad in the sheet footnotes, ends labelled per visible opinion', () => {
     const sheets = buildExportDocument(input(t, 'en'), m);
     expect(sheets).toHaveLength(1);
-    const fastLine = sheets[0].footnotes.find((line) => /–/.test(line));
-    expect(fastLine).toBeDefined();
-    expect(fastLine).toMatch(/\(op:[a-zA-Z0-9]+\)/);
-    expect(sheets[0].footnotes.some((line) => line.startsWith('Molad'))).toBe(true);
+    const fast = sheets[0].footnotes.find((note) => /–/.test(note.text));
+    expect(fast).toBeDefined();
+    expect(fast!.label).not.toBe('');
+    expect(fast!.text).toMatch(/\(op:[a-zA-Z0-9]+\)/);
+    expect(sheets[0].footnotes.some((note) => note.label.startsWith('Molad'))).toBe(true);
   });
 
   it('suppresses the fast lines when the fast toggle is off, keeping the molad', () => {
     const sheets = buildExportDocument(input(t, 'en', { includeFastNotes: false }), m);
-    expect(sheets[0].footnotes.some((line) => /–/.test(line))).toBe(false);
-    expect(sheets[0].footnotes.some((line) => line.startsWith('Molad'))).toBe(true);
+    expect(sheets[0].footnotes.some((note) => /–/.test(note.text))).toBe(false);
+    expect(sheets[0].footnotes.some((note) => note.label.startsWith('Molad'))).toBe(true);
   });
 });
 

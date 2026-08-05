@@ -565,7 +565,8 @@
     "previewNext": "הגיליון הבא",
     "learningSheetHint": "מסלול קצר יחיד (כמו דף היומי) מצטרף כעמודה לטבלת הזמנים; יותר מסלולים או קריאות ארוכות מודפסים כעמוד נפרד לכל חודש.",
     "noteCandles": "הדלקת נרות — {minutes} דק׳ לפני השקיעה",
-    "noteHavdalah": "הבדלה — {opinion}"
+    "noteHavdalah": "הבדלה — {opinion}",
+    "noteCalculation": "חישוב"
   },
   "sync": {
     "telegramTitle": "סנכרון טלגרם",

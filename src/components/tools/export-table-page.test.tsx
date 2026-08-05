@@ -185,18 +185,29 @@ describe('ExportTablePage header', () => {
     expect(container.querySelectorAll('thead tr')).toHaveLength(1);
   });
 
-  it('prints the sheet footnotes above the attribution', () => {
+  it('prints the sheet footnotes as labelled blocks above the attribution', () => {
     const { container } = render(
       <ExportTablePage
         title="Zmanim"
         subtitle="Jul 2026"
         pageLabel="1 / 1"
-        sheet={{ ...docSheet(sheet()), footnotes: ['Fast of Tammuz: 4:12 – 20:11', 'Molad Av: Monday, 12:54'] }}
+        sheet={{
+          ...docSheet(sheet()),
+          footnotes: [
+            { label: 'Fast of Tammuz', text: '4:12 – 20:11 (3 stars)' },
+            { label: 'Molad Av', text: 'Monday, 12:54' },
+          ],
+        }}
         footer="zmanim.example"
+        notes="Candles — 18 min before shkia"
+        notesLabel="Calculation"
         dir="ltr"
       />,
     );
-    expect(container.textContent).toContain('Fast of Tammuz: 4:12 – 20:11');
-    expect(container.textContent).toContain('Molad Av: Monday, 12:54');
+    expect(container.textContent).toContain('Fast of Tammuz');
+    expect(container.textContent).toContain('4:12 – 20:11 (3 stars)');
+    expect(container.textContent).toContain('Molad Av');
+    expect(container.textContent).toContain('Calculation');
+    expect(container.textContent).toContain('Candles — 18 min before shkia');
   });
 });
