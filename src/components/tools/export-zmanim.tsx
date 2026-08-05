@@ -311,12 +311,13 @@ export function ExportZmanimTool() {
   };
 
   return (
-    // Range / location / options in a fixed-width start column, the zmanim
-    // picker filling the rest, and the live PDF preview across the full width
-    // beneath them. The download buttons head the end column and stick there:
-    // the picker is long enough to scroll past them otherwise, and they are
-    // what the dialog is for.
-    <div className="space-y-3 lg:grid lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start lg:gap-x-8 lg:space-y-0">
+    // A print dialog's shape: every control in a fixed-width start rail, the
+    // live preview filling the rest and STAYING IN VIEW (sticky) while the
+    // rail scrolls — it is the dialog's answer to "what will I get", so it
+    // cannot live below the fold. The download buttons sit under the preview:
+    // look, then print. On mobile the preview and buttons follow the range
+    // and place, before the long tail of checkboxes.
+    <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-x-8 lg:gap-y-3">
       <div className="space-y-3">
         <div className="space-y-2">
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
@@ -354,7 +355,30 @@ export function ExportZmanimTool() {
           </label>
           <p className="text-muted-foreground text-xs">{t('transposeHint')}</p>
         </div>
+      </div>
 
+      {/* The preview pane: pinned beside the rail on desktop so every tick is
+          answered on the spot, with the download buttons right under it. */}
+      <div className="space-y-2 lg:sticky lg:top-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+        <ExportPdfPreview config={pdfConfig} />
+        {error && <p className="text-destructive text-xs">{error}</p>}
+        <div className="flex gap-2">
+          <Button onClick={() => exportTable('pdf')} disabled={busy} className="flex-1" variant="outline">
+            <FileDown className="size-4" />
+            {busy ? t('generating') : t('formatPdf')}
+          </Button>
+          <Button onClick={() => exportTable('xlsx')} disabled={busy} className="flex-1" variant="outline">
+            <FileSpreadsheet className="size-4" />
+            {busy ? t('generating') : t('formatExcel')}
+          </Button>
+          <Button onClick={() => exportTable('csv')} disabled={busy} className="flex-1" variant="outline">
+            <FileText className="size-4" />
+            {busy ? t('generating') : t('formatCsv')}
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-3 lg:col-start-1">
         <div className="space-y-1.5">
           <span className="text-sm font-medium">{t('dayColumns')}</span>
           <label htmlFor="export-col-date" className="flex cursor-pointer items-center gap-2">
@@ -417,63 +441,33 @@ export function ExportZmanimTool() {
             </label>
           ))}
         </div>
-      </div>
 
-      {/* self-stretch so this column runs the full height of the taller of the
-          two: the picker ends before the options do, and a bar pinned to the
-          bottom of a short column would stop sticking partway down the scroll. */}
-      <div className="flex flex-col gap-2 lg:col-start-2 lg:row-start-1 lg:self-stretch">
-        <span className="text-sm font-medium">{t('zmanimPick')}</span>
-        <div className="space-y-3 rounded-lg border p-3 lg:columns-2 lg:gap-x-6">
-          {ZMAN_PICKER_SECTIONS.map((section) => (
-            <section key={section.category} className="space-y-1.5 lg:break-inside-avoid">
-              <h4 className="text-muted-foreground/70 text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
-                {tGroup(section.category)}
-              </h4>
-              {section.bases.map(({ base, keys }) => (
-                <ZmanBaseControl
-                  key={base}
-                  base={base}
-                  name={tName(keys[0])}
-                  keys={keys}
-                  shitaLabel={tShita}
-                  isSelected={(k) => selectedKeys.has(k)}
-                  setSelected={setKeySelected}
-                  open={openBases.has(base)}
-                  onToggleOpen={() => toggleBase(base)}
-                  idPrefix="export-zman"
-                />
-              ))}
-            </section>
-          ))}
-        </div>
-
-        {/* The download buttons keep their original place at the bottom, but
-            pinned there so they stay reachable however far down the picker you
-            are. `bottom-0` would pin to the scroll container's PADDING edge,
-            leaving a live strip below it — hence the -1 offset and matching
-            padding, which also cancels out while the bar is unstuck. */}
-        <div className="bg-background sticky -bottom-1 z-10 mt-auto -mb-1 space-y-2 pt-2 pb-1">
-          {error && <p className="text-destructive text-xs">{error}</p>}
-          <div className="flex gap-2">
-            <Button onClick={() => exportTable('pdf')} disabled={busy} className="flex-1" variant="outline">
-              <FileDown className="size-4" />
-              {busy ? t('generating') : t('formatPdf')}
-            </Button>
-            <Button onClick={() => exportTable('xlsx')} disabled={busy} className="flex-1" variant="outline">
-              <FileSpreadsheet className="size-4" />
-              {busy ? t('generating') : t('formatExcel')}
-            </Button>
-            <Button onClick={() => exportTable('csv')} disabled={busy} className="flex-1" variant="outline">
-              <FileText className="size-4" />
-              {busy ? t('generating') : t('formatCsv')}
-            </Button>
+        <div className="space-y-1.5">
+          <span className="text-sm font-medium">{t('zmanimPick')}</span>
+          <div className="space-y-3 rounded-lg border p-3">
+            {ZMAN_PICKER_SECTIONS.map((section) => (
+              <section key={section.category} className="space-y-1.5">
+                <h4 className="text-muted-foreground/70 text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
+                  {tGroup(section.category)}
+                </h4>
+                {section.bases.map(({ base, keys }) => (
+                  <ZmanBaseControl
+                    key={base}
+                    base={base}
+                    name={tName(keys[0])}
+                    keys={keys}
+                    shitaLabel={tShita}
+                    isSelected={(k) => selectedKeys.has(k)}
+                    setSelected={setKeySelected}
+                    open={openBases.has(base)}
+                    onToggleOpen={() => toggleBase(base)}
+                    idPrefix="export-zman"
+                  />
+                ))}
+              </section>
+            ))}
           </div>
         </div>
-      </div>
-
-      <div className="lg:col-span-2">
-        <ExportPdfPreview config={pdfConfig} />
       </div>
     </div>
   );
