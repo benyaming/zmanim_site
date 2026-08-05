@@ -16,7 +16,7 @@ import {
 import type { LearningCycleKey } from '@/lib/learning';
 import type { AppLocation } from '@/lib/location';
 import { SITE_HOST } from '@/lib/site';
-import { type HavdalahOpinion, ZMANIM } from '@/lib/zmanim';
+import { type HavdalahOpinion, havdalahZmanKey, ZMANIM } from '@/lib/zmanim';
 
 import { reportTranslator } from './export-i18n';
 import { ExportTablePage } from './export-table-page';
@@ -51,6 +51,8 @@ export interface PdfDocConfig {
   locationLabel: string;
   candleLightingOffset: number;
   havdalahOpinion: HavdalahOpinion;
+  /** The user's hidden fast-end opinions, so the fast footnote answers with the ones they show. */
+  hiddenFastEnd: string[];
   useElevation: boolean;
   lehumra: boolean;
   reportLocale: string;
@@ -86,6 +88,8 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
     moladLabel: cfg.columns.mevarchim ? (parts) => tr('export.moladLine', parts) : undefined,
     learningKeys: cfg.learningKeys,
     plainTimes: true,
+    hiddenFastEnd: cfg.hiddenFastEnd,
+    fastEndLabel: (key) => tr(`events.fastEndOpinions.${key}`),
   });
 
   // Compact print headers: the parenthetical qualifier is dropped from the
@@ -155,11 +159,16 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
   });
 
   const footer = tr('export.generatedBy', { site: SITE_HOST });
-  const noteParts: string[] = [];
+  // The calculation line: everything that shaped these times, so a printed
+  // sheet answers "which opinions is this?" without the app in hand. The
+  // havdala item goes LAST because its opinion label carries a " · " of its
+  // own ("3 small stars · 8.5°") — mid-list it would read as two items.
+  const noteParts: string[] = [tr('export.noteCandles', { minutes: cfg.candleLightingOffset })];
   if (cfg.useElevation && typeof cfg.location.elevation === 'number' && cfg.location.elevation > 0) {
     noteParts.push(tr('export.noteElevation', { meters: cfg.location.elevation }));
   }
   if (cfg.lehumra) noteParts.push(tr('export.noteLehumra'));
+  noteParts.push(tr('export.noteHavdalah', { opinion: tr(`zmanim.shitot.${havdalahZmanKey(cfg.havdalahOpinion)}`) }));
   const notes = noteParts.join(' · ');
 
   const titleFor = (sheet: ExportDocSheet) =>

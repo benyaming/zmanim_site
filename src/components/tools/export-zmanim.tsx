@@ -46,8 +46,15 @@ export function ExportZmanimTool() {
   const tGroup = useTranslations('zmanim.groups');
   const tPanel = useTranslations('panel');
   const tLearning = useTranslations('learning');
-  const { candleLightingOffset, havdalahOpinion, hiddenZmanim, hiddenLearning, exportPreset, setExportPreset } =
-    useAppState();
+  const {
+    candleLightingOffset,
+    havdalahOpinion,
+    hiddenZmanim,
+    hiddenLearning,
+    hiddenFastEnd,
+    exportPreset,
+    setExportPreset,
+  } = useAppState();
   // The seed for every control below, and only a seed: each `useState` reads it
   // on the first render and never again, so later edits to the controls are not
   // fighting the saved preset. Safe to take straight from app state because the
@@ -178,6 +185,7 @@ export function ExportZmanimTool() {
           locationLabel: location.customLabel || location.label,
           candleLightingOffset,
           havdalahOpinion,
+          hiddenFastEnd,
           useElevation,
           lehumra,
           reportLocale,
@@ -254,6 +262,7 @@ export function ExportZmanimTool() {
           mevarchimLabel: tr('panel.shabbatMevarchim'),
           moladLabel: (parts) => tr('export.moladLine', parts),
           learningKeys,
+          hiddenFastEnd,
         });
         const footer = tr('export.generatedBy', { site: SITE_HOST });
         const noteParts: string[] = [];

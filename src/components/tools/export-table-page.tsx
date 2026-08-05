@@ -108,12 +108,16 @@ export function ExportTablePage({
       )}
 
       <div className="mt-auto shrink-0 pt-2">
-        {/* Values that occur once or twice a month — the fast bookends, the
-            molad — ride here instead of holding a column that is blank on 29
-            rows out of 30. */}
-        {sheet.footnotes.length > 0 && (
-          <p className="pb-[2px] text-center text-[9px] text-neutral-700">{sheet.footnotes.join('   ·   ')}</p>
-        )}
+        {/* The rich footer, top to bottom: the month's fasts (every visible
+            opinion) and the molad, one line each; then the calculation the
+            sheet was made with (candle offset, havdala opinion, elevation,
+            lehumra); then the attribution. Facts that occur once or twice a
+            month ride here instead of holding a column blank on 29 rows. */}
+        {sheet.footnotes.map((line, i) => (
+          <p key={i} className="pb-[2px] text-center text-[9px] text-neutral-700">
+            {line}
+          </p>
+        ))}
         {notes && <p className="pb-[2px] text-center text-[8px] text-neutral-500">{notes}</p>}
         <p className="text-center text-[8px] text-neutral-400">{footer}</p>
       </div>

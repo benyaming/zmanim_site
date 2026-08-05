@@ -129,6 +129,18 @@ export interface ZmanimTableOptions {
    * whose cells are data and keep the full locale format.
    */
   plainTimes?: boolean;
+  /**
+   * The user's hidden fast-end opinions (the calendar-settings picker), so the
+   * export answers with the same opinions the app shows. Defaults to the app's
+   * default hide-list.
+   */
+  hiddenFastEnd?: readonly string[];
+  /**
+   * Labels a fast-end opinion key ("tzais72" → "Rabbeinu Tam · 72 min") for
+   * `fastEndDetail`. Without it the detail stays empty and only the single
+   * `fastEnd` slot is filled — the CSV/Excel shape.
+   */
+  fastEndLabel?: (opinionKey: string) => string;
 }
 
 export type ZmanimTableRow = {
@@ -158,6 +170,13 @@ export type ZmanimTableRow = {
   havdalah: string;
   fastStart: string;
   fastEnd: string;
+  /**
+   * Every VISIBLE fast-end opinion for the day, formatted "time (opinion)" and
+   * joined with " · " — what the PDF's fast footnote prints. Empty unless a
+   * `fastEndLabel` was provided; the single `fastEnd` stays the one answer a
+   * spreadsheet cell wants.
+   */
+  fastEndDetail: string;
   /** "✓" on Shabbat Mevarchim, else empty. Kept tick-shaped for CSV/Excel. */
   mevarchim: string;
   /**
@@ -214,6 +233,10 @@ export function pageFootnotes(rows: ZmanimTableRow[], isoOnPage: ReadonlySet<str
     if (tail && tail !== row) pairedTail.add(i + 1);
   }
 
+  // The end side prefers the labelled multi-opinion detail when the table
+  // carries one — the printed luach answers with every opinion the user shows.
+  const endText = (r: ZmanimTableRow) => r.fastEndDetail || r.fastEnd;
+
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     if (!includeFasts) {
@@ -222,13 +245,13 @@ export function pageFootnotes(rows: ZmanimTableRow[], isoOnPage: ReadonlySet<str
       const next = rows[i + 1];
       const tail = row.fastEnd ? row : next && next.fastEnd && !next.fastStart ? next : undefined;
       if (isoOnPage.has(row.iso) || (tail && isoOnPage.has(tail.iso))) {
-        const span = [row.fastStart, tail?.fastEnd].filter(Boolean).join(' – ');
+        const span = [row.fastStart, tail && endText(tail)].filter(Boolean).join(' – ');
         const name = row.holiday || tail?.holiday || '';
         lines.push(name ? `${name}: ${span}` : span);
       }
     } else if (row.fastEnd && !pairedTail.has(i) && isoOnPage.has(row.iso)) {
       // An end with no start in range — the range itself began mid-fast.
-      lines.push(row.holiday ? `${row.holiday}: ${row.fastEnd}` : row.fastEnd);
+      lines.push(row.holiday ? `${row.holiday}: ${endText(row)}` : endText(row));
     }
     if (row.molad && isoOnPage.has(row.iso)) lines.push(row.molad);
   }
@@ -289,8 +312,8 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
     const info = getDayInfo(date, formatter, o.locale, o.location.inIsrael);
     const holiday = localizedHolidayLabel(o.locale, info.label, info.yomTovIndex, info.dayOfChanukah) ?? '';
 
-    // Same event set as the calendar cells, incl. the earliest-opinion fast
-    // end and the per-event lehumra rounding directions.
+    // Same event set as the calendar cells — the USER's fast-end opinions, the
+    // per-event lehumra rounding directions.
     const timeByKey = Object.fromEntries(zmanim.map((z) => [z.key, z.time]));
     const allEvents = getDayEvents(
       date,
@@ -301,18 +324,25 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
         zmanimByKey: timeByKey,
       },
       o.location.inIsrael,
-      DEFAULT_HIDDEN_FAST_END,
+      o.hiddenFastEnd ?? DEFAULT_HIDDEN_FAST_END,
     );
-    // One fast-end slot: the earliest opinion that HAS a time (on a short
-    // night the degree opinions are null and the fixed-minute fallback wins).
-    const fastEnds = allEvents.filter((e) => e.type === 'fastEnd');
+    const adjusted = o.lehumra ? applyLehumraToEvents(allEvents) : allEvents;
+    // One fast-end slot for the tabular cell: the earliest opinion that HAS a
+    // time (on a short night the degree opinions are null and the fixed-minute
+    // fallback wins). The labelled detail keeps every visible opinion.
+    const fastEnds = adjusted.filter((e) => e.type === 'fastEnd');
     const chosenFastEnd = fastEnds.find((e) => e.time) ?? fastEnds[0];
-    const rawEvents = allEvents.filter((e) => e.type !== 'fastEnd' || e === chosenFastEnd);
-    const events = o.lehumra ? applyLehumraToEvents(rawEvents) : rawEvents;
+    const events = adjusted.filter((e) => e.type !== 'fastEnd' || e === chosenFastEnd);
     const eventTime = (type: string) => {
       const e = events.find((ev) => ev.type === type);
       return e ? clock(e.time, o.locale) : '';
     };
+    const fastEndDetail = o.fastEndLabel
+      ? fastEnds
+          .filter((e) => e.time)
+          .map((e) => `${clock(e.time, o.locale)} (${o.fastEndLabel!(e.zmanKey ?? '')})`)
+          .join(' · ')
+      : '';
 
     // Every learning key present as a column, empty by default; only the
     // requested cycles are filled (the lookup is skipped when none are asked for).
@@ -338,6 +368,7 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       havdalah: eventTime('havdalah'),
       fastStart: eventTime('fastStart'),
       fastEnd: eventTime('fastEnd'),
+      fastEndDetail,
       mevarchim: info.isShabbosMevorchim ? '\u2713' : '',
       mevarchimName: info.isShabbosMevorchim ? (o.mevarchimLabel ?? '') : '',
       molad:

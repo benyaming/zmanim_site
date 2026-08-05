@@ -41,6 +41,7 @@ function table(startIso: string, endIso: string, keys: string[], locale = 'en', 
     mevarchimLabel: 'Mevarchim',
     moladLabel: ({ month, weekday, time }) => `Molad ${month}: ${weekday} ${time}`,
     plainTimes: true,
+    fastEndLabel: (key) => `op:${key}`,
   });
 }
 
@@ -222,10 +223,12 @@ describe('buildExportDocument — footnotes', () => {
   // July 2026: 17 Tammuz falls on Thursday July 2 — a fast day with both bookends.
   const t = table('2026-07-01', '2026-07-31', DEFAULT_SELECTION);
 
-  it('rides fast times and the molad in the sheet footnotes', () => {
+  it('rides fast times and the molad in the sheet footnotes, ends labelled per visible opinion', () => {
     const sheets = buildExportDocument(input(t, 'en'), m);
     expect(sheets).toHaveLength(1);
-    expect(sheets[0].footnotes.some((line) => /–/.test(line))).toBe(true);
+    const fastLine = sheets[0].footnotes.find((line) => /–/.test(line));
+    expect(fastLine).toBeDefined();
+    expect(fastLine).toMatch(/\(op:[a-zA-Z0-9]+\)/);
     expect(sheets[0].footnotes.some((line) => line.startsWith('Molad'))).toBe(true);
   });
 
