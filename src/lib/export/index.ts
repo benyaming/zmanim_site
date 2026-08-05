@@ -1,5 +1,5 @@
 export { exportGridToCsv, exportTableToCsv } from './csv';
-export { buildExportDocument, type ExportDocSheet, type ExportDocumentInput } from './document';
+export { buildExportDocument, type ExportDocSheet, type ExportDocumentInput, footnoteGridCols } from './document';
 export { downloadBlob } from './download';
 export { exportTableToExcel } from './excel';
 export {

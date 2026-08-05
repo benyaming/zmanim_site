@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { ZMAN_PICKER_SECTIONS, ZmanBaseControl } from '@/components/zmanim/zman-picker';
 import { dirForLocale } from '@/i18n/routing';
+import { FAST_END_OPINIONS } from '@/lib/calendar';
 import {
   buildExportGrid,
   buildZmanimTable,
@@ -46,6 +47,7 @@ export function ExportZmanimTool() {
   const tGroup = useTranslations('zmanim.groups');
   const tPanel = useTranslations('panel');
   const tLearning = useTranslations('learning');
+  const tFastEnd = useTranslations('events.fastEndOpinions');
   const {
     candleLightingOffset,
     havdalahOpinion,
@@ -113,6 +115,11 @@ export function ExportZmanimTool() {
   const [includeParsha, setIncludeParsha] = useState(columns?.parsha ?? true);
   const [includeCandles, setIncludeCandles] = useState(columns?.candles ?? true);
   const [includeFasts, setIncludeFasts] = useState(columns?.fasts ?? true);
+  // Which fast-end opinions the footer answers with — every catalog opinion is
+  // offered here; the app's calendar settings only seed the first selection.
+  const [selectedFastEnds, setSelectedFastEnds] = useState<Set<string>>(
+    () => new Set(preset?.fastEnds ?? FAST_END_OPINIONS.filter((o) => !hiddenFastEnd.includes(o.key)).map((o) => o.key)),
+  );
   const [includeMevarchim, setIncludeMevarchim] = useState(columns?.mevarchim ?? true);
   const [includeOmer, setIncludeOmer] = useState(columns?.omer ?? true);
   // Weekly sheets: one calendar week per page, days across the top.
@@ -185,7 +192,9 @@ export function ExportZmanimTool() {
           locationLabel: location.customLabel || location.label,
           candleLightingOffset,
           havdalahOpinion,
-          hiddenFastEnd,
+          // The dialog's own opinion picker, expressed as the hide-list the
+          // table builder takes.
+          hiddenFastEnd: FAST_END_OPINIONS.filter((o) => !selectedFastEnds.has(o.key)).map((o) => o.key),
           useElevation,
           lehumra,
           reportLocale,
@@ -262,7 +271,7 @@ export function ExportZmanimTool() {
           mevarchimLabel: tr('panel.shabbatMevarchim'),
           moladLabel: (parts) => tr('export.moladLine', parts),
           learningKeys,
-          hiddenFastEnd,
+          hiddenFastEnd: FAST_END_OPINIONS.filter((o) => !selectedFastEnds.has(o.key)).map((o) => o.key),
         });
         const footer = tr('export.generatedBy', { site: SITE_HOST });
         const noteParts: string[] = [];
@@ -295,6 +304,7 @@ export function ExportZmanimTool() {
         rangeDays,
         keys: [...selectedKeys],
         learning: learningKeys,
+        fastEnds: [...selectedFastEnds],
         columns: {
           date: includeDate,
           weekday: includeWeekday,
@@ -422,6 +432,29 @@ export function ExportZmanimTool() {
             <Checkbox id="export-col-fasts" checked={includeFasts} onCheckedChange={(v) => setIncludeFasts(v === true)} />
             <span className="text-sm">{t('includeFasts')}</span>
           </label>
+          {/* The fast-end opinions the footer answers with — the whole catalog,
+              not just what the calendar settings happen to show. */}
+          {includeFasts && (
+            <div className="ms-6 space-y-1.5">
+              {FAST_END_OPINIONS.map((opinion) => (
+                <label key={opinion.key} htmlFor={`export-fastend-${opinion.key}`} className="flex cursor-pointer items-center gap-2">
+                  <Checkbox
+                    id={`export-fastend-${opinion.key}`}
+                    checked={selectedFastEnds.has(opinion.key)}
+                    onCheckedChange={(v) =>
+                      setSelectedFastEnds((prev) => {
+                        const next = new Set(prev);
+                        if (v === true) next.add(opinion.key);
+                        else next.delete(opinion.key);
+                        return next;
+                      })
+                    }
+                  />
+                  <span className="text-muted-foreground text-xs">{tFastEnd(opinion.key)}</span>
+                </label>
+              ))}
+            </div>
+          )}
           <label htmlFor="export-col-mevarchim" className="flex cursor-pointer items-center gap-2">
             <Checkbox
               id="export-col-mevarchim"

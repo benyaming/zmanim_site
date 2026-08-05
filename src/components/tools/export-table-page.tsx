@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react';
 
 import {
   fitColumnWidths,
+  footnoteGridCols,
   HEADER_FONT_SCALE,
   headerRuns,
   PAGE_HEIGHT_PX,
@@ -117,18 +118,23 @@ export function ExportTablePage({
             Facts that occur once or twice a month ride here instead of
             holding a column blank on 29 rows. */}
         {(sheet.footnotes.length > 0 || notes) && (
-          <div className="flex flex-wrap items-stretch gap-1.5 pb-1.5">
+          // A GRID, not a wrap: every block in a row gets the same width and
+          // the rows line up into even columns — content-sized blocks left the
+          // footer ragged.
+          <div
+            className="grid gap-1.5 pb-1.5"
+            style={{
+              gridTemplateColumns: `repeat(${footnoteGridCols(sheet.footnotes.length + (notes ? 1 : 0))}, minmax(0, 1fr))`,
+            }}
+          >
             {sheet.footnotes.map((note, i) => (
-              <div
-                key={i}
-                className="flex-auto rounded-sm border border-neutral-300 px-2 py-1 text-[9px] leading-snug text-neutral-800"
-              >
+              <div key={i} className="rounded-sm border border-neutral-300 px-2 py-1 text-[9px] leading-snug text-neutral-800">
                 {note.label && <span className="font-semibold">{note.label} · </span>}
                 {note.text}
               </div>
             ))}
             {notes && (
-              <div className="flex-auto rounded-sm border border-neutral-200 px-2 py-1 text-[9px] leading-snug text-neutral-500">
+              <div className="rounded-sm border border-neutral-200 px-2 py-1 text-[9px] leading-snug text-neutral-500">
                 {notesLabel && <span className="font-semibold">{notesLabel} · </span>}
                 {notes}
               </div>

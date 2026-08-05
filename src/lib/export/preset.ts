@@ -18,6 +18,7 @@
  */
 
 import { routing } from '@/i18n/routing';
+import { FAST_END_OPINIONS } from '@/lib/calendar';
 import { LEARNING_CYCLE_KEYS, type LearningCycleKey } from '@/lib/learning';
 import { ZMANIM } from '@/lib/zmanim';
 
@@ -43,6 +44,11 @@ export interface ExportPreset {
   keys: string[];
   learning: LearningCycleKey[];
   columns: ExportPresetColumns;
+  /**
+   * Fast-end opinions the footer answers with. Absent = follow the calendar
+   * settings, as a first export does.
+   */
+  fastEnds?: string[];
   transpose: boolean;
   /** Report language. Absent = follow the UI language, as a first export does. */
   reportLocale?: string;
@@ -101,6 +107,10 @@ export function sanitizeExportPreset(raw: unknown): ExportPreset | null {
     ? LEARNING_CYCLE_KEYS.filter((k) => (p.learning as unknown[]).includes(k))
     : [];
 
+  const fastEnds = Array.isArray(p.fastEnds)
+    ? FAST_END_OPINIONS.filter((o) => (p.fastEnds as unknown[]).includes(o.key)).map((o) => o.key)
+    : undefined;
+
   const saved = (typeof p.columns === 'object' && p.columns !== null ? p.columns : {}) as Record<string, unknown>;
   const columns = { ...ALL_COLUMNS };
   for (const key of COLUMN_KEYS) columns[key] = boolOr(saved[key], ALL_COLUMNS[key]);
@@ -115,6 +125,7 @@ export function sanitizeExportPreset(raw: unknown): ExportPreset | null {
     keys,
     learning,
     columns,
+    ...(fastEnds !== undefined && { fastEnds }),
     transpose: boolOr(p.transpose, false),
     reportLocale,
     locationId: typeof p.locationId === 'string' && p.locationId ? p.locationId : 'current',

@@ -68,6 +68,11 @@ describe('sanitizeExportPreset', () => {
     expect(preset.learning).toEqual([...LEARNING_CYCLE_KEYS]);
   });
 
+  it('keeps only known fast-end opinions, and leaves the field absent when unsaved', () => {
+    expect(parse({ ...VALID, fastEnds: ['tzais', 'notAnOpinion', 'tzais72'] }).fastEnds).toEqual(['tzais', 'tzais72']);
+    expect(parse(VALID).fastEnds).toBeUndefined();
+  });
+
   it('clamps the remembered range to what the export can actually build', () => {
     expect(parse({ ...VALID, rangeDays: 0 }).rangeDays).toBe(1);
     expect(parse({ ...VALID, rangeDays: -5 }).rangeDays).toBe(1);

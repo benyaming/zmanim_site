@@ -103,12 +103,25 @@ const ROW_PADDING_PX = 4;
 const FOOTNOTE_ROW_PX = 36;
 
 /**
- * Footer height the blocks will occupy: about three blocks fit a row, and the
- * ever-present calculation block rides with them (hence +1). Zero blocks cost
- * nothing extra — the calculation line lives inside the base footer band.
+ * Grid columns for a count of footer blocks: 1–3 blocks share one row, four
+ * make an even 2×2, five and more pack three per row. The renderer uses the
+ * same rule, so the height estimate below matches what gets drawn.
+ */
+export function footnoteGridCols(blocks: number): number {
+  if (blocks <= 1) return 1;
+  if (blocks === 4) return 2;
+  return Math.min(3, blocks);
+}
+
+/**
+ * Footer height the blocks will occupy. The ever-present calculation block
+ * rides with the footnotes (hence +1). Zero blocks cost nothing extra — the
+ * calculation line lives inside the base footer band.
  */
 function footnoteBandPx(count: number): number {
-  return count === 0 ? 0 : Math.ceil((count + 1) / 3) * FOOTNOTE_ROW_PX;
+  if (count === 0) return 0;
+  const blocks = count + 1;
+  return Math.ceil(blocks / footnoteGridCols(blocks)) * FOOTNOTE_ROW_PX;
 }
 /** Gap between the side-by-side halves of a flowed sparse sheet. */
 const FLOW_GAP_PX = 32;
