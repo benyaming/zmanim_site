@@ -11,6 +11,13 @@ import { DateTime } from 'luxon';
 export interface MoladInfo {
   /** Civil date the molad falls on (local-midnight anchored, for weekday/date display). */
   date: DateTime;
+  /**
+   * Civil date of the 1st of the Jewish month this molad ANNOUNCES — i.e. the
+   * incoming month, not the one the announcement is made in. Callers that need
+   * to name that month (a print sheet spanning several) resolve it from here;
+   * keeping it a date rather than a name leaves this module locale-free.
+   */
+  monthDate: DateTime;
   /** Hour of that civil day, 0-23. */
   hours: number;
   /** Minutes past the hour, 0-59. */
@@ -43,6 +50,10 @@ export function getMolad(date: DateTime): MoladInfo {
       month: molad.getGregorianMonth() + 1, // kosher-zmanim months are 0-based
       day: molad.getGregorianDayOfMonth(),
     }),
+    // Rebuilt from components rather than handing back the walked DateTime, so
+    // the same molad reported from Rosh Chodesh and from Shabbat Mevorchim is
+    // structurally identical (the walk reaches the two by different routes).
+    monthDate: DateTime.fromObject({ year: day.year, month: day.month, day: day.day }),
     hours: molad.getMoladHours(),
     minutes: molad.getMoladMinutes(),
     chalakim: molad.getMoladChalakim(),

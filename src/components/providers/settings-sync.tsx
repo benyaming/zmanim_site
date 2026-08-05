@@ -68,6 +68,7 @@ export function SettingsSync() {
     hiddenLearning,
     hiddenFastEnd,
     personalDates,
+    exportPreset,
   } = useAppState();
   const { fontScale, reduceMotion, highContrast } = useAccessibility();
   const { theme } = useTheme();
@@ -149,6 +150,11 @@ export function SettingsSync() {
     hiddenLearning,
     hiddenFastEnd,
     personalDates,
+    // The export preset rides the prefs blob, so a new one has to wake the
+    // watcher: without it the preset stayed on this device until some unrelated
+    // preference happened to change, and a reconcile in between could adopt the
+    // account's prefs and drop it.
+    exportPreset,
     fontScale,
     reduceMotion,
     highContrast,

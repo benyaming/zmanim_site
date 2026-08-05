@@ -20,6 +20,10 @@ import {
   SINGLE_EVENT_KINDS,
   type StandaloneDate,
 } from '@/lib/personal-dates';
+// Straight from the module, not the `@/lib/export` barrel: that barrel also
+// re-exports the writers (PDF rasterizer, workbook builder), and this provider
+// is in the main bundle — nothing here should be able to drag those in.
+import { type ExportPreset, sanitizeExportPreset } from '@/lib/export/preset';
 import { browserGeolocate } from '@/lib/geo/browser-location';
 import { fetchElevation } from '@/lib/geo/elevation';
 import { reverseGeocode } from '@/lib/geo/geocoding';
@@ -136,6 +140,14 @@ interface AppStateValue {
   addOccasion: (occasion: Omit<StandaloneDate, 'id'>) => string | null;
   updateOccasion: (id: string, occasion: Omit<StandaloneDate, 'id'>) => void;
   removeOccasion: (id: string) => void;
+  /**
+   * The zmanim table export's last-used selection, or null on a device that has
+   * never exported one — where the tool falls back to its live defaults rather
+   * than a frozen copy of them.
+   */
+  exportPreset: ExportPreset | null;
+  /** Remember this selection as the last export. Called when an export succeeds. */
+  setExportPreset: (preset: ExportPreset) => void;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -186,6 +198,8 @@ interface PersistedPrefs {
   personalDates?: PersonalDatesData;
   /** Legacy flat personal-date list — migrated into `personalDates` on load. */
   customDates?: unknown;
+  /** The zmanim-table export's last-used selection (see lib/export/preset.ts). */
+  export?: unknown;
 }
 
 function loadPrefs(): PersistedPrefs | null {
@@ -437,6 +451,8 @@ export function AppStateProvider({
   const removeOccasion = (id: string) =>
     setPersonalDates((prev) => ({ ...prev, occasions: prev.occasions.filter((o) => o.id !== id) }));
 
+  const [exportPreset, setExportPreset] = useState<ExportPreset | null>(null);
+
   // Gates persistence: it flips true only after the load effect has read
   // localStorage, so a pre-hydration render (initial mount, an HMR remount, or
   // React StrictMode's double-invoke) can never overwrite saved prefs with the
@@ -492,6 +508,10 @@ export function AppStateProvider({
       ? sanitizePersonalDates(prefs.personalDates)
       : migrateLegacyCustomDates(prefs.customDates);
     if (savedPersonal.people.length > 0 || savedPersonal.occasions.length > 0) setPersonalDates(savedPersonal);
+    // Unrecognized or stale content sanitizes to null, which reads as "never
+    // exported" — the tool then uses its live defaults instead of a stale copy.
+    const savedExport = sanitizeExportPreset(prefs.export);
+    if (savedExport) setExportPreset(savedExport);
     // A location from the URL (deep link) takes precedence over the saved one.
     // Ignore a persisted *default* (eager-persisted, not a real choice) so it
     // doesn't lock out auto-detection. inIsrael is always derived from the
@@ -619,12 +639,15 @@ export function AppStateProvider({
           hiddenFastEnd,
           fastEndCustomized,
           personalDates,
+          // Omitted entirely until an export has actually been made, so a device
+          // that never used the tool doesn't push an empty object at sync.
+          ...(exportPreset ? { export: exportPreset } : {}),
         }),
       );
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [hydrated, location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, lehumraCustomized, hiddenZmanim, zmanimCustomized, hiddenLearning, hiddenFastEnd, fastEndCustomized, personalDates]);
+  }, [hydrated, location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, lehumraCustomized, hiddenZmanim, zmanimCustomized, hiddenLearning, hiddenFastEnd, fastEndCustomized, personalDates, exportPreset]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
@@ -728,6 +751,8 @@ export function AppStateProvider({
     addOccasion,
     updateOccasion,
     removeOccasion,
+    exportPreset,
+    setExportPreset,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

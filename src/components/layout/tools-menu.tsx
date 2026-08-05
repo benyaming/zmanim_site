@@ -29,7 +29,11 @@ interface ToolEntry {
 
 const TOOLS: ToolEntry[] = [
   { key: 'calendar', Icon: CalendarRange, Tool: ExportCalendarTool, nameKey: 'calendarName', descKey: 'calendarDesc', dialogClass: 'sm:max-w-lg lg:max-w-4xl', download: true },
-  { key: 'zmanim', Icon: Table2, Tool: ExportZmanimTool, nameKey: 'zmanimName', descKey: 'zmanimDesc', dialogClass: 'sm:max-w-lg lg:max-w-3xl', download: true },
+  // Wider than the other tools at lg: this one carries a two-column zmanim
+  // picker whose rows are [checkbox · name · count · chevron], and at 3xl each
+  // column came out around 110px — too narrow for the name and the count to
+  // coexist, so they overlapped.
+  { key: 'zmanim', Icon: Table2, Tool: ExportZmanimTool, nameKey: 'zmanimName', descKey: 'zmanimDesc', dialogClass: 'sm:max-w-lg lg:max-w-4xl', download: true },
   { key: 'personalDates', Icon: CalendarHeart, Tool: PersonalDatesTool, nameKey: 'personalDatesName', descKey: 'personalDatesDesc', dialogClass: 'sm:max-w-lg', download: false },
 ];
 
