@@ -115,7 +115,7 @@ export interface ExportGrid {
 }
 
 /** The cell text for one column of one row (joining `fields` when the column is synthetic). */
-function cellValue(row: ZmanimTableRow, column: ExportColumn): string {
+export function cellValue(row: ZmanimTableRow, column: ExportColumn): string {
   const fields = column.fields ?? (column.key === 'events' ? [] : [column.key]);
   return fields
     .map((f) => row[f])
@@ -134,23 +134,36 @@ function isWeekStart(iso: string): boolean {
   return !Number.isNaN(ms) && new Date(ms).getUTCDay() === 0;
 }
 
-/** Build the normal (day-per-row) grid from the table and its enabled columns. */
+/**
+ * Build the normal (day-per-row) grid from the table and its enabled columns.
+ * `trailing` columns render AFTER the zmanim — the myzmanim position for a
+ * Daf Yomi column, which closes the row rather than interrupting the times.
+ */
 export function buildExportGrid(
   table: ZmanimTable,
   columns: ExportColumn[],
   zmanHeaders: ReadonlyArray<string | ExportHeader>,
+  trailing: ExportColumn[] = [],
 ): ExportGrid {
   const zmanim = zmanHeaders.map((h) => (typeof h === 'string' ? { label: h } : h));
   return {
-    headers: [...columns.map((c) => flatHeader(c.header, c.sub)), ...zmanim.map((h) => flatHeader(h.label, h.sub))],
-    groupLabels: [...columns.map((c) => c.header), ...zmanim.map((h) => h.label)],
-    subHeaders: [...columns.map((c) => c.sub ?? ''), ...zmanim.map((h) => h.sub ?? '')],
-    groupKeys: [...columns.map(() => null), ...zmanim.map((h) => h.group ?? null)],
-    weights: [...columns.map((c) => dayColumnWeight(c.key)), ...zmanim.map(() => 1)],
-    maxWeights: [...columns.map((c) => c.maxWeight ?? 0), ...zmanim.map(() => 0)],
-    text: [...columns.map((c) => TEXT_DAY_COLUMNS.has(c.key)), ...zmanim.map(() => false)],
-    emphasis: [...columns.map((c) => c.emphasis === true), ...zmanim.map(() => false)],
-    rows: table.rows.map((r) => [...columns.map((c) => cellValue(r, c)), ...r.cells]),
+    headers: [
+      ...columns.map((c) => flatHeader(c.header, c.sub)),
+      ...zmanim.map((h) => flatHeader(h.label, h.sub)),
+      ...trailing.map((c) => flatHeader(c.header, c.sub)),
+    ],
+    groupLabels: [...columns.map((c) => c.header), ...zmanim.map((h) => h.label), ...trailing.map((c) => c.header)],
+    subHeaders: [...columns.map((c) => c.sub ?? ''), ...zmanim.map((h) => h.sub ?? ''), ...trailing.map((c) => c.sub ?? '')],
+    groupKeys: [...columns.map(() => null), ...zmanim.map((h) => h.group ?? null), ...trailing.map(() => null)],
+    weights: [...columns.map((c) => dayColumnWeight(c.key)), ...zmanim.map(() => 1), ...trailing.map((c) => dayColumnWeight(c.key))],
+    maxWeights: [...columns.map((c) => c.maxWeight ?? 0), ...zmanim.map(() => 0), ...trailing.map((c) => c.maxWeight ?? 0)],
+    text: [
+      ...columns.map((c) => TEXT_DAY_COLUMNS.has(c.key)),
+      ...zmanim.map(() => false),
+      ...trailing.map((c) => TEXT_DAY_COLUMNS.has(c.key)),
+    ],
+    emphasis: [...columns.map((c) => c.emphasis === true), ...zmanim.map(() => false), ...trailing.map((c) => c.emphasis === true)],
+    rows: table.rows.map((r) => [...columns.map((c) => cellValue(r, c)), ...r.cells, ...trailing.map((c) => cellValue(r, c))]),
     weekStarts: table.rows.map((r) => isWeekStart(r.iso)),
     leadColumns: columns.length,
     keyColumns: leadingIdentityCount(columns),
@@ -475,6 +488,19 @@ export function fitColumnWidths(weights: number[], tableWidthPx = CONTENT_WIDTH_
   const total = weights.reduce((sum, w) => sum + w, 0) || 1;
   const textSpace = Math.max(1, tableWidthPx - CELL_PADDING_PX * weights.length);
   return weights.map((w) => (CELL_PADDING_PX + (w / total) * textSpace) / tableWidthPx);
+}
+
+/**
+ * True when every one of these values fits a standard capped text column
+ * without wrapping. This is what lets a lone short-valued learning cycle
+ * (Daf Yomi — "Хулин 98") ride the times sheet as a column, the myzmanim
+ * way, while a Rambam reading spelled out over fifty characters keeps the
+ * separate learning sheet.
+ */
+export function fitsTextColumn(values: string[], m: TextMeasurer = defaultMeasurer()): boolean {
+  const unit = m.width(UNIT_TEXT, REFERENCE_FONT_PX) || 1;
+  const cap = 3 * unit;
+  return values.every((v) => m.width(v, REFERENCE_FONT_PX) <= cap);
 }
 
 /**

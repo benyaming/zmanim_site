@@ -563,7 +563,7 @@
     "sheetsCount": "{count, plural, one {# sheet} other {# sheets}}",
     "previewPrev": "Previous sheet",
     "previewNext": "Next sheet",
-    "learningSheetHint": "In the PDF, daily learning prints as its own page for each month."
+    "learningSheetHint": "A single short cycle (like Daf Yomi) joins the times sheet as a column; more cycles, or long readings, print as their own sheet per month."
   },
   "sync": {
     "telegramTitle": "Telegram sync",

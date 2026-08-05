@@ -25,7 +25,7 @@ export function ExportPdfPreview({ config }: { config: PdfDocConfig | null }) {
   const t = useTranslations('export');
   const [built, setBuilt] = useState<{ pages: ReactNode[]; count: number; key: string } | null>(null);
   const [page, setPage] = useState(0);
-  const [width, setWidth] = useState(0);
+  const [box, setBox] = useState({ width: 0, maxHeight: 0 });
   const roRef = useRef<ResizeObserver | null>(null);
 
   const key = config ? JSON.stringify(config) : '';
@@ -44,21 +44,36 @@ export function ExportPdfPreview({ config }: { config: PdfDocConfig | null }) {
   }, [key]);
 
   // Measured, not assumed: the dialog is responsive and the page keeps its A4
-  // aspect by scaling to whatever width the box actually has.
+  // aspect by scaling to whatever box it actually has. The HEIGHT cap is what
+  // keeps the download buttons on screen: on a big display the column is wide
+  // enough for a page taller than the dialog, and a width-only scale pushed
+  // the buttons below the fold of a pane that, being sticky, never scrolls.
+  const measure = (el: HTMLElement) => ({
+    width: el.clientWidth,
+    // Dialog chrome + preview label + buttons ≈ 250px of the viewport.
+    maxHeight: Math.max(280, document.documentElement.clientHeight - 250),
+  });
   const hostRef = (el: HTMLDivElement | null) => {
     roRef.current?.disconnect();
     roRef.current = null;
     if (el) {
-      const ro = new ResizeObserver((entries) => setWidth(entries[0]?.contentRect.width ?? 0));
+      const update = () => setBox(measure(el));
+      const ro = new ResizeObserver(update);
       ro.observe(el);
-      roRef.current = ro;
+      window.addEventListener('resize', update);
+      roRef.current = {
+        disconnect: () => {
+          ro.disconnect();
+          window.removeEventListener('resize', update);
+        },
+      } as ResizeObserver;
     }
   };
 
   const pages = built?.pages ?? [];
   const current = Math.min(page, Math.max(0, pages.length - 1));
   const stale = key !== '' && built?.key !== key;
-  const scale = width > 0 ? width / PAGE_WIDTH_PX : 0;
+  const scale = box.width > 0 ? Math.min(box.width / PAGE_WIDTH_PX, box.maxHeight / PAGE_HEIGHT_PX) : 0;
 
   return (
     <div className="space-y-2">
@@ -104,10 +119,13 @@ export function ExportPdfPreview({ config }: { config: PdfDocConfig | null }) {
             {t('noColumns')}
           </p>
         ) : (
-          width > 0 && (
+          box.width > 0 && (
             <div
-              className={cn('relative overflow-hidden rounded-md border shadow-sm transition-opacity', stale && 'opacity-60')}
-              style={{ height: Math.round(PAGE_HEIGHT_PX * scale) }}
+              className={cn(
+                'relative mx-auto overflow-hidden rounded-md border shadow-sm transition-opacity',
+                stale && 'opacity-60',
+              )}
+              style={{ height: Math.round(PAGE_HEIGHT_PX * scale), width: Math.round(PAGE_WIDTH_PX * scale) }}
             >
               <div
                 dir="ltr"

@@ -27,6 +27,7 @@
 
 import {
   buildExportGrid,
+  cellValue,
   dropEmptyColumns,
   type ExportColumn,
   type ExportGrid,
@@ -34,6 +35,7 @@ import {
   fitColumnWeights,
   fitFontSize,
   fitRowPadding,
+  fitsTextColumn,
   MAX_TABLE_FONT_PX,
   MIN_TABLE_FONT_PX,
   pickColumns,
@@ -524,13 +526,23 @@ export function buildExportDocument(input: ExportDocumentInput, m: TextMeasurer 
   const sheets: ExportDocSheet[] = [];
   const months = monthSlices(table.rows);
 
-  // The times grid: day columns + zmanim, learning strictly excluded. Column
-  // parts are computed once over the whole table so every month splits alike.
-  // A grid whose only columns IDENTIFY the rows carries no data — a learning-
-  // only export gets no bare list of dates masquerading as a times sheet.
-  const hasTimes = input.dayColumns.some((c) => c.identity !== true) || input.zmanHeaders.length > 0;
+  // A LONE learning cycle whose values are all short (Daf Yomi, Tehillim)
+  // joins the times sheet as its closing column — the myzmanim דף היומי
+  // position — instead of spending a whole sheet on one narrow list. Several
+  // cycles, or one with spelled-out readings (Rambam), keep their own sheet.
+  const lone = input.learningColumns.length === 1 ? input.learningColumns[0] : null;
+  const inlineLearning =
+    lone && fitsTextColumn(table.rows.map((r) => cellValue(r, lone)), m) ? [{ ...lone, maxWeight: 3 }] : [];
+
+  // The times grid: day columns + zmanim (+ an inlined cycle), long-form
+  // learning strictly excluded. Column parts are computed once over the whole
+  // table so every month splits alike. A grid whose only columns IDENTIFY the
+  // rows carries no data — a learning-only export gets no bare list of dates
+  // masquerading as a times sheet.
+  const hasTimes =
+    input.dayColumns.some((c) => c.identity !== true) || input.zmanHeaders.length > 0 || inlineLearning.length > 0;
   const timesGrid = hasTimes
-    ? { ...buildExportGrid(table, input.dayColumns, input.zmanHeaders), wrapTextColumns: true }
+    ? { ...buildExportGrid(table, input.dayColumns, input.zmanHeaders, inlineLearning), wrapTextColumns: true }
     : null;
   const parts = timesGrid ? partitionColumns(timesGrid, m) : [];
 
@@ -538,7 +550,7 @@ export function buildExportDocument(input: ExportDocumentInput, m: TextMeasurer 
   // allowed — a reading is data here, not an intruder, and gets its width.
   const keyColumns = input.dayColumns.filter((c) => c.identity === true);
   const learningGrid =
-    input.learningColumns.length > 0
+    input.learningColumns.length > 0 && inlineLearning.length === 0
       ? { ...buildExportGrid(table, [...keyColumns, ...input.learningColumns], []), wrapTextColumns: true }
       : null;
 

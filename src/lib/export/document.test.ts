@@ -125,6 +125,23 @@ describe('buildExportDocument — month sheets', () => {
     ]);
   });
 
+  it('inlines a lone short-valued cycle (Daf Yomi) into the times sheet, dropping the learning sheet', () => {
+    const t = table('2026-01-01', '2026-01-31', DEFAULT_SELECTION, 'en', true);
+    const daf: ExportColumn[] = [{ key: 'dafYomi', header: 'Daf Yomi' }];
+    const sheets = buildExportDocument(input(t, 'en', { learningColumns: daf }), m);
+    expect(sheets.map((s) => s.kind)).toEqual(['times']);
+    const grid = sheets[0].grid;
+    expect(grid.headers[grid.headers.length - 1]).toBe('Daf Yomi');
+    expect(grid.rows[0][grid.headers.length - 1]).toMatch(/\d/);
+  });
+
+  it('keeps the separate learning sheet for a lone LONG-valued cycle (Rambam)', () => {
+    const t = table('2026-01-01', '2026-01-31', DEFAULT_SELECTION, 'ru', true);
+    const rambam = learningColumns('ru').filter((c) => c.key === 'rambam');
+    const sheets = buildExportDocument(input(t, 'ru', { learningColumns: rambam }), m);
+    expect(sheets.map((s) => s.kind)).toEqual(['times', 'learning']);
+  });
+
   it('builds learning sheets alone when no zmanim or day columns are selected', () => {
     const t = table('2026-01-01', '2026-01-31', [], 'en', true);
     const sheets = buildExportDocument(
