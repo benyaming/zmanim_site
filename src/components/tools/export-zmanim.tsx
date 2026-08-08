@@ -20,6 +20,7 @@ import {
   type ExportHeader,
   exportTableToCsv,
   exportTableToExcel,
+  hebrewMonthSpan,
   MAX_TABLE_DAYS,
   pagesToPdf,
   tableDayCount,
@@ -387,7 +388,18 @@ export function ExportZmanimTool() {
               <Checkbox
                 id="export-hebrew-months"
                 checked={hebrewMonths}
-                onCheckedChange={(v) => setHebrewMonths(v === true)}
+                onCheckedChange={(v) => {
+                  const on = v === true;
+                  setHebrewMonths(on);
+                  // Snap the range to the new calendar's month boundaries, so
+                  // the sheets come out as whole months instead of stubs.
+                  if (start.isValid && end.isValid) {
+                    const from = on ? hebrewMonthSpan(start).start : start.startOf('month');
+                    const to = on ? hebrewMonthSpan(end).end : end.endOf('month');
+                    setStartIso(from.toISODate() ?? startIso);
+                    setEndIso(to.toISODate() ?? endIso);
+                  }
+                }}
               />
               <span className="text-sm font-medium">{t('hebrewMonths')}</span>
             </label>

@@ -32,6 +32,7 @@ export {
 export {
   alternateMonthsTitle,
   hebrewMonthAnchor,
+  hebrewMonthSpan,
   hebrewMonthsOfYear,
   isHebrewLeapYear,
   MAX_GRID_MONTHS,
