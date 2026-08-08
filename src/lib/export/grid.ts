@@ -26,11 +26,13 @@ export interface ExportColumn {
    */
   identity?: boolean;
   /**
-   * Join these row fields with " · " (dropping empties) instead of reading
-   * `key` off the row. Required for the synthetic `events` column, which the
-   * PDF uses to merge holiday + parsha into one narrow column.
+   * Join these row fields (dropping empties) instead of reading `key` off the
+   * row. Required for the synthetic `events` column, which the PDF uses to
+   * merge holiday + parsha into one narrow column.
    */
   fields?: RowFieldKey[];
+  /** Joiner for `fields` — " · " unless a tighter one is asked for ("8 сб"). */
+  separator?: string;
 }
 
 /** A zman column's header: the base zman's name, plus its opinion label when the base has several. */
@@ -120,7 +122,7 @@ export function cellValue(row: ZmanimTableRow, column: ExportColumn): string {
   return fields
     .map((f) => row[f])
     .filter(Boolean)
-    .join(' · ');
+    .join(column.separator ?? ' · ');
 }
 
 /** Flat "name · shita" header, as CSV and Excel have always written it. */

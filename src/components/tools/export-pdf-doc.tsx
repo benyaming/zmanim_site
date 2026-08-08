@@ -115,36 +115,54 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
     };
   };
 
-  // The day columns, compact: the enabled date fields merge into ONE identity
-  // cell and the day's happenings into one events cell. The calendar the sheet
-  // is PAGED BY contributes only its day number — its month is already in the
-  // sheet's title, and repeating it on thirty rows was pure noise — while the
-  // other calendar keeps its month names, which do change mid-sheet.
+  // The day identity, in two slim adjacent columns: the paged calendar's day
+  // with the weekday ("8 сб") — its month is already the sheet's title — and
+  // the OTHER calendar's full date beside it ("25 Ава"), whose month names do
+  // change mid-sheet. In Hebrew-month mode the two swap roles.
   const monthly = !cfg.weekly;
-  const dateFields = cfg.hebrewMonths
+  const dayFields = cfg.hebrewMonths
     ? [
         ...(cfg.columns.hebrewDate ? ([monthly ? 'hebrewDay' : 'hebrewDate'] as const) : []),
-        ...(cfg.columns.date ? (['dayWithMonth'] as const) : []),
         ...(cfg.columns.weekday ? (['weekday'] as const) : []),
       ]
     : [
         ...(cfg.columns.date ? ([monthly ? 'dayOfMonth' : 'dayWithMonth'] as const) : []),
-        ...(cfg.columns.hebrewDate ? (['hebrewDate'] as const) : []),
         ...(cfg.columns.weekday ? (['weekday'] as const) : []),
       ];
+  const otherCalendarField = cfg.hebrewMonths
+    ? cfg.columns.date
+      ? ('dayWithMonth' as const)
+      : null
+    : cfg.columns.hebrewDate
+      ? ('hebrewDate' as const)
+      : null;
   const eventFields = [
     ...(cfg.columns.holiday ? (['holiday'] as const) : []),
     ...(cfg.columns.parsha ? (['parsha'] as const) : []),
     ...(cfg.columns.mevarchim ? (['mevarchimName'] as const) : []),
   ];
+  const dayOnlyWeekday = dayFields.length === 1 && dayFields[0] === 'weekday';
   const dayColumns: ExportColumn[] = [
-    ...(dateFields.length > 0
+    ...(dayFields.length > 0
       ? [
           {
             key: 'dayWithMonth' as const,
-            header: tr('export.colDate'),
-            fields: [...dateFields],
-            maxWeight: 4.6,
+            header: tr(
+              dayOnlyWeekday ? 'export.colWeekday' : cfg.hebrewMonths ? 'export.colHebrewDate' : 'export.colDate',
+            ),
+            fields: [...dayFields],
+            separator: ' ',
+            maxWeight: 2.5,
+            identity: true,
+          },
+        ]
+      : []),
+    ...(otherCalendarField
+      ? [
+          {
+            key: otherCalendarField,
+            header: tr(cfg.hebrewMonths ? 'export.colDate' : 'export.colHebrewDate'),
+            maxWeight: 2.5,
             identity: true,
           },
         ]
