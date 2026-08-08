@@ -566,7 +566,9 @@
     "learningSheetHint": "מסלול קצר יחיד (כמו דף היומי) מצטרף כעמודה לטבלת הזמנים; יותר מסלולים או קריאות ארוכות מודפסים כעמוד נפרד לכל חודש.",
     "noteCandles": "הדלקת נרות — {minutes} דק׳ לפני השקיעה",
     "noteHavdalah": "הבדלה — {opinion}",
-    "noteCalculation": "חישוב"
+    "noteCalculation": "חישוב",
+    "hebrewMonths": "חודשים עבריים",
+    "hebrewMonthsHint": "גיליון לכל חודש עברי (אלול תשפ״ו) במקום חודש לועזי."
   },
   "sync": {
     "telegramTitle": "סנכרון טלגרם",

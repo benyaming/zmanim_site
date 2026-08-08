@@ -106,6 +106,16 @@ describe('buildExportDocument — month sheets', () => {
     }
   });
 
+  it('pages by Hebrew month when asked: a sheet per Elul, split on Rosh Chodesh', () => {
+    // 1 Elul 5786 falls on Aug 14 2026 — the range spans the tail of Av and Elul.
+    const t = table('2026-08-06', '2026-09-05', DEFAULT_SELECTION);
+    const sheets = buildExportDocument(input(t, 'en', { hebrewMonths: true }), m);
+    expect(sheets.map((s) => [s.startIso, s.endIso])).toEqual([
+      ['2026-08-06', '2026-08-13'],
+      ['2026-08-14', '2026-09-05'],
+    ]);
+  });
+
   it('fits a default-selection month on one sheet at a legible size, all 31 days on it', () => {
     const t = table('2026-01-01', '2026-01-31', DEFAULT_SELECTION);
     const sheets = buildExportDocument(input(t, 'en'), m);

@@ -49,6 +49,8 @@ export interface ExportPreset {
    * settings, as a first export does.
    */
   fastEnds?: string[];
+  /** Page the PDF by Hebrew month instead of civil month. */
+  hebrewMonths?: boolean;
   transpose: boolean;
   /** Report language. Absent = follow the UI language, as a first export does. */
   reportLocale?: string;
@@ -126,6 +128,7 @@ export function sanitizeExportPreset(raw: unknown): ExportPreset | null {
     learning,
     columns,
     ...(fastEnds !== undefined && { fastEnds }),
+    hebrewMonths: boolOr(p.hebrewMonths, false),
     transpose: boolOr(p.transpose, false),
     reportLocale,
     locationId: typeof p.locationId === 'string' && p.locationId ? p.locationId : 'current',

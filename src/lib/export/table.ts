@@ -1,3 +1,4 @@
+import { JewishDate } from 'kosher-zmanim';
 import type { DateTime } from 'luxon';
 
 import {
@@ -34,8 +35,10 @@ export const MAX_TABLE_DAYS = 732;
 export type DayColumnKey =
   | 'dateLabel'
   | 'dayWithMonth'
+  | 'dayOfMonth'
   | 'weekday'
   | 'hebrewDate'
+  | 'hebrewDay'
   | 'holiday'
   | 'parsha'
   | 'mevarchimName'
@@ -157,10 +160,23 @@ export type ZmanimTableRow = {
    * and only the combined format orders the parts correctly per locale.
    */
   dayWithMonth: string;
+  /**
+   * The bare civil day of month ("6"), for sheets paged by civil month: the
+   * month is in the sheet's title, so repeating it on thirty rows is noise.
+   */
+  dayOfMonth: string;
   /** Localized short weekday name. */
   weekday: string;
   /** "12 Tammuz" in the active locale. */
   hebrewDate: string;
+  /** The bare Hebrew day of month ("12"), for sheets paged by Hebrew month. */
+  hebrewDay: string;
+  /**
+   * "5786-05" — the Hebrew year and month this day belongs to, the grouping
+   * key for Hebrew-month pagination (names alone won't do: two Adars, and the
+   * year rolls mid-civil-year).
+   */
+  hebrewMonthId: string;
   /** Significant-day name (Yom Tov / fast / …), or empty. */
   holiday: string;
   /** Parsha with the special-Shabbat name appended (Shabbat rows only), or empty. */
@@ -375,12 +391,16 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       }
     }
 
+    const jewish = new JewishDate(date);
     rows.push({
       iso: date.toISODate() ?? '',
       dateLabel: date.setLocale(o.locale).toLocaleString({ year: 'numeric', month: 'numeric', day: 'numeric' }),
       dayWithMonth: date.setLocale(o.locale).toLocaleString(monthFormat),
+      dayOfMonth: String(date.day),
       weekday: date.setLocale(o.locale).toLocaleString({ weekday: 'short' }),
       hebrewDate: `${info.hebrewDayOfMonth} ${info.hebrewMonth}`,
+      hebrewDay: String(info.hebrewDayOfMonth),
+      hebrewMonthId: `${jewish.getJewishYear()}-${String(jewish.getJewishMonth()).padStart(2, '0')}`,
       holiday,
       parsha: [info.parsha, info.specialShabbos ? specialShabbat(info.specialShabbos) : null]
         .filter(Boolean)

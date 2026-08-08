@@ -64,6 +64,8 @@ export interface ExportDocumentInput {
   learningColumns: ExportColumn[];
   /** Weekly layout: one calendar week per sheet, days across the top. */
   weekly: boolean;
+  /** Page sheets by HEBREW month (Elul 5786 per sheet) instead of civil month. */
+  hebrewMonths?: boolean;
   /** Include fast start/end footnotes (the "fast times" toggle). Default true. */
   includeFastNotes?: boolean;
 }
@@ -137,13 +139,13 @@ interface Slice {
   end: number;
 }
 
-/** Group day rows by civil month, in range order. */
-function monthSlices(rows: ZmanimTableRow[]): Slice[] {
+/** Group day rows by month — civil or Hebrew — in range order. */
+function monthSlices(rows: ZmanimTableRow[], hebrew: boolean): Slice[] {
+  const monthOf = (r: ZmanimTableRow) => (hebrew ? r.hebrewMonthId : r.iso.slice(0, 7));
   const slices: Slice[] = [];
   for (let i = 0; i < rows.length; i++) {
-    const month = rows[i].iso.slice(0, 7);
     const last = slices[slices.length - 1];
-    if (last && rows[last.start].iso.slice(0, 7) === month) last.end = i + 1;
+    if (last && monthOf(rows[last.start]) === monthOf(rows[i])) last.end = i + 1;
     else slices.push({ start: i, end: i + 1 });
   }
   return slices;
@@ -517,21 +519,12 @@ function dropEmptyFieldRows(grid: ExportGrid): ExportGrid {
   };
 }
 
-/** Renumber part/parts within each (kind, month) group, in place. */
+/** Renumber part/parts across one month's sheets of one kind, in place. */
 function numberParts(sheets: ExportDocSheet[]): ExportDocSheet[] {
-  const groups = new Map<string, ExportDocSheet[]>();
-  for (const sheet of sheets) {
-    const key = `${sheet.kind}:${sheet.startIso.slice(0, 7)}`;
-    const group = groups.get(key);
-    if (group) group.push(sheet);
-    else groups.set(key, [sheet]);
-  }
-  for (const group of groups.values()) {
-    group.forEach((sheet, i) => {
-      sheet.part = i + 1;
-      sheet.parts = group.length;
-    });
-  }
+  sheets.forEach((sheet, i) => {
+    sheet.part = i + 1;
+    sheet.parts = sheets.length;
+  });
   return sheets;
 }
 
@@ -546,7 +539,7 @@ export function buildExportDocument(input: ExportDocumentInput, m: TextMeasurer 
   if (input.weekly) return weeklySheets(input, m);
 
   const sheets: ExportDocSheet[] = [];
-  const months = monthSlices(table.rows);
+  const months = monthSlices(table.rows, input.hebrewMonths === true);
 
   // A LONE learning cycle whose values are all short (Daf Yomi, Tehillim)
   // joins the times sheet as its closing column — the myzmanim דף היומי
@@ -576,17 +569,21 @@ export function buildExportDocument(input: ExportDocumentInput, m: TextMeasurer 
       ? { ...buildExportGrid(table, [...keyColumns, ...input.learningColumns], []), wrapTextColumns: true }
       : null;
 
+  // Part numbering is per (month, kind) — grouped here in the loop rather than
+  // recovered from dates afterwards, because two HEBREW months can begin in
+  // the same civil month and a date-derived key would fuse their numbering.
   for (const month of months) {
     if (timesGrid) {
-      for (const cols of parts) {
+      const monthTimes = parts.flatMap((cols) => {
         const monthPart = sliceRows(pickColumns(timesGrid, cols), month.start, month.end);
-        sheets.push(...monthSheets('times', input, monthPart, m));
-      }
+        return monthSheets('times', input, monthPart, m);
+      });
+      sheets.push(...numberParts(monthTimes));
     }
     if (learningGrid) {
       const monthGrid = sliceRows(learningGrid, month.start, month.end);
-      sheets.push(...monthSheets('learning', input, monthGrid, m));
+      sheets.push(...numberParts(monthSheets('learning', input, monthGrid, m)));
     }
   }
-  return numberParts(sheets);
+  return sheets;
 }

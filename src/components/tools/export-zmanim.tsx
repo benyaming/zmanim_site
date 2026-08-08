@@ -124,6 +124,8 @@ export function ExportZmanimTool() {
   const [includeOmer, setIncludeOmer] = useState(columns?.omer ?? true);
   // Weekly sheets: one calendar week per page, days across the top.
   const [transpose, setTranspose] = useState(preset?.transpose ?? false);
+  // Page by Hebrew month — a sheet per Elul — like the calendar's Hebrew mode.
+  const [hebrewMonths, setHebrewMonths] = useState(preset?.hebrewMonths ?? false);
   // Daf Yomi only by default; the full set is one tick away. Learning gets its
   // own sheet per month in the PDF, and columns in the data exports.
   const [selectedLearning, setSelectedLearning] = useState<Set<LearningCycleKey>>(
@@ -188,6 +190,7 @@ export function ExportZmanimTool() {
             omer: includeOmer,
           },
           weekly: transpose,
+          hebrewMonths,
           location,
           locationLabel: location.customLabel || location.label,
           candleLightingOffset,
@@ -305,6 +308,7 @@ export function ExportZmanimTool() {
         keys: [...selectedKeys],
         learning: learningKeys,
         fastEnds: [...selectedFastEnds],
+        hebrewMonths,
         columns: {
           date: includeDate,
           weekday: includeWeekday,
@@ -374,6 +378,22 @@ export function ExportZmanimTool() {
           </label>
           <p className="text-muted-foreground text-xs">{t('transposeHint')}</p>
         </div>
+
+        {/* Hebrew-month pagination, like the calendar's Hebrew mode. Weekly
+            sheets page by the week and ignore it, so it hides there. */}
+        {!transpose && (
+          <div className="space-y-1.5">
+            <label htmlFor="export-hebrew-months" className="flex cursor-pointer items-center gap-2">
+              <Checkbox
+                id="export-hebrew-months"
+                checked={hebrewMonths}
+                onCheckedChange={(v) => setHebrewMonths(v === true)}
+              />
+              <span className="text-sm font-medium">{t('hebrewMonths')}</span>
+            </label>
+            <p className="text-muted-foreground text-xs">{t('hebrewMonthsHint')}</p>
+          </div>
+        )}
       </div>
 
       {/* The preview pane: pinned beside the rail on desktop so every tick is

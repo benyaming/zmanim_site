@@ -47,6 +47,8 @@ export interface PdfDocConfig {
   columns: PdfColumnFlags;
   /** Weekly layout (one calendar week per sheet) instead of month sheets. */
   weekly: boolean;
+  /** Page by Hebrew month (a sheet per Elul) instead of civil month. */
+  hebrewMonths: boolean;
   location: AppLocation;
   locationLabel: string;
   candleLightingOffset: number;
@@ -114,12 +116,22 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
   };
 
   // The day columns, compact: the enabled date fields merge into ONE identity
-  // cell ("1 Aug · 18 Av · Wed") and the day's happenings into one events cell.
-  const dateFields = [
-    ...(cfg.columns.date ? (['dayWithMonth'] as const) : []),
-    ...(cfg.columns.hebrewDate ? (['hebrewDate'] as const) : []),
-    ...(cfg.columns.weekday ? (['weekday'] as const) : []),
-  ];
+  // cell and the day's happenings into one events cell. The calendar the sheet
+  // is PAGED BY contributes only its day number — its month is already in the
+  // sheet's title, and repeating it on thirty rows was pure noise — while the
+  // other calendar keeps its month names, which do change mid-sheet.
+  const monthly = !cfg.weekly;
+  const dateFields = cfg.hebrewMonths
+    ? [
+        ...(cfg.columns.hebrewDate ? ([monthly ? 'hebrewDay' : 'hebrewDate'] as const) : []),
+        ...(cfg.columns.date ? (['dayWithMonth'] as const) : []),
+        ...(cfg.columns.weekday ? (['weekday'] as const) : []),
+      ]
+    : [
+        ...(cfg.columns.date ? ([monthly ? 'dayOfMonth' : 'dayWithMonth'] as const) : []),
+        ...(cfg.columns.hebrewDate ? (['hebrewDate'] as const) : []),
+        ...(cfg.columns.weekday ? (['weekday'] as const) : []),
+      ];
   const eventFields = [
     ...(cfg.columns.holiday ? (['holiday'] as const) : []),
     ...(cfg.columns.parsha ? (['parsha'] as const) : []),
@@ -155,6 +167,7 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
     zmanHeaders: table.keys.map(zmanHeader),
     learningColumns: cfg.learningKeys.map((key) => ({ key, header: tr(`learning.${key}`) })),
     weekly: cfg.weekly,
+    hebrewMonths: cfg.hebrewMonths,
     includeFastNotes: cfg.columns.fasts,
   });
 
@@ -181,9 +194,10 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
       return `${from} – ${to}${part}`;
     }
     // The month in both calendars, like the app header: "September 2026 ·
-    // Elul 5786 – Tishrei 5787".
+    // Elul 5786 – Tishrei 5787" — or Hebrew-first when paging by Hebrew month.
     const month = DateTime.fromISO(sheet.startIso);
-    return `${monthTitle(month, 'gregorian', cfg.reportLocale)} · ${alternateMonthsTitle(month, 'gregorian', cfg.reportLocale)}${part}`;
+    const mode = cfg.hebrewMonths ? 'hebrew' : 'gregorian';
+    return `${monthTitle(month, mode, cfg.reportLocale)} · ${alternateMonthsTitle(month, mode, cfg.reportLocale)}${part}`;
   };
 
   const pages = sheets.map((sheet, i) => (
