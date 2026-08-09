@@ -92,7 +92,7 @@ export function ExportTablePage({
         </p>
       </div>
 
-      {sheet.flowGrids ? (
+      {sheet.grid.headers.length === 0 ? null : sheet.flowGrids ? (
         // A sparse month flowed into side-by-side halves — first half of the
         // month, then the rest — instead of two columns stretched across the
         // whole page with whitespace between them.

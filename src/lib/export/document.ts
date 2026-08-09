@@ -382,7 +382,7 @@ function flowSparseSheet(
   budgetPx: number,
   m: TextMeasurer,
 ): { grids: ExportGrid[]; widthPx: number } | null {
-  if (grid.rows.length < FLOW_MIN_ROWS || fontPx < MAX_TABLE_FONT_PX) return null;
+  if (grid.headers.length === 0 || grid.rows.length < FLOW_MIN_ROWS || fontPx < MAX_TABLE_FONT_PX) return null;
   const demand = tableDemandWidthPx(grid.weights, fontPx, m);
   if (demand * 2 + FLOW_GAP_PX > CONTENT_WIDTH_PX) return null;
 
@@ -443,15 +443,16 @@ function weeklySheets(input: ExportDocumentInput, m: TextMeasurer): ExportDocShe
       days.map((r) => r.hebrewDate),
     );
     const trimmed = dropEmptyFieldRows(turned);
-    if (trimmed.rows.length === 0) continue;
+    // A week with no field rows still earns a sheet when its footnotes carry
+    // content (a fasts-only selection): the day headers over the fast blocks.
+    const footnotes = footnotesFor(table, turned, input.includeFastNotes !== false);
+    if (trimmed.rows.length === 0 && footnotes.length === 0) continue;
 
     // Uniform day columns: each day's width is the widest day's demand, so the
     // seven columns march evenly instead of jittering with their content.
     const measured = fitColumnWeights(trimmed, m);
     const dayMax = Math.max(...measured.slice(1));
     const fitted: ExportGrid = { ...trimmed, weights: [measured[0], ...measured.slice(1).map(() => dayMax)] };
-
-    const footnotes = footnotesFor(table, fitted, input.includeFastNotes !== false);
     // Not fitFontSize: the weekly sheet has its own, higher ceiling — eight
     // wide columns deserve larger type than a month grid ever gets.
     const widthFont = Math.max(MIN_TABLE_FONT_PX, Math.min(WEEK_MAX_FONT_PX, rawFontSize(fitted.weights, m)));
@@ -559,7 +560,7 @@ export function buildExportDocument(input: ExportDocumentInput, m: TextMeasurer 
     input.dayColumns.some((c) => c.identity !== true) ||
     input.zmanHeaders.length > 0 ||
     inlineLearning.length > 0 ||
-    (input.includeFastNotes !== false && input.dayColumns.length > 0 && input.learningColumns.length === 0);
+    (input.includeFastNotes !== false && input.learningColumns.length === 0);
   const timesGrid = hasTimes
     ? { ...buildExportGrid(table, input.dayColumns, input.zmanHeaders, inlineLearning), wrapTextColumns: true }
     : null;
@@ -582,7 +583,10 @@ export function buildExportDocument(input: ExportDocumentInput, m: TextMeasurer 
         const monthPart = sliceRows(pickColumns(timesGrid, cols), month.start, month.end);
         return monthSheets('times', input, monthPart, m);
       });
-      sheets.push(...numberParts(monthTimes));
+      // A footnote-only month sheet (a fasts-only selection with no columns at
+      // all) earns its page only when it actually has footnotes to show.
+      const kept = monthTimes.filter((s) => s.grid.headers.length > 0 || s.footnotes.length > 0);
+      sheets.push(...numberParts(kept));
     }
     if (learningGrid) {
       const monthGrid = sliceRows(learningGrid, month.start, month.end);

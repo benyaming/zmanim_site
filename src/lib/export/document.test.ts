@@ -243,6 +243,26 @@ describe('buildExportDocument — footnotes', () => {
     expect(sheets[0].footnotes.some((note) => note.label.startsWith('Molad'))).toBe(true);
   });
 
+  it('prints fast footnotes even with every column unchecked, skipping fastless months', () => {
+    const bare = table('2026-07-01', '2026-07-31', []);
+    const sheets = buildExportDocument(input(bare, 'en', { dayColumns: [] }), m);
+    expect(sheets).toHaveLength(1);
+    expect(sheets[0].grid.headers).toHaveLength(0);
+    expect(sheets[0].footnotes.some((note) => /–/.test(note.text))).toBe(true);
+  });
+
+  it('gives a weekly fasts-only selection its sheets: day headers over the fast blocks', () => {
+    // Jul 1 2026 is a Wednesday; 17 Tammuz falls Thursday Jul 2. Week two
+    // (Jul 5–7) has neither fast nor molad and is skipped.
+    const bare = table('2026-07-01', '2026-07-07', []);
+    const sheets = buildExportDocument(input(bare, 'en', { dayColumns: [], weekly: true }), m);
+    expect(sheets).toHaveLength(1);
+    expect(sheets[0].kind).toBe('week');
+    expect(sheets[0].startIso).toBe('2026-07-01');
+    expect(sheets[0].grid.rows).toHaveLength(0);
+    expect(sheets[0].footnotes.some((note) => /–/.test(note.text))).toBe(true);
+  });
+
   it('prints a fasts-only selection: dates alone under the fast footnotes', () => {
     // No zmanim, no learning, no data columns — just the identity column and
     // the fast toggle. The footnotes are the content, so a sheet still prints.

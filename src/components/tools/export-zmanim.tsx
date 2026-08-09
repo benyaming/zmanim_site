@@ -87,12 +87,19 @@ export function ExportZmanimTool() {
   };
 
   const today = DateTime.now().startOf('day');
-  const [startIso, setStartIso] = useState(() => today.toISODate() ?? '');
   // A remembered range is re-anchored on today: the saved LENGTH is what the
   // user meant ("a month"), not the dates they happened to pick last time.
-  const [endIso, setEndIso] = useState(
-    () => today.plus({ days: (preset?.rangeDays ?? DEFAULT_EXPORT_RANGE_DAYS) - 1 }).toISODate() ?? '',
+  // A Hebrew-months preset re-anchors THROUGH the month snap, keeping the
+  // whole-month promise the toggle made — without it, reopening produced
+  // partial first and last sheets.
+  const presetHebrewMonths = preset?.hebrewMonths ?? false;
+  const [startIso, setStartIso] = useState(
+    () => (presetHebrewMonths ? hebrewMonthSpan(today).start : today).toISODate() ?? '',
   );
+  const [endIso, setEndIso] = useState(() => {
+    const end = today.plus({ days: (preset?.rangeDays ?? DEFAULT_EXPORT_RANGE_DAYS) - 1 });
+    return (presetHebrewMonths ? hebrewMonthSpan(end).end : end).toISODate() ?? '';
+  });
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
     () => new Set(preset?.keys ?? CONFIGURABLE_ZMANIM.filter((z) => !hiddenZmanim.includes(z.key)).map((z) => z.key)),
   );
@@ -126,7 +133,7 @@ export function ExportZmanimTool() {
   // Weekly sheets: one calendar week per page, days across the top.
   const [transpose, setTranspose] = useState(preset?.transpose ?? false);
   // Page by Hebrew month — a sheet per Elul — like the calendar's Hebrew mode.
-  const [hebrewMonths, setHebrewMonths] = useState(preset?.hebrewMonths ?? false);
+  const [hebrewMonths, setHebrewMonths] = useState(presetHebrewMonths);
   // Daf Yomi only by default; the full set is one tick away. Learning gets its
   // own sheet per month in the PDF, and columns in the data exports.
   const [selectedLearning, setSelectedLearning] = useState<Set<LearningCycleKey>>(
