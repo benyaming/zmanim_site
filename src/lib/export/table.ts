@@ -10,7 +10,7 @@ import {
   isErevPesach,
   localizedHolidayLabel,
 } from '@/lib/calendar';
-import { formatDuration, formatMoladParts, formatTime, formatTimePlain } from '@/lib/format';
+import { formatDuration, formatTime, formatTimePlain } from '@/lib/format';
 import { getDailyLearning, LEARNING_CYCLE_KEYS, type LearningCycleKey } from '@/lib/learning';
 import type { AppLocation } from '@/lib/location';
 import {
@@ -43,7 +43,6 @@ export type DayColumnKey =
   | 'holiday'
   | 'parsha'
   | 'mevarchimName'
-  | 'molad'
   // Not a row field: a synthetic column whose cell joins several other fields
   // (see `ExportColumn.fields`). The PDF uses it to merge the day's identity
   // into one column and its holiday / parsha / Mevarchim into another.
@@ -68,7 +67,6 @@ export const TEXT_DAY_COLUMNS: ReadonlySet<DayColumnKey> = new Set<DayColumnKey>
   'holiday',
   'parsha',
   'mevarchimName',
-  'molad',
   'events',
   ...LEARNING_CYCLE_KEYS,
 ]);
@@ -119,12 +117,10 @@ export interface ZmanimTableOptions {
   /** Localized "Shabbat Mevarchim" caption for the merged events cell. */
   mevarchimLabel?: string;
   /**
-   * Renders the molad announcement sentence; omitted = no molad text. Gets the
-   * announced MONTH and the civil date as well as the weekday, because the PDF
-   * prints this in a page footer where — unlike the day panel — there is no
-   * surrounding row to say when "Tuesday" is or which month is being announced.
+   * Titles the molad footer block ("Молад Ияра"); omitted = no molad block.
+   * Gets the announced MONTH — the incoming one, not the row's.
    */
-  moladLabel?: (parts: { month: string; weekday: string; date: string; time: string; chalakim: number }) => string;
+  moladTitle?: (month: string) => string;
   /** Learning cycles to include as columns (empty = none, skips the lookup). */
   learningKeys?: LearningCycleKey[];
   /**
@@ -218,11 +214,11 @@ export type ZmanimTableRow = {
    */
   mevarchimName: string;
   /**
-   * The molad announcement for this day, or empty. Only Rosh Chodesh / Shabbat
-   * Mevarchim rows carry one; the PDF prints it in the page footer rather than
-   * spending a column on a value that appears once a month.
+   * The molad announcement for this day as localized pieces, or null. Only
+   * Rosh Chodesh / Shabbat Mevarchim rows carry one; the PDF prints it as a
+   * footer block rather than spending a column on a once-a-month value.
    */
-  molad: string;
+  molad: { title: string; weekday: string; date: string; time: string; chalakim: number } | null;
   /** Day of the omer (1-49) as text, else empty. */
   omer: string;
   /** One formatted value per key (clock time, h:mm:ss duration, or a dash). */
@@ -265,6 +261,8 @@ export interface FastBlockLabels {
   chametzEat?: string;
   /** "Биур хамец" — the burn-by deadline heading. */
   chametzBurn?: string;
+  /** The chalakim unit for the molad block ("халаким"). */
+  chalakim?: string;
 }
 
 /**
@@ -306,14 +304,14 @@ export function pageFootnotes(
     return pairs.length > 0 ? [{ heading: labels.ends ?? '', pairs }] : [];
   };
 
-  // Shabbat Mevarchim rides its molad's block ("… · Shabbat Mevarchim — 8 Aug")
-  // rather than the events column: it exists to announce the molad, so they
-  // read as one fact. Collected first so the annotation lands on the block
-  // whether the page shows the Shabbat, the Rosh Chodesh, or both.
-  const mevarchimByMolad = new Map<string, string>();
+  // Shabbat Mevarchim rides its molad's block rather than the events column:
+  // it exists to announce the molad, so they read as one fact. Collected first
+  // so the annotation lands on the block whether the page shows the Shabbat,
+  // the Rosh Chodesh, or both.
+  const mevarchimByMolad = new Map<string, { heading: string; date: string }>();
   for (const row of rows) {
     if (row.molad && row.mevarchim && row.mevarchimName && isoOnPage.has(row.iso)) {
-      mevarchimByMolad.set(row.molad, `${row.mevarchimName} — ${row.dayWithMonth}`);
+      mevarchimByMolad.set(JSON.stringify(row.molad), { heading: row.mevarchimName, date: row.dayWithMonth });
     }
   }
 
@@ -355,12 +353,21 @@ export function pageFootnotes(
       if (groups.length > 0) lines.push({ label: row.holiday, text: '', groups });
     }
     if (row.molad && isoOnPage.has(row.iso)) {
-      // The molad sentence arrives as one localized string ("Molad Av: Monday,
-      // …"); its lead-up to the first colon is the block's label.
-      const at = row.molad.indexOf(': ');
-      const extra = mevarchimByMolad.get(row.molad);
-      const text = (at > 0 ? row.molad.slice(at + 2) : row.molad) + (extra ? ` · ${extra}` : '');
-      lines.push({ label: at > 0 ? row.molad.slice(0, at) : '', text });
+      const mevarchim = mevarchimByMolad.get(JSON.stringify(row.molad));
+      lines.push({
+        label: row.molad.title,
+        text: '',
+        groups: [
+          {
+            heading: `${row.molad.weekday}, ${row.molad.date}`,
+            pairs: [
+              { label: '', time: row.molad.time },
+              { label: '+', time: `${row.molad.chalakim} ${labels.chalakim ?? ''}`.trim() },
+            ],
+          },
+          ...(mevarchim ? [{ heading: mevarchim.heading, pairs: [{ label: '', time: mevarchim.date }] }] : []),
+        ],
+      });
     }
   }
   // One molad is announced on BOTH Shabbat Mevarchim and Rosh Chodesh, so the
@@ -373,6 +380,11 @@ export function pageFootnotes(
     seen.add(key);
     return true;
   });
+}
+
+/** The molad's civil moment (its date at its announced hour and minute). */
+function moladAt(molad: { date: DateTime; hours: number; minutes: number }): DateTime {
+  return molad.date.set({ hour: molad.hours, minute: molad.minutes });
 }
 
 /** Number of days from start to end inclusive (0 when end precedes start). */
@@ -507,19 +519,20 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       mevarchim: info.isShabbosMevorchim ? '\u2713' : '',
       mevarchimName: info.isShabbosMevorchim ? (o.mevarchimLabel ?? '') : '',
       molad:
-        info.molad && o.moladLabel
-          ? o.moladLabel({
+        info.molad && o.moladTitle
+          ? {
               // The month the molad announces is the INCOMING one (a molad
               // announced in Tammuz is Av's), so it is resolved from the
               // molad's own month-start, not from this row's date.
-              month: getDayInfo(info.molad.monthDate, formatter, o.locale, o.location.inIsrael).hebrewMonth,
-              // Spelled out, not abbreviated: this rides a page footer with room
-              // to spare, unlike the per-row date column.
+              title: o.moladTitle(getDayInfo(info.molad.monthDate, formatter, o.locale, o.location.inIsrael).hebrewMonth),
+              // Spelled out, not abbreviated: this rides a page footer with
+              // room to spare, unlike the per-row date column.
               date: info.molad.date.setLocale(o.locale).toLocaleString({ day: 'numeric', month: 'long' }),
-              ...formatMoladParts(info.molad, o.locale),
+              weekday: moladAt(info.molad).setLocale(o.locale).toLocaleString({ weekday: 'long' }),
+              time: clock(moladAt(info.molad), o.locale),
               chalakim: info.molad.chalakim,
-            })
-          : '',
+            }
+          : null,
       omer: info.omer > 0 ? String(info.omer) : '',
       cells: keys.map((key) => {
         const z = byKey.get(key);

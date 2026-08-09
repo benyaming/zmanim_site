@@ -39,7 +39,7 @@ function table(startIso: string, endIso: string, keys: string[], locale = 'en', 
     keys,
     learningKeys: learning ? [...LEARNING_CYCLE_KEYS] : [],
     mevarchimLabel: 'Mevarchim',
-    moladLabel: ({ month, weekday, time }) => `Molad ${month}: ${weekday} ${time}`,
+    moladTitle: (month) => `Molad ${month}`,
     plainTimes: true,
     opinionLabel: (key) => `op:${key}`,
   });
@@ -257,7 +257,7 @@ describe('buildExportDocument — footnotes', () => {
       m,
     );
     expect(sheets).toHaveLength(1);
-    const fasts = sheets[0].footnotes.filter((note) => (note.groups?.length ?? 0) > 0);
+    const fasts = sheets[0].footnotes.filter((note) => note.groups?.some((g) => g.heading === 'starts'));
     expect(fasts.length).toBe(2); // 17 Tammuz and Tisha b'Av
     const [tammuz, av] = fasts;
     expect(tammuz.label).not.toBe('');
@@ -269,7 +269,7 @@ describe('buildExportDocument — footnotes', () => {
     // Shabbat Mevarchim rides the molad block, not the events column.
     const molad = sheets[0].footnotes.find((note) => note.label.startsWith('Molad'));
     expect(molad).toBeDefined();
-    expect(molad!.text).toContain('Mevarchim —');
+    expect(molad!.groups!.some((g) => g.heading === 'Mevarchim')).toBe(true);
   });
 
   it('prints fast footnotes even with every column unchecked, skipping fastless months', () => {
@@ -310,8 +310,11 @@ describe('buildExportDocument — footnotes', () => {
   });
 
   it('suppresses the fast lines when the fast toggle is off, keeping the molad', () => {
-    const sheets = buildExportDocument(input(t, 'en', { includeFastNotes: false }), m);
-    expect(sheets[0].footnotes.some((note) => (note.groups?.length ?? 0) > 0)).toBe(false);
+    const sheets = buildExportDocument(
+      input(t, 'en', { includeFastNotes: false, fastLabels: { start: 'starts' } }),
+      m,
+    );
+    expect(sheets[0].footnotes.some((note) => note.groups?.some((g) => g.heading === 'starts'))).toBe(false);
     expect(sheets[0].footnotes.some((note) => note.label.startsWith('Molad'))).toBe(true);
   });
 });

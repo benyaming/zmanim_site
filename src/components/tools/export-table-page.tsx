@@ -12,7 +12,7 @@ import {
   PAGE_WIDTH_PX,
   SUB_HEADER_FONT_SCALE,
 } from '@/lib/export';
-import type { ExportDocSheet, ExportGrid } from '@/lib/export';
+import type { ExportDocSheet, ExportGrid, PageFootnote } from '@/lib/export';
 import { cn } from '@/lib/utils';
 
 /**
@@ -51,8 +51,7 @@ export function ExportTablePage({
   pageLabel,
   sheet,
   footer,
-  notes,
-  notesLabel,
+  calculation,
   dir,
 }: {
   /** Sheet heading: what the table is, and where ("Zmanim · Yaroslavl"). */
@@ -65,11 +64,12 @@ export function ExportTablePage({
   /** Attribution line at the bottom of the page. */
   footer: string;
   /** The calculation block: candle offset, havdala opinion, elevation, lehumra. */
-  notes?: string;
-  /** Bold lead label for the calculation block ("Calculation"). */
-  notesLabel?: string;
+  calculation?: PageFootnote;
   dir: 'ltr' | 'rtl';
 }) {
+  // The calculation renders as one more footer block, so every block shares
+  // one grid and one visual language.
+  const blocks = [...sheet.footnotes, ...(calculation ? [calculation] : [])];
   return (
     <div
       data-export-page
@@ -117,17 +117,17 @@ export function ExportTablePage({
             made with — laid across the full width, then the attribution.
             Facts that occur once or twice a month ride here instead of
             holding a column blank on 29 rows. */}
-        {(sheet.footnotes.length > 0 || notes) && (
+        {blocks.length > 0 && (
           // A GRID, not a wrap: every block in a row gets the same width and
           // the rows line up into even columns — content-sized blocks left the
           // footer ragged.
           <div
             className="grid gap-1.5 pb-1.5"
             style={{
-              gridTemplateColumns: `repeat(${footnoteGridCols(sheet.footnotes.length + (notes ? 1 : 0))}, minmax(0, 1fr))`,
+              gridTemplateColumns: `repeat(${footnoteGridCols(blocks.length)}, minmax(0, 1fr))`,
             }}
           >
-            {sheet.footnotes.map((note, i) => (
+            {blocks.map((note, i) => (
               <div key={i} className="rounded-sm border border-neutral-300 px-2 py-1 text-[9px] leading-snug text-neutral-800">
                 {note.label && <span className="font-semibold">{note.label}</span>}
                 {note.text && (
@@ -155,13 +155,6 @@ export function ExportTablePage({
                 )}
               </div>
             ))}
-            {notes && (
-              <div className="rounded-sm border border-neutral-300 px-2 py-1 text-[9px] leading-snug text-neutral-800">
-                {notesLabel && <span className="font-semibold">{notesLabel}</span>}
-                {notesLabel ? ' · ' : ''}
-                {notes}
-              </div>
-            )}
           </div>
         )}
         <p className="text-center text-[8px] text-neutral-400">{footer}</p>

@@ -287,7 +287,6 @@ export function ExportZmanimTool() {
           havdalahOpinion,
           specialShabbatLabel: (name) => tr('panel.specialShabbat', { name }),
           mevarchimLabel: tr('panel.shabbatMevarchim'),
-          moladLabel: (parts) => tr('export.moladLine', parts),
           learningKeys,
           hiddenFastEnd: FAST_END_OPINIONS.filter((o) => !selectedFastEnds.has(o.key)).map((o) => o.key),
         });

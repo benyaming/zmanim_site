@@ -54,6 +54,7 @@ export {
   type DayColumnKey,
   MAX_TABLE_DAYS,
   orderedZmanKeys,
+  type PageFootnote,
   pageFootnotes,
   tableDayCount,
   TEXT_DAY_COLUMNS,

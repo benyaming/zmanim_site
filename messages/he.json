@@ -554,7 +554,6 @@
     "colHoliday": "חג / מועד",
     "colParsha": "פרשה",
     "colEvents": "חג / פרשה",
-    "moladLine": "מולד {month}: {weekday}, {date}, {time} ו־{chalakim} חלקים",
     "colOmer": "עומר",
     "failed": "הייצוא נכשל. נסו שוב.",
     "generatedBy": "הופק על ידי {site}",
@@ -564,11 +563,14 @@
     "previewPrev": "הגיליון הקודם",
     "previewNext": "הגיליון הבא",
     "learningSheetHint": "מסלול קצר יחיד (כמו דף היומי) מצטרף כעמודה לטבלת הזמנים; יותר מסלולים או קריאות ארוכות מודפסים כעמוד נפרד לכל חודש.",
-    "noteCandles": "הדלקת נרות — {minutes} דק׳ לפני השקיעה",
-    "noteHavdalah": "הבדלה — {opinion}",
     "noteCalculation": "חישוב",
     "hebrewMonths": "חודשים עבריים",
-    "hebrewMonthsHint": "גיליון לכל חודש עברי (אלול תשפ״ו) במקום חודש לועזי."
+    "hebrewMonthsHint": "גיליון לכל חודש עברי (אלול תשפ״ו) במקום חודש לועזי.",
+    "moladTitle": "מולד {month}",
+    "chalakim": "חלקים",
+    "calcBeforeShkia": "{minutes} דק׳ לפני השקיעה",
+    "calcElevation": "גובה",
+    "calcMeters": "{meters} מ׳"
   },
   "sync": {
     "telegramTitle": "סנכרון טלגרם",

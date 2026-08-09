@@ -12,6 +12,7 @@ import {
   type ExportDocSheet,
   type ExportHeader,
   monthTitle,
+  type PageFootnote,
 } from '@/lib/export';
 import type { LearningCycleKey } from '@/lib/learning';
 import type { AppLocation } from '@/lib/location';
@@ -94,7 +95,7 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
     mevarchimLabel: cfg.columns.mevarchim ? tr('panel.shabbatMevarchim') : undefined,
     // The molad footnote follows the Mevarchim toggle: both are the "Shabbat
     // announcements" material.
-    moladLabel: cfg.columns.mevarchim ? (parts) => tr('export.moladLine', parts) : undefined,
+    moladTitle: cfg.columns.mevarchim ? (month) => tr('export.moladTitle', { month }) : undefined,
     learningKeys: cfg.learningKeys,
     plainTimes: true,
     hiddenFastEnd: cfg.hiddenFastEnd,
@@ -204,21 +205,38 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
       chatzos: shortName('chatzos'),
       chametzEat: shortName('sofZmanAchilasChametzGRA'),
       chametzBurn: shortName('sofZmanBiurChametzGRA'),
+      chalakim: tr('export.chalakim'),
     },
   });
 
   const footer = tr('export.generatedBy', { site: SITE_HOST });
-  // The calculation line: everything that shaped these times, so a printed
-  // sheet answers "which opinions is this?" without the app in hand. The
-  // havdala item goes LAST because its opinion label carries a " · " of its
-  // own ("3 small stars · 8.5°") — mid-list it would read as two items.
-  const noteParts: string[] = [tr('export.noteCandles', { minutes: cfg.candleLightingOffset })];
-  if (cfg.useElevation && typeof cfg.location.elevation === 'number' && cfg.location.elevation > 0) {
-    noteParts.push(tr('export.noteElevation', { meters: cfg.location.elevation }));
-  }
-  if (cfg.lehumra) noteParts.push(tr('export.noteLehumra'));
-  noteParts.push(tr('export.noteHavdalah', { opinion: tr(`zmanim.shitot.${havdalahZmanKey(cfg.havdalahOpinion)}`) }));
-  const notes = noteParts.join(' · ');
+  // The calculation block: everything that shaped these times, as the same
+  // headed label→value groups the other footer blocks use — so a printed
+  // sheet answers "which opinions is this?" without the app in hand.
+  const elevated = cfg.useElevation && typeof cfg.location.elevation === 'number' && cfg.location.elevation > 0;
+  const calculation: PageFootnote = {
+    label: tr('export.noteCalculation'),
+    text: '',
+    groups: [
+      {
+        heading: tr('events.candle'),
+        pairs: [{ label: '', time: tr('export.calcBeforeShkia', { minutes: cfg.candleLightingOffset }) }],
+      },
+      ...(elevated
+        ? [
+            {
+              heading: tr('export.calcElevation'),
+              pairs: [{ label: '', time: tr('export.calcMeters', { meters: cfg.location.elevation ?? 0 }) }],
+            },
+          ]
+        : []),
+      ...(cfg.lehumra ? [{ heading: tr('settings.lehumra'), pairs: [] }] : []),
+      {
+        heading: tr('events.havdalah'),
+        pairs: [{ label: '', time: tr(`zmanim.shitot.${havdalahZmanKey(cfg.havdalahOpinion)}`) }],
+      },
+    ],
+  };
 
   const titleFor = (sheet: ExportDocSheet) =>
     `${sheet.kind === 'learning' ? tr('learning.title') : tr('export.tableTitle')} · ${cfg.locationLabel}`;
@@ -244,8 +262,7 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
       pageLabel={`${i + 1} / ${sheets.length}`}
       sheet={sheet}
       footer={footer}
-      notes={notes}
-      notesLabel={tr('export.noteCalculation')}
+      calculation={calculation}
       dir={dir}
     />
   ));

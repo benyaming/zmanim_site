@@ -554,7 +554,6 @@
     "colHoliday": "Праздник",
     "colParsha": "Глава",
     "colEvents": "Праздник / глава",
-    "moladLine": "Молад {month}: {weekday}, {date}, {time} и {chalakim} халаким",
     "colOmer": "Омер",
     "failed": "Экспорт не удался. Попробуйте ещё раз.",
     "generatedBy": "Создано на {site}",
@@ -564,11 +563,14 @@
     "previewPrev": "Предыдущий лист",
     "previewNext": "Следующий лист",
     "learningSheetHint": "Один короткий цикл (например, даф йоми) — колонкой в таблице зманим; несколько циклов или длинные названия — отдельным листом на каждый месяц.",
-    "noteCandles": "Зажигание свечей — за {minutes} мин до шкии",
-    "noteHavdalah": "Авдала — {opinion}",
     "noteCalculation": "Расчёт",
     "hebrewMonths": "Еврейские месяцы",
-    "hebrewMonthsHint": "Один лист на еврейский месяц (Элул 5786) вместо григорианского."
+    "hebrewMonthsHint": "Один лист на еврейский месяц (Элул 5786) вместо григорианского.",
+    "moladTitle": "Молад {month}",
+    "chalakim": "халаким",
+    "calcBeforeShkia": "за {minutes} мин до шкии",
+    "calcElevation": "Высота",
+    "calcMeters": "{meters} м"
   },
   "sync": {
     "telegramTitle": "Синхронизация с Telegram",

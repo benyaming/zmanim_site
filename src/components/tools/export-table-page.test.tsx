@@ -206,8 +206,11 @@ describe('ExportTablePage header', () => {
           ],
         }}
         footer="zmanim.example"
-        notes="Candles — 18 min before shkia"
-        notesLabel="Calculation"
+        calculation={{
+          label: 'Calculation',
+          text: '',
+          groups: [{ heading: 'Candles', pairs: [{ label: '', time: '18 min before shkia' }] }],
+        }}
         dir="ltr"
       />,
     );
@@ -218,6 +221,7 @@ describe('ExportTablePage header', () => {
     expect(container.textContent).toContain('20:11');
     expect(container.textContent).toContain('Molad Av');
     expect(container.textContent).toContain('Calculation');
-    expect(container.textContent).toContain('Candles — 18 min before shkia');
+    expect(container.textContent).toContain('Candles');
+    expect(container.textContent).toContain('18 min before shkia');
   });
 });
