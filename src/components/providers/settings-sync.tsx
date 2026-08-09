@@ -92,11 +92,12 @@ export function SettingsSync() {
   // Startup reconcile. Adopting newer remote sections reloads the page so the
   // providers re-read them; a pending import skips this — the user decides
   // first. Adopting copies each remote section's stamp, so a re-run normally
-  // sees them equal and won't re-adopt. The Mini App used to break that (it
-  // re-applied the bot's structured location each mount, defeating the
-  // fingerprint tie-break); it now only seeds a device that has none, but the
-  // startup reload stays capped at once per session (consumeStartupReload) as
-  // the backstop.
+  // sees them equal and won't re-adopt. The Mini App used to break that by
+  // writing the bot's location into prefs each mount (first the bot-profile
+  // re-apply, later the launch URL's ?lat=&lng= deep link being persisted);
+  // the profile now only seeds a device that has none and the deep link is
+  // session-only, but the startup reload stays capped at once per session
+  // (consumeStartupReload) as the backstop.
   useEffect(() => {
     // Purge the Drive-era localStorage keys on the way in (see web-login.ts):
     // nothing reads them, and one held an access token. Unconditional, because

@@ -53,6 +53,14 @@ syncs, so failed pushes retry on the next change.
 **seeds** a device that has no location of its own (`applyBotProfile` checks
 `locationLocked`: a URL deep link, a restored non-default pref, a precise fix,
 or a pick made here all count as having one), and it is **never written back**.
+The launch URL's `?lat=&lng=` deep link follows the same rule in miniature: it
+decides what the app *opens on* (the bot's location, instant first paint) but
+is **session-only** — never persisted to prefs, so it can't overwrite the
+app's own synced location or diverge the device from the settings blob.
+Persisting it used to do exactly that, which made the startup sync reconcile
+adopt the blob and reload the Mini App once on every open (see
+[`settings-sync.md`](settings-sync.md)). A location picked in-app persists (and
+syncs) as usual; the next personalized launch still opens on the bot's.
 The two are not the same act: the bot's location decides where its daily
 messages come from, while the app's is whatever times the user is looking at
 right now — so browsing another city must not move the bot, and a location
