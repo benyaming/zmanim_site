@@ -238,6 +238,19 @@ export function AppStateProvider({
   // True once the location is explicitly chosen (URL deep link, saved pref, or a
   // user action). Guards the async IP soft-default from overwriting that choice.
   const locationLocked = useRef(urlProvided);
+  // A deep-link location (?lat=&lng= — a shared link, or the bot's personalized
+  // launch URL inside Telegram, which carries the bot's coordinates on every
+  // open) is a view for this session, not a choice: it is shown but never
+  // persisted. Persisting it overwrote the saved location in prefs at every
+  // Mini App mount, keeping this device permanently diverged from the synced
+  // blob — so the startup reconcile adopted the blob and reloaded on every
+  // launch (each launch is a fresh webview session, so the one-reload-per-
+  // session cap reset every time). While the flag holds, the persist effect
+  // writes storedLocation — whatever location prefs held at load, verbatim, so
+  // the persisted content round-trips unchanged. An explicit in-session pick
+  // clears it.
+  const deepLinkSessionOnly = useRef(urlProvided);
+  const storedLocation = useRef<AppLocation | null>(null);
   // What the user explicitly changed *this session* — the Telegram bot profile
   // must not override these (unlike locationLocked, a restored save or URL
   // param doesn't count: the bot profile is fresher than both). Location isn't
@@ -246,6 +259,7 @@ export function AppStateProvider({
   const sessionTouched = useRef({ candleOffset: false, havdalah: false });
   const setLocation = (loc: AppLocation) => {
     locationLocked.current = true;
+    deepLinkSessionOnly.current = false;
     setLocationState(loc);
   };
 
@@ -525,6 +539,10 @@ export function AppStateProvider({
       const timeZoneId = normalizeIsraelAreaTimezone(saved.timeZoneId);
       setLocationState({ ...saved, timeZoneId, inIsrael: isIsraelTimezone(timeZoneId) });
     }
+    // Under a deep link the saved location still owns the persisted copy —
+    // stashed verbatim (no normalization) so the persist effect round-trips
+    // the synced content byte-for-byte.
+    if (urlProvided && prefs.location) storedLocation.current = prefs.location;
   }, [urlProvided]);
 
   // Telegram Mini App: the zmanim mirror the bot, and the bot always rounds
@@ -625,7 +643,9 @@ export function AppStateProvider({
       window.localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          location,
+          // A session-only deep link never lands in prefs — the saved location
+          // (or none) rides through untouched.
+          location: deepLinkSessionOnly.current ? (storedLocation.current ?? undefined) : location,
           savedLocations,
           candleLightingOffset,
           useElevation,

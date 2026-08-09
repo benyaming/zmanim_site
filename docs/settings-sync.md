@@ -56,13 +56,18 @@ agreed on lives in `zmanim:sync-synced:v1`.
   had the data.
 - **Adopting is loop-safe.** Adopting a section copies its remote stamp
   locally, so the post-reload run normally sees them equal and can't re-adopt.
-  The place that invariant used to break was the Telegram Mini App, where
-  `TelegramMiniApp` re-applied the bot's *structured* location on every mount:
-  it could disagree with the `web_prefs` blob and lose the fingerprint
-  tie-break, so the reconcile re-adopted and reloaded on a loop. That driver is
-  gone — the bot's location now only seeds a device that has none — but the
-  guard stays, since any future mount-time write would reopen it. A session
-  guard (`consumeStartupReload`, a
+  The place that invariant used to break was the Telegram Mini App, which wrote
+  the bot's location into prefs at every mount — first via `TelegramMiniApp`
+  re-applying the bot's *structured* location, later via the personalized
+  launch URL's `?lat=&lng=` deep link being persisted over the saved location.
+  Either could disagree with the `web_prefs` blob and lose (or trail) the
+  merge, so the reconcile re-adopted and reloaded on every launch — each
+  launch is a fresh webview session, so the session cap below reset every
+  time. Both drivers are gone: the bot's location only seeds a device that has
+  none, and a deep-link location is **session-only** — shown for the session,
+  never persisted (the saved location rides through prefs verbatim; see
+  `app-state.tsx`). The guard stays, since any future mount-time write would
+  reopen it. A session guard (`consumeStartupReload`, a
   `sessionStorage` flag) caps the automatic startup reconcile to **one reload per
   tab session**; the residual difference then converges silently via the normal
   push. Manual "Sync now" and imports don't go through the guard.
@@ -96,7 +101,7 @@ agreed on lives in `zmanim:sync-synced:v1`.
   blank device) has nothing to lose, so the account's copy wins silently —
   unless content vouches for it, covering pre-v1.22 devices whose choices
   carry no stamp: prefs via `prefsHoldUserData` (web only — the Mini App
-  writes the bot's location into prefs each mount), a11y via non-default
+  seeds the bot's location into prefs on a device that has none), a11y via non-default
   values (`a11yHoldsUserData`), theme by mere presence (it is only ever
   persisted by an explicit pick). Mount-written defaults and the URL language
   never count, keeping fresh devices silent.
