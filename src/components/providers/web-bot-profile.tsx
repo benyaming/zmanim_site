@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { useAppState } from '@/components/providers/app-state';
 import { botLocationEntries } from '@/components/providers/telegram-mini-app';
@@ -19,6 +19,12 @@ import { loadTelegramWebAuth, WEB_AUTH_EVENT } from '@/lib/telegram/web-login';
  */
 export function WebBotProfile() {
   const { applyBotProfile } = useAppState();
+  // One on-load pull per mount, however often the effect re-runs. The effect
+  // is keyed on applyBotProfile, whose identity can change with provider
+  // renders — re-fetching the profile on every such re-run turned into a
+  // fetch loop once the fetch itself caused a render (see applyBotProfile's
+  // botLocations bail, the other half of this fix).
+  const pulledOnLoad = useRef(false);
 
   useEffect(() => {
     if (isTelegramMiniApp()) return; // the Mini App provider owns that context
@@ -30,7 +36,10 @@ export function WebBotProfile() {
         if (profile && !cancelled) applyBotProfile({ botLocations: botLocationEntries(profile) });
       });
     };
-    pull(); // on load, if already signed in
+    if (!pulledOnLoad.current) {
+      pulledOnLoad.current = true;
+      pull(); // on load, if already signed in
+    }
     window.addEventListener(WEB_AUTH_EVENT, pull); // and right after a fresh sign-in
     return () => {
       cancelled = true;

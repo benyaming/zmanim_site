@@ -362,7 +362,20 @@ export function AppStateProvider({
     if (profile.havdalahOpinion !== undefined && !sessionTouched.current.havdalah) {
       setHavdalahOpinionState(profile.havdalahOpinion);
     }
-    if (profile.botLocations) setBotLocations(profile.botLocations);
+    // Keep the previous array when the content is unchanged. Every profile
+    // fetch builds a fresh array for the same list, and swapping it in
+    // re-rendered the provider for nothing — WebBotProfile's pull effect
+    // (keyed on this function's identity) then re-fired, fetched the profile
+    // again, and applied it again: a fetch loop at network speed that flooded
+    // the bot API with /me calls for as long as a signed-in tab stayed open.
+    if (profile.botLocations) {
+      const next = profile.botLocations;
+      setBotLocations((prev) =>
+        prev.length === next.length && prev.every((e, i) => e.id === next[i].id && e.name === next[i].name)
+          ? prev
+          : next,
+      );
+    }
   };
   const [lehumra, setLehumraState] = useState(false);
   const [lehumraCustomized, setLehumraCustomized] = useState(false);
