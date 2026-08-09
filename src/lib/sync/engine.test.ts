@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { PREFS_STORAGE_KEY } from '@/components/providers/app-state';
 import { A11Y_STORAGE_KEY } from '@/components/providers/accessibility-provider';
@@ -246,6 +246,95 @@ describe('reconcileTargets', () => {
     document.documentElement.lang = 'en';
     const second = await reconcileTargets([target]);
     expect(second.outcome).toBe('clean');
+  });
+
+  describe('Mini App language passivity', () => {
+    // Inside Telegram the page locale is the BOT's, not the user's: the bot
+    // relaunches the app at its own language path (/he|/ru) on EVERY open. The
+    // URL-derived language must therefore neither be adopted over (adopting
+    // navigates = restarts the webview, and the next launch resets the locale
+    // right back — a restart on every open) nor pushed out as if the user chose
+    // it (it would clobber the language picked on the website).
+    beforeEach(() => {
+      installMemorySessionStorage();
+      window.sessionStorage.setItem('zmanim:tg-mini-app', '1');
+    });
+    afterEach(() => {
+      installMemorySessionStorage(); // drop the flag for the tests that follow
+    });
+
+    it('never adopts a remote language at an equal stamp (the restart-on-every-open bug)', async () => {
+      // Launch at the bot's /he; the blob says 'ru' at the same stamp (a prior
+      // adoption copied it). 'ru' wins the fingerprint tie-break, so without
+      // the rule this adopts + navigates on every single open.
+      const stamp = '2026-08-01T00:00:00.000Z';
+      document.documentElement.lang = 'he';
+      stampSection('language', stamp);
+      const { target, state } = memoryTarget(blob({ language: { data: 'ru', t: stamp } }));
+
+      const result = await reconcileTargets([target]);
+
+      expect(result.outcome).toBe('clean'); // no adopt → no reload
+      expect(result.appliedLanguage).toBeNull();
+      expect(state.pushes).toEqual([]); // and nothing pushed back either
+    });
+
+    it('never adopts a genuinely newer remote language (the session mirrors the bot)', async () => {
+      document.documentElement.lang = 'ru';
+      stampSection('language', '2026-08-01T00:00:00.000Z');
+      const { target, state } = memoryTarget(
+        blob({ language: { data: 'en', t: '2026-08-05T00:00:00.000Z' } }),
+      );
+
+      const result = await reconcileTargets([target]);
+
+      expect(result.outcome).toBe('clean');
+      expect(result.appliedLanguage).toBeNull(); // no navigation — the session stays at the launch locale
+      expect(state.blob?.sections.language.data).toBe('en'); // the account's language is untouched
+    });
+
+    it('never pushes the launch locale over the account language at an equal stamp', async () => {
+      // Launch at /ru; the blob says 'en' at the same stamp. 'ru' would win the
+      // tie-break and silently overwrite the language picked on the website.
+      const stamp = '2026-08-01T00:00:00.000Z';
+      document.documentElement.lang = 'ru';
+      stampSection('language', stamp);
+      const { target, state } = memoryTarget(blob({ language: { data: 'en', t: stamp } }));
+
+      const result = await reconcileTargets([target]);
+
+      expect(result.outcome).toBe('clean');
+      expect(state.pushes).toEqual([]);
+      expect(state.blob?.sections.language.data).toBe('en');
+    });
+
+    it('still propagates an explicit in-session language pick', async () => {
+      // The user opened the language settings inside the Mini App and chose
+      // English — a deliberate edit (dirty) beats the passivity rule.
+      document.documentElement.lang = 'en';
+      markUserEdit('language');
+      const { target, state } = memoryTarget(
+        blob({ language: { data: 'ru', t: '2026-08-01T00:00:00.000Z' } }),
+      );
+
+      const result = await reconcileTargets([target]);
+
+      expect(result.outcome).toBe('pushed');
+      expect(state.blob?.sections.language.data).toBe('en');
+    });
+
+    it('on the plain site (no Mini App flag) the language still syncs both ways', async () => {
+      installMemorySessionStorage(); // no flag — the website
+      const stamp = '2026-08-01T00:00:00.000Z';
+      document.documentElement.lang = 'he';
+      stampSection('language', stamp);
+      const { target } = memoryTarget(blob({ language: { data: 'ru', t: stamp } }));
+
+      const result = await reconcileTargets([target]);
+
+      expect(result.outcome).toBe('applied'); // the web behavior is unchanged
+      expect(result.appliedLanguage).toBe('ru');
+    });
   });
 
   it('reports the adopted language so the caller can switch locale', async () => {

@@ -286,6 +286,22 @@ export async function reconcileTargets(
   // after the pull would let that noise leak into the merge.
   const local = collectSettingsBlob();
 
+  // Inside the Mini App the page locale is the BOT's, not the user's: Telegram
+  // relaunches the app at the bot-language path (/he|/ru) on every open, so the
+  // URL-derived language section re-diverges from the blob at every launch
+  // whenever the two differ. Adopting the blob's language would navigate — a
+  // visible webview restart — on every single open (the next launch resets the
+  // locale right back), and winning the equal-stamp tie-break instead would
+  // silently overwrite the language picked on the website. So the Mini App is
+  // PASSIVE about language, mirroring the deep-link location rule (app-state):
+  // the local side contributes nothing — the blob's language rides through the
+  // merge by presence and is pushed onward intact — and a remote language is
+  // never adopted; the session simply runs at the launch locale, like the bot.
+  // The one exception is an explicit in-session pick (dirty): a deliberate
+  // edit still wins the merge and propagates.
+  const passiveLanguage = isTelegramMiniApp() && !dirtySections().includes('language');
+  if (passiveLanguage) local.sections.language = { ...local.sections.language, data: null };
+
   // The explicit element type keeps PULL_FAILED's `unique symbol` identity,
   // which `await` inference widens to plain `symbol` (breaking `!==` narrowing).
   const results: { target: SyncTarget; blob: PullResult }[] = await Promise.all(
@@ -466,14 +482,29 @@ export async function reconcileTargets(
 
   // Adopt the sections the merge changed locally (a remote won those). Reload
   // so the providers re-read them; adopting copies each remote stamp, so a
-  // re-run can't re-adopt (no loop).
-  const adopt = changedSections(local, merged);
+  // re-run can't re-adopt (no loop). Under the passive-language rule the
+  // merged language is the remote's by presence (local contributed null) —
+  // that difference is the rule working, not a change to adopt.
+  const adopt = changedSections(local, merged).filter((name) => !(passiveLanguage && name === 'language'));
   syncDebug('reconcile: adopt=', adopt, 'conflicts=', conflicts.length);
   if (adopt.length > 0) {
     // Adoption skipped by the caller: the run did NOT settle, so the lineage
     // stays unrecorded and the foreign stores stay quarantined for blind
     // pushes; the next full run redoes (and then commits) the reconcile.
     if (!allowApply) return { outcome: 'clean', appliedLanguage: null, conflicts };
+    // Breadcrumb for chasing a reload in the field (an adopt is what reloads
+    // the page — see settings-sync.tsx): readable from a webview console after
+    // the fact, no debug flag to pre-arm. Adopting everything on every open
+    // points at storage that didn't persist; one recurring section points at
+    // whatever rewrites it at mount.
+    try {
+      window.localStorage.setItem(
+        'zmanim:sync-last-adopt:v1',
+        JSON.stringify({ at: new Date().toISOString(), adopt }),
+      );
+    } catch {
+      // Diagnostics only.
+    }
     applyBlobSections(merged, adopt);
     commitLineage();
     return {
@@ -572,6 +603,10 @@ export function keepDeviceSettings(conflicts: SyncConflict[]): void {
   if (conflicts.length === 0) return;
   const local = collectSettingsBlob();
   for (const name of SECTION_NAMES) {
+    // The Mini App's page locale is the bot's launch path, not a device
+    // setting — stamping it as an edit would push it over the account's
+    // language (see the passive-language rule in reconcileTargets).
+    if (name === 'language' && isTelegramMiniApp()) continue;
     if (local.sections[name].data !== null) markUserEdit(name);
   }
   for (const { targetId, account } of sameAccountGroup(conflicts)) recordLineage(targetId, account);

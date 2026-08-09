@@ -73,6 +73,17 @@ from the calendar app: …", localized), so bot-side state never changes
 invisibly. The shared havdalah opinion keys and the candle-offset semantics are
 identical in both projects by design (`src/lib/zmanim/havdalah.ts`).
 
+**The language works like the deep-link location.** The bot launches the app at
+its own language path (`/he`|`/ru`) on every open, so inside the Mini App the
+page locale is the bot's, not the user's. The sync engine is therefore
+**passive about language** there (see `reconcileTargets`): the URL-derived
+locale contributes nothing to the merge — the blob's language rides through
+intact instead of being clobbered by the launch path — and a remote language is
+never adopted, because adopting navigates, i.e. visibly restarts the webview on
+every open (the next launch would reset the locale right back). The session
+simply runs at the launch locale, mirroring the bot; an explicit in-session
+language pick still syncs out like any deliberate edit.
+
 GPS auto-detection is skipped inside the webview (unreliable there, and the
 bot profile is better); the soft IP guess and the manual GPS button still work.
 Lehumra minute rounding defaults ON inside Telegram (the bot always rounds
