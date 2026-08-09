@@ -356,13 +356,27 @@ export function ExportZmanimTool() {
             <label htmlFor="export-table-start" className="text-muted-foreground min-w-[3.75rem] text-xs">
               {t('from')}
             </label>
-            <DatePicker id="export-table-start" value={startIso} onChange={setStartIso} aria-label={t('from')} />
+            {/* The pickers follow the sheet calendar: Hebrew-month sheets are
+                picked by Hebrew dates. */}
+            <DatePicker
+              id="export-table-start"
+              mode={hebrewMonths && !transpose ? 'hebrew' : 'gregorian'}
+              value={startIso}
+              onChange={setStartIso}
+              aria-label={t('from')}
+            />
           </div>
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
             <label htmlFor="export-table-end" className="text-muted-foreground min-w-[3.75rem] text-xs">
               {t('to')}
             </label>
-            <DatePicker id="export-table-end" value={endIso} onChange={setEndIso} aria-label={t('to')} />
+            <DatePicker
+              id="export-table-end"
+              mode={hebrewMonths && !transpose ? 'hebrew' : 'gregorian'}
+              value={endIso}
+              onChange={setEndIso}
+              aria-label={t('to')}
+            />
           </div>
           {locationField}
           {languageField}
