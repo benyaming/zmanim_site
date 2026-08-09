@@ -337,7 +337,32 @@ export function collectSettingsBlob(): SettingsBlob {
 }
 
 /**
- * Stable content identity for one section. The prefs location's
+ * JSON with object keys sorted recursively — a serialization in which equal
+ * content always produces equal bytes. The fingerprint must not depend on the
+ * ORDER a writer happened to emit keys in: the same event object is written
+ * `{...event, id}` by the personal-dates editors but `{id, kind, anchor, …}`
+ * by their load-time sanitizer, so one mount could flip the bytes of an
+ * unchanged section. With plain JSON.stringify that read as a content change
+ * at an equal stamp, the store's copy won the tie-break, and the startup
+ * reconcile adopted-and-reloaded the Mini App on every single open.
+ * Undefined-valued keys are skipped, matching what JSON.stringify drops.
+ */
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map((v) => canonicalJson(v === undefined ? null : v)).join(',')}]`;
+  if (typeof value === 'object' && value !== null) {
+    const record = value as Record<string, unknown>;
+    const entries = Object.keys(record)
+      .sort()
+      .filter((k) => record[k] !== undefined)
+      .map((k) => `${JSON.stringify(k)}:${canonicalJson(record[k])}`);
+    return `{${entries.join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'null';
+}
+
+/**
+ * Stable content identity for one section — canonical (key-order-insensitive)
+ * by construction, see canonicalJson. The prefs location's
  * `label`/`labelLocale` are dropped: they're derived by per-device,
  * per-language reverse geocoding (the same place reads "Petah Tikva" /
  * "Петах-Тиква" / "פתח תקווה"), so keeping them would make two devices in one
@@ -346,9 +371,9 @@ export function collectSettingsBlob(): SettingsBlob {
  */
 export function sectionFingerprint(name: SectionName, data: SectionData): string {
   if (name === 'prefs' && data && typeof data === 'object') {
-    return JSON.stringify(normalizeForFingerprint(data as Record<string, unknown>));
+    return canonicalJson(normalizeForFingerprint(data as Record<string, unknown>));
   }
-  return JSON.stringify(data ?? null);
+  return canonicalJson(data ?? null);
 }
 
 function normalizeForFingerprint(prefs: Record<string, unknown>): Record<string, unknown> {
