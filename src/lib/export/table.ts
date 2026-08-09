@@ -192,6 +192,11 @@ export type ZmanimTableRow = {
    * the single `fastEnd` stays the one answer a spreadsheet cell wants.
    */
   fastEnds: { label: string; time: string }[];
+  /**
+   * The day's chatzot, always computed: the Tisha b'Av footnote prints it (the
+   * turn of the day's restrictions) whether or not chatzot was selected.
+   */
+  chatzosTime: string;
   /** "✓" on Shabbat Mevarchim, else empty. Kept tick-shaped for CSV/Excel. */
   mevarchim: string;
   /**
@@ -228,14 +233,21 @@ export function orderedZmanKeys(keys: string[]): string[] {
 /** One footer block: a bold lead label (the fast's name, "Molad Av") and its content. */
 export interface PageFootnote {
   label: string;
-  /** Prose content (the molad sentence). Empty when `entries` carry the content. */
+  /** Prose content (the molad sentence). Empty when `groups` carry the content. */
   text: string;
   /**
-   * Structured content: label→time pairs the renderer sets as aligned columns
-   * ("начало 5:09 · 5.95° 19:11 · 8.5° 19:24") instead of run-on prose — a
-   * fast's start and its per-opinion ends.
+   * Structured content: headed groups of label→time pairs the renderer sets as
+   * aligned columns ("Начало 19:44 · Хацот 12:46 · Окончание: 5.95° 20:10 …")
+   * instead of run-on prose — a fast's start, its chatzot, its per-opinion ends.
    */
-  entries?: { label: string; time: string }[];
+  groups?: { heading: string; pairs: { label: string; time: string }[] }[];
+}
+
+/** Muted headings for a fast block's groups; all optional (bare pairs otherwise). */
+export interface FastBlockLabels {
+  start?: string;
+  ends?: string;
+  chatzos?: string;
 }
 
 /**
@@ -249,8 +261,7 @@ export function pageFootnotes(
   rows: ZmanimTableRow[],
   isoOnPage: ReadonlySet<string>,
   includeFasts = true,
-  /** Muted label for the fast's start pair ("начало"). */
-  fastStartLabel = '',
+  labels: FastBlockLabels = {},
 ): PageFootnote[] {
   const lines: PageFootnote[] = [];
   // A fast that begins the previous evening (Tisha b'Av, Yom Kippur) reports
@@ -273,6 +284,10 @@ export function pageFootnotes(
   // shows. A plain single end (no labeller) becomes one unlabelled pair.
   const endPairs = (r: ZmanimTableRow) =>
     r.fastEnds.length > 0 ? r.fastEnds : r.fastEnd ? [{ label: '', time: r.fastEnd }] : [];
+  const endsGroup = (r: ZmanimTableRow) => {
+    const pairs = endPairs(r);
+    return pairs.length > 0 ? [{ heading: labels.ends ?? '', pairs }] : [];
+  };
 
   // Shabbat Mevarchim rides its molad's block ("… · Shabbat Mevarchim — 8 Aug")
   // rather than the events column: it exists to announce the molad, so they
@@ -293,15 +308,25 @@ export function pageFootnotes(
       const next = rows[i + 1];
       const tail = row.fastEnd ? row : next && next.fastEnd && !next.fastStart ? next : undefined;
       if (isoOnPage.has(row.iso) || (tail && isoOnPage.has(tail.iso))) {
+        // A fast paired across TWO rows began the previous evening — the
+        // 25-hour fast (Tisha b'Av) — where chatzot marks the turn of the
+        // day's restrictions, so the block carries it between start and end.
+        const overnight = tail !== undefined && tail !== row;
         lines.push({
           label: row.holiday || tail?.holiday || '',
           text: '',
-          entries: [{ label: fastStartLabel, time: row.fastStart }, ...(tail ? endPairs(tail) : [])],
+          groups: [
+            { heading: labels.start ?? '', pairs: [{ label: '', time: row.fastStart }] },
+            ...(overnight && tail.chatzosTime
+              ? [{ heading: labels.chatzos ?? '', pairs: [{ label: '', time: tail.chatzosTime }] }]
+              : []),
+            ...(tail ? endsGroup(tail) : []),
+          ],
         });
       }
     } else if (row.fastEnd && !pairedTail.has(i) && isoOnPage.has(row.iso)) {
       // An end with no start in range — the range itself began mid-fast.
-      lines.push({ label: row.holiday, text: '', entries: endPairs(row) });
+      lines.push({ label: row.holiday, text: '', groups: endsGroup(row) });
     }
     if (row.molad && isoOnPage.has(row.iso)) {
       // The molad sentence arrives as one localized string ("Molad Av: Monday,
@@ -317,7 +342,7 @@ export function pageFootnotes(
   // one month differ in text and are kept.
   const seen = new Set<string>();
   return lines.filter((line) => {
-    const key = JSON.stringify([line.label, line.text, line.entries ?? []]);
+    const key = JSON.stringify([line.label, line.text, line.groups ?? []]);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -354,8 +379,9 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
     ? ({ day: 'numeric', month: 'short', year: '2-digit' } as const)
     : ({ day: 'numeric', month: 'short' } as const);
   // Compute only the selected columns plus the keys the day events need — not
-  // every opinion — which matters most over a long date range.
-  const computeKeys = new Set([...keys, ...dayEventZmanKeys(havdalahZmanKey(havdalahOpinion))]);
+  // every opinion — which matters most over a long date range. Chatzot rides
+  // along for the Tisha b'Av footnote.
+  const computeKeys = new Set([...keys, ...dayEventZmanKeys(havdalahZmanKey(havdalahOpinion)), 'chatzos']);
 
   for (let i = 0; i < days; i++) {
     const date = o.start.startOf('day').plus({ days: i });
@@ -435,6 +461,7 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       fastStart: eventTime('fastStart'),
       fastEnd: eventTime('fastEnd'),
       fastEnds: fastEndPairs,
+      chatzosTime: byKey.get('chatzos')?.time ? clock(byKey.get('chatzos')!.time, o.locale) : '',
       mevarchim: info.isShabbosMevorchim ? '\u2713' : '',
       mevarchimName: info.isShabbosMevorchim ? (o.mevarchimLabel ?? '') : '',
       molad:

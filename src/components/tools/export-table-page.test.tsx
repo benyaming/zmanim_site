@@ -194,7 +194,14 @@ describe('ExportTablePage header', () => {
         sheet={{
           ...docSheet(sheet()),
           footnotes: [
-            { label: 'Fast of Tammuz', text: '4:12 – 20:11 (3 stars)' },
+            {
+              label: 'Fast of Tammuz',
+              text: '',
+              groups: [
+                { heading: 'starts', pairs: [{ label: '', time: '4:12' }] },
+                { heading: 'ends', pairs: [{ label: '3 stars', time: '20:11' }] },
+              ],
+            },
             { label: 'Molad Av', text: 'Monday, 12:54' },
           ],
         }}
@@ -205,7 +212,10 @@ describe('ExportTablePage header', () => {
       />,
     );
     expect(container.textContent).toContain('Fast of Tammuz');
-    expect(container.textContent).toContain('4:12 – 20:11 (3 stars)');
+    expect(container.textContent).toContain('starts');
+    expect(container.textContent).toContain('4:12');
+    expect(container.textContent).toContain('3 stars');
+    expect(container.textContent).toContain('20:11');
     expect(container.textContent).toContain('Molad Av');
     expect(container.textContent).toContain('Calculation');
     expect(container.textContent).toContain('Candles — 18 min before shkia');

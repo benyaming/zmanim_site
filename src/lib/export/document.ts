@@ -49,7 +49,7 @@ import {
 } from './grid';
 import { defaultMeasurer, type TextMeasurer } from './measure';
 import { CONTENT_WIDTH_PX } from './page';
-import { type PageFootnote, pageFootnotes, type ZmanimTable, type ZmanimTableRow } from './table';
+import { type FastBlockLabels, type PageFootnote, pageFootnotes, type ZmanimTable, type ZmanimTableRow } from './table';
 
 export interface ExportDocumentInput {
   table: ZmanimTable;
@@ -68,8 +68,8 @@ export interface ExportDocumentInput {
   hebrewMonths?: boolean;
   /** Include fast start/end footnotes (the "fast times" toggle). Default true. */
   includeFastNotes?: boolean;
-  /** Muted label for a fast block's start pair ("начало"). */
-  fastStartLabel?: string;
+  /** Muted group headings for the fast blocks (start / ends / chatzot). */
+  fastLabels?: FastBlockLabels;
 }
 
 export interface ExportDocSheet {
@@ -321,7 +321,7 @@ function footnotesFor(input: ExportDocumentInput, grid: ExportGrid): PageFootnot
     input.table.rows,
     new Set(keys.filter((k) => k !== '')),
     input.includeFastNotes !== false,
-    input.fastStartLabel ?? '',
+    input.fastLabels,
   );
 }
 

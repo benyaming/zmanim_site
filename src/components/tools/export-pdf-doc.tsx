@@ -191,7 +191,11 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
     weekly: cfg.weekly,
     hebrewMonths: cfg.hebrewMonths,
     includeFastNotes: cfg.columns.fasts,
-    fastStartLabel: tr('events.fastStart'),
+    fastLabels: {
+      start: tr('events.fastStart'),
+      ends: tr('events.fastEnd'),
+      chatzos: shortName('chatzos'),
+    },
   });
 
   const footer = tr('export.generatedBy', { site: SITE_HOST });

@@ -136,14 +136,19 @@ export function ExportTablePage({
                     {note.text}
                   </span>
                 )}
-                {/* Structured content: label→time pairs set as aligned columns
-                    instead of run-on parenthetical prose. */}
-                {note.entries && note.entries.length > 0 && (
-                  <span className="ms-2.5 inline-flex flex-wrap gap-x-3 gap-y-0.5 align-bottom">
-                    {note.entries.map((entry, j) => (
-                      <span key={j} className="whitespace-nowrap">
-                        {entry.label && <span className="text-neutral-500">{entry.label} </span>}
-                        <span className="tabular-nums">{entry.time}</span>
+                {/* Structured content: headed groups of label→time pairs set as
+                    aligned columns instead of run-on parenthetical prose. */}
+                {note.groups && note.groups.length > 0 && (
+                  <span className="ms-2.5 inline-flex flex-wrap gap-x-4 gap-y-0.5 align-bottom">
+                    {note.groups.map((group, j) => (
+                      <span key={j} className="inline-flex flex-wrap gap-x-2 gap-y-0.5">
+                        {group.heading && <span className="whitespace-nowrap text-neutral-500">{group.heading}</span>}
+                        {group.pairs.map((pair, k) => (
+                          <span key={k} className="whitespace-nowrap">
+                            {pair.label && <span className="text-neutral-500">{pair.label} </span>}
+                            <span className="tabular-nums">{pair.time}</span>
+                          </span>
+                        ))}
                       </span>
                     ))}
                   </span>
@@ -151,8 +156,9 @@ export function ExportTablePage({
               </div>
             ))}
             {notes && (
-              <div className="rounded-sm border border-neutral-200 px-2 py-1 text-[9px] leading-snug text-neutral-500">
-                {notesLabel && <span className="font-semibold">{notesLabel} · </span>}
+              <div className="rounded-sm border border-neutral-300 px-2 py-1 text-[9px] leading-snug text-neutral-800">
+                {notesLabel && <span className="font-semibold">{notesLabel}</span>}
+                {notesLabel ? ' · ' : ''}
                 {notes}
               </div>
             )}
