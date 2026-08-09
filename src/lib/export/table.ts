@@ -7,6 +7,7 @@ import {
   dayEventZmanKeys,
   getDayEvents,
   getDayInfo,
+  isErevPesach,
   localizedHolidayLabel,
 } from '@/lib/calendar';
 import { formatDuration, formatMoladParts, formatTime, formatTimePlain } from '@/lib/format';
@@ -139,11 +140,17 @@ export interface ZmanimTableOptions {
    */
   hiddenFastEnd?: readonly string[];
   /**
-   * Labels a fast-end opinion key ("tzais72" → "Р״Т 72") for the `fastEnds`
-   * pairs. Without it the pairs stay empty and only the single `fastEnd` slot
-   * is filled — the CSV/Excel shape.
+   * Labels an opinion's zman key with its compact shita ("tzais72" → "Р״Т 72")
+   * for the footnote pairs — fast ends and the Erev Pesach chametz deadlines.
+   * Without it those stay empty — the CSV/Excel shape.
    */
-  fastEndLabel?: (opinionKey: string) => string;
+  opinionLabel?: (zmanKey: string) => string;
+}
+
+/** One labelled time in a footer block ("ГР״А 10:03"). */
+export interface OpinionPair {
+  label: string;
+  time: string;
 }
 
 export type ZmanimTableRow = {
@@ -188,10 +195,16 @@ export type ZmanimTableRow = {
   fastEnd: string;
   /**
    * Every VISIBLE fast-end opinion for the day as a labelled pair — what the
-   * PDF's fast footnote prints. Empty unless a `fastEndLabel` was provided;
+   * PDF's fast footnote prints. Empty unless an `opinionLabel` was provided;
    * the single `fastEnd` stays the one answer a spreadsheet cell wants.
    */
-  fastEnds: { label: string; time: string }[];
+  fastEnds: OpinionPair[];
+  /**
+   * The Erev Pesach chametz deadlines (eat by / burn by, per opinion), on that
+   * one day a year — footer-block material, like the fast bookends. Null on
+   * every other day, and always null without an `opinionLabel`.
+   */
+  chametz: { achilas: OpinionPair[]; biur: OpinionPair[] } | null;
   /**
    * The day's chatzot, always computed: the Tisha b'Av footnote prints it (the
    * turn of the day's restrictions) whether or not chatzot was selected.
@@ -243,11 +256,15 @@ export interface PageFootnote {
   groups?: { heading: string; pairs: { label: string; time: string }[] }[];
 }
 
-/** Muted headings for a fast block's groups; all optional (bare pairs otherwise). */
+/** Muted headings for the footnote blocks' groups; all optional (bare pairs otherwise). */
 export interface FastBlockLabels {
   start?: string;
   ends?: string;
   chatzos?: string;
+  /** "Ахилат хамец" — the eat-by deadline heading of the Erev Pesach block. */
+  chametzEat?: string;
+  /** "Биур хамец" — the burn-by deadline heading. */
+  chametzBurn?: string;
 }
 
 /**
@@ -328,6 +345,15 @@ export function pageFootnotes(
       // An end with no start in range — the range itself began mid-fast.
       lines.push({ label: row.holiday, text: '', groups: endsGroup(row) });
     }
+    // The Erev Pesach chametz deadlines — once a year, and exactly the kind of
+    // fact a reader looks for in the footer.
+    if (row.chametz && isoOnPage.has(row.iso)) {
+      const groups = [
+        ...(row.chametz.achilas.length > 0 ? [{ heading: labels.chametzEat ?? '', pairs: row.chametz.achilas }] : []),
+        ...(row.chametz.biur.length > 0 ? [{ heading: labels.chametzBurn ?? '', pairs: row.chametz.biur }] : []),
+      ];
+      if (groups.length > 0) lines.push({ label: row.holiday, text: '', groups });
+    }
     if (row.molad && isoOnPage.has(row.iso)) {
       // The molad sentence arrives as one localized string ("Molad Av: Monday,
       // …"); its lead-up to the first colon is the block's label.
@@ -380,8 +406,14 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
     : ({ day: 'numeric', month: 'short' } as const);
   // Compute only the selected columns plus the keys the day events need — not
   // every opinion — which matters most over a long date range. Chatzot rides
-  // along for the Tisha b'Av footnote.
+  // along for the Tisha b'Av footnote; the chametz deadlines for the Erev
+  // Pesach block, only when a labeller says the footnotes will be printed.
   const computeKeys = new Set([...keys, ...dayEventZmanKeys(havdalahZmanKey(havdalahOpinion)), 'chatzos']);
+  const CHAMETZ_KEYS = {
+    achilas: ['sofZmanAchilasChametzMGA', 'sofZmanAchilasChametzGRA'],
+    biur: ['sofZmanBiurChametzMGA', 'sofZmanBiurChametzGRA'],
+  };
+  if (o.opinionLabel) for (const key of [...CHAMETZ_KEYS.achilas, ...CHAMETZ_KEYS.biur]) computeKeys.add(key);
 
   for (let i = 0; i < days; i++) {
     const date = o.start.startOf('day').plus({ days: i });
@@ -426,11 +458,20 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       const e = events.find((ev) => ev.type === type);
       return e ? clock(e.time, o.locale) : '';
     };
-    const fastEndPairs = o.fastEndLabel
+    const fastEndPairs = o.opinionLabel
       ? fastEnds
           .filter((e) => e.time)
-          .map((e) => ({ label: o.fastEndLabel!(e.zmanKey ?? ''), time: clock(e.time, o.locale) }))
+          .map((e) => ({ label: o.opinionLabel!(e.zmanKey ?? ''), time: clock(e.time, o.locale) }))
       : [];
+    const opinionPairs = (zmanKeys: string[]): OpinionPair[] =>
+      zmanKeys
+        .map((key) => ({ key, zman: byKey.get(key) }))
+        .filter(({ zman }) => zman?.time)
+        .map(({ key, zman }) => ({ label: o.opinionLabel!(key), time: clock(zman!.time, o.locale) }));
+    const chametz =
+      o.opinionLabel && isErevPesach(date)
+        ? { achilas: opinionPairs(CHAMETZ_KEYS.achilas), biur: opinionPairs(CHAMETZ_KEYS.biur) }
+        : null;
 
     // Every learning key present as a column, empty by default; only the
     // requested cycles are filled (the lookup is skipped when none are asked for).
@@ -461,6 +502,7 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       fastStart: eventTime('fastStart'),
       fastEnd: eventTime('fastEnd'),
       fastEnds: fastEndPairs,
+      chametz,
       chatzosTime: byKey.get('chatzos')?.time ? clock(byKey.get('chatzos')!.time, o.locale) : '',
       mevarchim: info.isShabbosMevorchim ? '\u2713' : '',
       mevarchimName: info.isShabbosMevorchim ? (o.mevarchimLabel ?? '') : '',

@@ -98,10 +98,10 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
     learningKeys: cfg.learningKeys,
     plainTimes: true,
     hiddenFastEnd: cfg.hiddenFastEnd,
-    // Compact shita labels in the fast block ("5.95°", "Р״Т 72") — the same
+    // Compact shita labels in the footer blocks ("5.95°", "ГР״А") — the same
     // register as the column sub-headers; the dialog's picker keeps the
     // spelled-out names.
-    fastEndLabel: (key) => tr(`zmanim.shitotShort.${key}`),
+    opinionLabel: (key) => tr(`zmanim.shitotShort.${key}`),
   });
 
   // Compact print headers: the parenthetical qualifier is dropped from the
@@ -202,6 +202,8 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
       start: tr('events.fastStart'),
       ends: tr('events.fastEnd'),
       chatzos: shortName('chatzos'),
+      chametzEat: shortName('sofZmanAchilasChametzGRA'),
+      chametzBurn: shortName('sofZmanBiurChametzGRA'),
     },
   });
 

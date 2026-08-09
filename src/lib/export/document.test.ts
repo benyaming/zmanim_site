@@ -41,7 +41,7 @@ function table(startIso: string, endIso: string, keys: string[], locale = 'en', 
     mevarchimLabel: 'Mevarchim',
     moladLabel: ({ month, weekday, time }) => `Molad ${month}: ${weekday} ${time}`,
     plainTimes: true,
-    fastEndLabel: (key) => `op:${key}`,
+    opinionLabel: (key) => `op:${key}`,
   });
 }
 
@@ -230,6 +230,24 @@ describe('buildExportDocument — learning overflow', () => {
 });
 
 describe('buildExportDocument — footnotes', () => {
+  it('rides the chametz deadlines on the Erev Pesach sheet', () => {
+    // Pesach 5786: Erev Pesach falls in early April 2026.
+    const t = table('2026-03-20', '2026-04-10', DEFAULT_SELECTION);
+    const sheets = buildExportDocument(
+      input(t, 'en', { fastLabels: { chametzEat: 'eat by', chametzBurn: 'burn by' } }),
+      m,
+    );
+    const chametz = sheets
+      .flatMap((s) => s.footnotes)
+      .find((note) => note.groups?.some((g) => g.heading === 'eat by'));
+    expect(chametz).toBeDefined();
+    expect(chametz!.groups!.map((g) => g.heading)).toEqual(['eat by', 'burn by']);
+    for (const group of chametz!.groups!) {
+      expect(group.pairs.length).toBeGreaterThan(0);
+      expect(group.pairs.every((pair) => pair.label.startsWith('op:sofZman'))).toBe(true);
+    }
+  });
+
   // July 2026: 17 Tammuz falls on Thursday July 2 — a fast day with both bookends.
   const t = table('2026-07-01', '2026-07-31', DEFAULT_SELECTION);
 
