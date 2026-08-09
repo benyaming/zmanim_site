@@ -234,13 +234,17 @@ describe('buildExportDocument — footnotes', () => {
   const t = table('2026-07-01', '2026-07-31', DEFAULT_SELECTION);
 
   it('rides fast times and the molad in the sheet footnotes, ends labelled per visible opinion', () => {
-    const sheets = buildExportDocument(input(t, 'en'), m);
+    const sheets = buildExportDocument(input(t, 'en', { fastStartLabel: 'starts' }), m);
     expect(sheets).toHaveLength(1);
-    const fast = sheets[0].footnotes.find((note) => /–/.test(note.text));
+    const fast = sheets[0].footnotes.find((note) => (note.entries?.length ?? 0) > 0);
     expect(fast).toBeDefined();
     expect(fast!.label).not.toBe('');
-    expect(fast!.text).toMatch(/\(op:[a-zA-Z0-9]+\)/);
-    expect(sheets[0].footnotes.some((note) => note.label.startsWith('Molad'))).toBe(true);
+    expect(fast!.entries![0].label).toBe('starts');
+    expect(fast!.entries!.slice(1).every((entry) => entry.label.startsWith('op:'))).toBe(true);
+    // Shabbat Mevarchim rides the molad block, not the events column.
+    const molad = sheets[0].footnotes.find((note) => note.label.startsWith('Molad'));
+    expect(molad).toBeDefined();
+    expect(molad!.text).toContain('Mevarchim —');
   });
 
   it('prints fast footnotes even with every column unchecked, skipping fastless months', () => {
@@ -248,7 +252,7 @@ describe('buildExportDocument — footnotes', () => {
     const sheets = buildExportDocument(input(bare, 'en', { dayColumns: [] }), m);
     expect(sheets).toHaveLength(1);
     expect(sheets[0].grid.headers).toHaveLength(0);
-    expect(sheets[0].footnotes.some((note) => /–/.test(note.text))).toBe(true);
+    expect(sheets[0].footnotes.some((note) => (note.entries?.length ?? 0) > 0)).toBe(true);
   });
 
   it('gives a weekly fasts-only selection its sheets: day headers over the fast blocks', () => {
@@ -260,7 +264,7 @@ describe('buildExportDocument — footnotes', () => {
     expect(sheets[0].kind).toBe('week');
     expect(sheets[0].startIso).toBe('2026-07-01');
     expect(sheets[0].grid.rows).toHaveLength(0);
-    expect(sheets[0].footnotes.some((note) => /–/.test(note.text))).toBe(true);
+    expect(sheets[0].footnotes.some((note) => (note.entries?.length ?? 0) > 0)).toBe(true);
   });
 
   it('prints a fasts-only selection: dates alone under the fast footnotes', () => {
@@ -270,7 +274,7 @@ describe('buildExportDocument — footnotes', () => {
     const sheets = buildExportDocument(input(bare, 'en', { dayColumns: dayColumns().slice(0, 1) }), m);
     expect(sheets).toHaveLength(1);
     expect(sheets[0].kind).toBe('times');
-    expect(sheets[0].footnotes.some((note) => /–/.test(note.text))).toBe(true);
+    expect(sheets[0].footnotes.some((note) => (note.entries?.length ?? 0) > 0)).toBe(true);
     // But a learning-only export still gets no bare list of dates.
     const learningOnly = table('2026-07-01', '2026-07-31', [], 'en', true);
     const learningSheets = buildExportDocument(
@@ -282,7 +286,7 @@ describe('buildExportDocument — footnotes', () => {
 
   it('suppresses the fast lines when the fast toggle is off, keeping the molad', () => {
     const sheets = buildExportDocument(input(t, 'en', { includeFastNotes: false }), m);
-    expect(sheets[0].footnotes.some((note) => /–/.test(note.text))).toBe(false);
+    expect(sheets[0].footnotes.some((note) => (note.entries?.length ?? 0) > 0)).toBe(false);
     expect(sheets[0].footnotes.some((note) => note.label.startsWith('Molad'))).toBe(true);
   });
 });

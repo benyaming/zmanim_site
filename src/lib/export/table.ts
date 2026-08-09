@@ -139,9 +139,9 @@ export interface ZmanimTableOptions {
    */
   hiddenFastEnd?: readonly string[];
   /**
-   * Labels a fast-end opinion key ("tzais72" → "Rabbeinu Tam · 72 min") for
-   * `fastEndDetail`. Without it the detail stays empty and only the single
-   * `fastEnd` slot is filled — the CSV/Excel shape.
+   * Labels a fast-end opinion key ("tzais72" → "Р״Т 72") for the `fastEnds`
+   * pairs. Without it the pairs stay empty and only the single `fastEnd` slot
+   * is filled — the CSV/Excel shape.
    */
   fastEndLabel?: (opinionKey: string) => string;
 }
@@ -187,12 +187,11 @@ export type ZmanimTableRow = {
   fastStart: string;
   fastEnd: string;
   /**
-   * Every VISIBLE fast-end opinion for the day, formatted "time (opinion)" and
-   * joined with " · " — what the PDF's fast footnote prints. Empty unless a
-   * `fastEndLabel` was provided; the single `fastEnd` stays the one answer a
-   * spreadsheet cell wants.
+   * Every VISIBLE fast-end opinion for the day as a labelled pair — what the
+   * PDF's fast footnote prints. Empty unless a `fastEndLabel` was provided;
+   * the single `fastEnd` stays the one answer a spreadsheet cell wants.
    */
-  fastEndDetail: string;
+  fastEnds: { label: string; time: string }[];
   /** "✓" on Shabbat Mevarchim, else empty. Kept tick-shaped for CSV/Excel. */
   mevarchim: string;
   /**
@@ -226,10 +225,17 @@ export function orderedZmanKeys(keys: string[]): string[] {
   return ZMANIM.filter((z) => wanted.has(z.key)).map((z) => z.key);
 }
 
-/** One footer block: a bold lead label (the fast's name, "Molad Av") and its text. */
+/** One footer block: a bold lead label (the fast's name, "Molad Av") and its content. */
 export interface PageFootnote {
   label: string;
+  /** Prose content (the molad sentence). Empty when `entries` carry the content. */
   text: string;
+  /**
+   * Structured content: label→time pairs the renderer sets as aligned columns
+   * ("начало 5:09 · 5.95° 19:11 · 8.5° 19:24") instead of run-on prose — a
+   * fast's start and its per-opinion ends.
+   */
+  entries?: { label: string; time: string }[];
 }
 
 /**
@@ -243,6 +249,8 @@ export function pageFootnotes(
   rows: ZmanimTableRow[],
   isoOnPage: ReadonlySet<string>,
   includeFasts = true,
+  /** Muted label for the fast's start pair ("начало"). */
+  fastStartLabel = '',
 ): PageFootnote[] {
   const lines: PageFootnote[] = [];
   // A fast that begins the previous evening (Tisha b'Av, Yom Kippur) reports
@@ -260,9 +268,22 @@ export function pageFootnotes(
     if (tail && tail !== row) pairedTail.add(i + 1);
   }
 
-  // The end side prefers the labelled multi-opinion detail when the table
-  // carries one — the printed luach answers with every opinion the user shows.
-  const endText = (r: ZmanimTableRow) => r.fastEndDetail || r.fastEnd;
+  // The end side prefers the labelled multi-opinion pairs when the table
+  // carries them — the printed luach answers with every opinion the user
+  // shows. A plain single end (no labeller) becomes one unlabelled pair.
+  const endPairs = (r: ZmanimTableRow) =>
+    r.fastEnds.length > 0 ? r.fastEnds : r.fastEnd ? [{ label: '', time: r.fastEnd }] : [];
+
+  // Shabbat Mevarchim rides its molad's block ("… · Shabbat Mevarchim — 8 Aug")
+  // rather than the events column: it exists to announce the molad, so they
+  // read as one fact. Collected first so the annotation lands on the block
+  // whether the page shows the Shabbat, the Rosh Chodesh, or both.
+  const mevarchimByMolad = new Map<string, string>();
+  for (const row of rows) {
+    if (row.molad && row.mevarchim && row.mevarchimName && isoOnPage.has(row.iso)) {
+      mevarchimByMolad.set(row.molad, `${row.mevarchimName} — ${row.dayWithMonth}`);
+    }
+  }
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -272,18 +293,23 @@ export function pageFootnotes(
       const next = rows[i + 1];
       const tail = row.fastEnd ? row : next && next.fastEnd && !next.fastStart ? next : undefined;
       if (isoOnPage.has(row.iso) || (tail && isoOnPage.has(tail.iso))) {
-        const span = [row.fastStart, tail && endText(tail)].filter(Boolean).join(' – ');
-        lines.push({ label: row.holiday || tail?.holiday || '', text: span });
+        lines.push({
+          label: row.holiday || tail?.holiday || '',
+          text: '',
+          entries: [{ label: fastStartLabel, time: row.fastStart }, ...(tail ? endPairs(tail) : [])],
+        });
       }
     } else if (row.fastEnd && !pairedTail.has(i) && isoOnPage.has(row.iso)) {
       // An end with no start in range — the range itself began mid-fast.
-      lines.push({ label: row.holiday, text: endText(row) });
+      lines.push({ label: row.holiday, text: '', entries: endPairs(row) });
     }
     if (row.molad && isoOnPage.has(row.iso)) {
       // The molad sentence arrives as one localized string ("Molad Av: Monday,
       // …"); its lead-up to the first colon is the block's label.
       const at = row.molad.indexOf(': ');
-      lines.push(at > 0 ? { label: row.molad.slice(0, at), text: row.molad.slice(at + 2) } : { label: '', text: row.molad });
+      const extra = mevarchimByMolad.get(row.molad);
+      const text = (at > 0 ? row.molad.slice(at + 2) : row.molad) + (extra ? ` · ${extra}` : '');
+      lines.push({ label: at > 0 ? row.molad.slice(0, at) : '', text });
     }
   }
   // One molad is announced on BOTH Shabbat Mevarchim and Rosh Chodesh, so the
@@ -291,7 +317,7 @@ export function pageFootnotes(
   // one month differ in text and are kept.
   const seen = new Set<string>();
   return lines.filter((line) => {
-    const key = `${line.label}\u0000${line.text}`;
+    const key = JSON.stringify([line.label, line.text, line.entries ?? []]);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -374,12 +400,11 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       const e = events.find((ev) => ev.type === type);
       return e ? clock(e.time, o.locale) : '';
     };
-    const fastEndDetail = o.fastEndLabel
+    const fastEndPairs = o.fastEndLabel
       ? fastEnds
           .filter((e) => e.time)
-          .map((e) => `${clock(e.time, o.locale)} (${o.fastEndLabel!(e.zmanKey ?? '')})`)
-          .join(' · ')
-      : '';
+          .map((e) => ({ label: o.fastEndLabel!(e.zmanKey ?? ''), time: clock(e.time, o.locale) }))
+      : [];
 
     // Every learning key present as a column, empty by default; only the
     // requested cycles are filled (the lookup is skipped when none are asked for).
@@ -409,7 +434,7 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
       havdalah: eventTime('havdalah'),
       fastStart: eventTime('fastStart'),
       fastEnd: eventTime('fastEnd'),
-      fastEndDetail,
+      fastEnds: fastEndPairs,
       mevarchim: info.isShabbosMevorchim ? '\u2713' : '',
       mevarchimName: info.isShabbosMevorchim ? (o.mevarchimLabel ?? '') : '',
       molad:

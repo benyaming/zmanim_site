@@ -91,7 +91,10 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
     learningKeys: cfg.learningKeys,
     plainTimes: true,
     hiddenFastEnd: cfg.hiddenFastEnd,
-    fastEndLabel: (key) => tr(`events.fastEndOpinions.${key}`),
+    // Compact shita labels in the fast block ("5.95°", "Р״Т 72") — the same
+    // register as the column sub-headers; the dialog's picker keeps the
+    // spelled-out names.
+    fastEndLabel: (key) => tr(`zmanim.shitotShort.${key}`),
   });
 
   // Compact print headers: the parenthetical qualifier is dropped from the
@@ -136,10 +139,11 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
     : cfg.columns.hebrewDate
       ? ('hebrewDate' as const)
       : null;
+  // Mevarchim is deliberately NOT an events field: it announces the molad, so
+  // it rides the molad footer block instead of spending column width.
   const eventFields = [
     ...(cfg.columns.holiday ? (['holiday'] as const) : []),
     ...(cfg.columns.parsha ? (['parsha'] as const) : []),
-    ...(cfg.columns.mevarchim ? (['mevarchimName'] as const) : []),
   ];
   const dayOnlyWeekday = dayFields.length === 1 && dayFields[0] === 'weekday';
   const dayColumns: ExportColumn[] = [
@@ -187,6 +191,7 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
     weekly: cfg.weekly,
     hebrewMonths: cfg.hebrewMonths,
     includeFastNotes: cfg.columns.fasts,
+    fastStartLabel: tr('events.fastStart'),
   });
 
   const footer = tr('export.generatedBy', { site: SITE_HOST });

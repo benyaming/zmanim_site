@@ -68,6 +68,8 @@ export interface ExportDocumentInput {
   hebrewMonths?: boolean;
   /** Include fast start/end footnotes (the "fast times" toggle). Default true. */
   includeFastNotes?: boolean;
+  /** Muted label for a fast block's start pair ("начало"). */
+  fastStartLabel?: string;
 }
 
 export interface ExportDocSheet {
@@ -313,9 +315,14 @@ function splitRowsByHeight(lines: number[], fontPx: number, budget: number, brea
 }
 
 /** Footnotes for the days a grid covers (columns on a weekly sheet, rows otherwise). */
-function footnotesFor(table: ZmanimTable, grid: ExportGrid, includeFasts: boolean): PageFootnote[] {
+function footnotesFor(input: ExportDocumentInput, grid: ExportGrid): PageFootnote[] {
   const keys = grid.columnKeys ?? grid.rowKeys;
-  return pageFootnotes(table.rows, new Set(keys.filter((k) => k !== '')), includeFasts);
+  return pageFootnotes(
+    input.table.rows,
+    new Set(keys.filter((k) => k !== '')),
+    input.includeFastNotes !== false,
+    input.fastStartLabel ?? '',
+  );
 }
 
 /**
@@ -330,12 +337,10 @@ function monthSheets(
   monthGrid: ExportGrid,
   m: TextMeasurer,
 ): ExportDocSheet[] {
-  const { table } = input;
-  const includeFasts = input.includeFastNotes !== false;
   const trimmed = dropEmptyColumns(monthGrid);
   const fitted: ExportGrid = { ...trimmed, weights: fitColumnWeights(trimmed, m) };
   const widthFont = fitFontSize(fitted.weights, m);
-  const monthNotes = kind === 'times' ? footnotesFor(table, fitted, includeFasts) : [];
+  const monthNotes = kind === 'times' ? footnotesFor(input, fitted) : [];
   const { fontPx, lines } = fitSheetFont(fitted, widthFont, footnoteBandPx(monthNotes.length), m);
   const budget = sheetBodyHeight(fontPx, fitted, m) - footnoteBandPx(monthNotes.length);
 
@@ -347,7 +352,7 @@ function monthSheets(
   return slices.map((s) => {
     const grid = sliceRows(fitted, s.start, s.end);
     const sliceLines = lines.slice(s.start, s.end);
-    const footnotes = kind === 'times' ? footnotesFor(table, grid, includeFasts) : [];
+    const footnotes = kind === 'times' ? footnotesFor(input, grid) : [];
     // A single-slice month may flow into halves; `budget` already accounts for
     // this sheet's footnotes (they equal the month's when nothing was split).
     const flow = slices.length === 1 ? flowSparseSheet(grid, fontPx, budget, m) : null;
@@ -445,7 +450,7 @@ function weeklySheets(input: ExportDocumentInput, m: TextMeasurer): ExportDocShe
     const trimmed = dropEmptyFieldRows(turned);
     // A week with no field rows still earns a sheet when its footnotes carry
     // content (a fasts-only selection): the day headers over the fast blocks.
-    const footnotes = footnotesFor(table, turned, input.includeFastNotes !== false);
+    const footnotes = footnotesFor(input, turned);
     if (trimmed.rows.length === 0 && footnotes.length === 0) continue;
 
     // Uniform day columns: each day's width is the widest day's demand, so the

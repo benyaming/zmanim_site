@@ -129,8 +129,25 @@ export function ExportTablePage({
           >
             {sheet.footnotes.map((note, i) => (
               <div key={i} className="rounded-sm border border-neutral-300 px-2 py-1 text-[9px] leading-snug text-neutral-800">
-                {note.label && <span className="font-semibold">{note.label} · </span>}
-                {note.text}
+                {note.label && <span className="font-semibold">{note.label}</span>}
+                {note.text && (
+                  <span>
+                    {note.label ? ' · ' : ''}
+                    {note.text}
+                  </span>
+                )}
+                {/* Structured content: label→time pairs set as aligned columns
+                    instead of run-on parenthetical prose. */}
+                {note.entries && note.entries.length > 0 && (
+                  <span className="ms-2.5 inline-flex flex-wrap gap-x-3 gap-y-0.5 align-bottom">
+                    {note.entries.map((entry, j) => (
+                      <span key={j} className="whitespace-nowrap">
+                        {entry.label && <span className="text-neutral-500">{entry.label} </span>}
+                        <span className="tabular-nums">{entry.time}</span>
+                      </span>
+                    ))}
+                  </span>
+                )}
               </div>
             ))}
             {notes && (
