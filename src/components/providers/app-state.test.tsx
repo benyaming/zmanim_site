@@ -103,6 +103,33 @@ describe('deep-link location persistence', () => {
     expect(persisted()?.location).toMatchObject({ lat: 31.7683, lng: 35.2137 });
   });
 
+  it('keeps the botLocations array identity when a re-fetched list is unchanged', () => {
+    // The identity matters: a fresh array for the same list re-rendered the
+    // provider, which re-fired WebBotProfile's pull effect, which fetched and
+    // applied the profile again — a /me fetch loop at network speed.
+    render(
+      <AppStateProvider>
+        <Probe />
+      </AppStateProvider>,
+    );
+    const entry = () => [
+      { id: 'bot:32.08,34.78', name: 'Дом', location: makeLocation(32.08, 34.78, 'Дом') },
+    ];
+    act(() => {
+      state.applyBotProfile({ botLocations: entry() });
+    });
+    const first = state.botLocations;
+    act(() => {
+      state.applyBotProfile({ botLocations: entry() });
+    });
+    expect(state.botLocations).toBe(first); // same content → same array, no re-render fuel
+
+    act(() => {
+      state.applyBotProfile({ botLocations: [{ ...entry()[0], name: 'Работа' }] });
+    });
+    expect(state.botLocations).not.toBe(first); // a real change still lands
+  });
+
   it('without a deep link the saved location loads and persists as before', () => {
     window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify({ location: STORED_LOCATION }));
 
