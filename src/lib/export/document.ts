@@ -553,9 +553,13 @@ export function buildExportDocument(input: ExportDocumentInput, m: TextMeasurer 
   // learning strictly excluded. Column parts are computed once over the whole
   // table so every month splits alike. A grid whose only columns IDENTIFY the
   // rows carries no data — a learning-only export gets no bare list of dates
-  // masquerading as a times sheet.
+  // masquerading as a times sheet. EXCEPT a fasts-only selection: fast
+  // footnotes are real content, and they need a sheet of dates to ride under.
   const hasTimes =
-    input.dayColumns.some((c) => c.identity !== true) || input.zmanHeaders.length > 0 || inlineLearning.length > 0;
+    input.dayColumns.some((c) => c.identity !== true) ||
+    input.zmanHeaders.length > 0 ||
+    inlineLearning.length > 0 ||
+    (input.includeFastNotes !== false && input.dayColumns.length > 0 && input.learningColumns.length === 0);
   const timesGrid = hasTimes
     ? { ...buildExportGrid(table, input.dayColumns, input.zmanHeaders, inlineLearning), wrapTextColumns: true }
     : null;

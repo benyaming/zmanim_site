@@ -243,6 +243,23 @@ describe('buildExportDocument — footnotes', () => {
     expect(sheets[0].footnotes.some((note) => note.label.startsWith('Molad'))).toBe(true);
   });
 
+  it('prints a fasts-only selection: dates alone under the fast footnotes', () => {
+    // No zmanim, no learning, no data columns — just the identity column and
+    // the fast toggle. The footnotes are the content, so a sheet still prints.
+    const bare = table('2026-07-01', '2026-07-31', []);
+    const sheets = buildExportDocument(input(bare, 'en', { dayColumns: dayColumns().slice(0, 1) }), m);
+    expect(sheets).toHaveLength(1);
+    expect(sheets[0].kind).toBe('times');
+    expect(sheets[0].footnotes.some((note) => /–/.test(note.text))).toBe(true);
+    // But a learning-only export still gets no bare list of dates.
+    const learningOnly = table('2026-07-01', '2026-07-31', [], 'en', true);
+    const learningSheets = buildExportDocument(
+      input(learningOnly, 'en', { dayColumns: dayColumns().slice(0, 1), learningColumns: learningColumns('en') }),
+      m,
+    );
+    expect(learningSheets.every((s) => s.kind === 'learning')).toBe(true);
+  });
+
   it('suppresses the fast lines when the fast toggle is off, keeping the molad', () => {
     const sheets = buildExportDocument(input(t, 'en', { includeFastNotes: false }), m);
     expect(sheets[0].footnotes.some((note) => /–/.test(note.text))).toBe(false);

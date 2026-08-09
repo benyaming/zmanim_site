@@ -165,6 +165,7 @@ export function ExportZmanimTool() {
     includeHoliday ||
     includeParsha ||
     includeCandles ||
+    includeFasts ||
     includeMevarchim ||
     includeOmer;
   const hasContent = anyColumn || selectedKeys.size > 0 || learningKeys.length > 0;
