@@ -494,13 +494,38 @@ export async function reconcileTargets(
     if (!allowApply) return { outcome: 'clean', appliedLanguage: null, conflicts };
     // Breadcrumb for chasing a reload in the field (an adopt is what reloads
     // the page — see settings-sync.tsx): readable from a webview console after
-    // the fact, no debug flag to pre-arm. Adopting everything on every open
-    // points at storage that didn't persist; one recurring section points at
-    // whatever rewrites it at mount.
+    // the fact, no debug flag to pre-arm. Beyond the section names it records,
+    // per adopted section, which store the winning copy came from, both sides'
+    // stamps, and the first differing bytes of the two fingerprints — enough
+    // to name the exact field that diverged without reproducing the race.
     try {
+      const fpOf = (name: SectionName, blob: SettingsBlob) => sectionFingerprint(name, blob.sections[name].data);
+      const detail = Object.fromEntries(
+        adopt.map((name) => {
+          const localFp = fpOf(name, local);
+          const winnerFp = fpOf(name, merged);
+          const source =
+            readable.find(({ blob }) => blob !== null && fpOf(name, blob) === winnerFp)?.target.id ?? 'local';
+          let i = 0;
+          while (i < Math.min(localFp.length, winnerFp.length) && localFp[i] === winnerFp[i]) i++;
+          return [
+            name,
+            {
+              source,
+              localT: local.sections[name].t,
+              winnerT: merged.sections[name].t,
+              localLen: localFp.length,
+              winnerLen: winnerFp.length,
+              diffAt: i,
+              local: localFp.slice(Math.max(0, i - 30), i + 50),
+              winner: winnerFp.slice(Math.max(0, i - 30), i + 50),
+            },
+          ];
+        }),
+      );
       window.localStorage.setItem(
         'zmanim:sync-last-adopt:v1',
-        JSON.stringify({ at: new Date().toISOString(), adopt }),
+        JSON.stringify({ at: new Date().toISOString(), adopt, detail }),
       );
     } catch {
       // Diagnostics only.

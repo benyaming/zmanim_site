@@ -337,6 +337,27 @@ describe('reconcileTargets', () => {
     });
   });
 
+  it('records a forensic breadcrumb naming the winning store and the first differing bytes', async () => {
+    document.documentElement.lang = '';
+    window.localStorage.setItem(THEME_STORAGE_KEY, 'light');
+    stampSection('theme', '2026-08-01T00:00:00.000Z');
+    const { target } = memoryTarget(blob({ theme: { data: 'dark', t: '2026-08-02T00:00:00.000Z' } }));
+
+    await reconcileTargets([target]);
+
+    const crumb = JSON.parse(window.localStorage.getItem('zmanim:sync-last-adopt:v1')!) as {
+      adopt: string[];
+      detail: Record<string, { source: string; localT: string; winnerT: string; diffAt: number; local: string; winner: string }>;
+    };
+    expect(crumb.adopt).toEqual(['theme']);
+    expect(crumb.detail.theme.source).toBe('telegram-bot');
+    expect(crumb.detail.theme.localT).toBe('2026-08-01T00:00:00.000Z');
+    expect(crumb.detail.theme.winnerT).toBe('2026-08-02T00:00:00.000Z');
+    // The excerpts show the actual divergence, so the field is nameable after the fact.
+    expect(crumb.detail.theme.local).toContain('light');
+    expect(crumb.detail.theme.winner).toContain('dark');
+  });
+
   it('reports the adopted language so the caller can switch locale', async () => {
     document.documentElement.lang = 'en';
     stampSection('language', '2026-07-20T09:00:00.000Z');
