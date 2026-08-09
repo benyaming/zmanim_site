@@ -7,7 +7,7 @@ import { DEFAULT_LOCATION } from '@/lib/location';
 import { computeZmanim } from '@/lib/zmanim';
 
 import { exportGridToCsv } from './csv';
-import { buildExportGrid, paginateExportGrid, transposeExportGrid } from './grid';
+import { buildExportGrid, transposeExportGrid } from './grid';
 import { buildZmanimTable, orderedZmanKeys, tableDayCount } from './table';
 
 const BASE_OPTS = {
@@ -229,10 +229,54 @@ describe('exportGridToCsv', () => {
 
   it('quotes cells that contain a comma or quote', () => {
     const quoted = exportGridToCsv(
-      { headers: ['a,b', 'c"d'], weights: [1, 1], text: [false, false], sticky: [false, false], rows: [] },
+      {
+        headers: ['a,b', 'c"d'],
+        groupLabels: ['a,b', 'c"d'],
+        subHeaders: ['', ''],
+        groupKeys: [null, null],
+        weights: [1, 1],
+        maxWeights: [0, 0],
+        text: [false, false],
+        emphasis: [false, false],
+        rows: [],
+        weekStarts: [],
+        rowKeys: [],
+      },
       'plain',
     );
     expect(quoted.split('\r\n')[0]).toBe('"a,b","c""d"');
+  });
+
+  it('flattens a zman column’s two header tiers back to "name · shita"', () => {
+    const flat = exportGridToCsv(
+      buildExportGrid(table, [{ key: 'dateLabel', header: 'Date' }], [
+        { label: 'Alot ha-Shachar', sub: '90 min', group: 'alot' },
+        { label: 'Alot ha-Shachar', sub: '72 min', group: 'alot' },
+      ]),
+      'f',
+    );
+    expect(flat.split('\r\n')[0]).toBe('Date,Alot ha-Shachar · 90 min,Alot ha-Shachar · 72 min');
+  });
+
+  it('fills a merged events column from only the enabled fields', () => {
+    // 2026-01-10 is Shabbat Parashat Shemos — it has a parsha but no holiday.
+    const shabbat = buildZmanimTable({
+      ...BASE_OPTS,
+      start: DateTime.fromISO('2026-01-10'),
+      end: DateTime.fromISO('2026-01-10'),
+      keys: ['sunrise'],
+    });
+    const events = (fields: ('holiday' | 'parsha')[]) =>
+      buildExportGrid(shabbat, [{ key: 'events', header: 'Events', fields }], []).rows[0][0];
+    expect(shabbat.rows[0].parsha).not.toBe('');
+    expect(events(['holiday', 'parsha'])).toBe(shabbat.rows[0].parsha);
+    expect(events(['parsha'])).toBe(shabbat.rows[0].parsha);
+    expect(events(['holiday'])).toBe(''); // dropped — an empty field contributes nothing
+  });
+
+  it('joins a merged column’s non-empty fields with a separator', () => {
+    const merged = buildExportGrid(table, [{ key: 'events', header: 'Day', fields: ['weekday', 'hebrewDate'] }], []);
+    expect(merged.rows[0][0]).toBe(`${table.rows[0].weekday} · ${table.rows[0].hebrewDate}`);
   });
 
   it('transposes fields to rows and days to columns', () => {
@@ -250,38 +294,3 @@ describe('exportGridToCsv', () => {
   });
 });
 
-describe('paginateExportGrid column pagination', () => {
-  const table = buildZmanimTable({
-    ...BASE_OPTS,
-    start: DateTime.fromISO('2026-01-04'),
-    end: DateTime.fromISO('2026-01-05'),
-    keys: ['sunrise', 'sunset'],
-  });
-
-  it('keeps a modest table on a single column-page', () => {
-    const grid = buildExportGrid(table, [{ key: 'dateLabel', header: 'Date' }], ['Sunrise', 'Sunset']);
-    const pages = paginateExportGrid(grid, false);
-    expect(pages).toHaveLength(1);
-    expect(pages[0].headers).toEqual(['Date', 'Sunrise', 'Sunset']);
-  });
-
-  it('splits many columns across pages and repeats the identity columns on each', () => {
-    const many = Array.from({ length: 40 }, (_, i) => `Z${i}`);
-    const grid = buildExportGrid(
-      table,
-      [
-        { key: 'dateLabel', header: 'Date' },
-        { key: 'holiday', header: 'Holiday' },
-      ],
-      many,
-    );
-    const pages = paginateExportGrid(grid, false);
-    expect(pages.length).toBeGreaterThan(1);
-    // Identity columns lead every page.
-    for (const p of pages) expect(p.headers.slice(0, 2)).toEqual(['Date', 'Holiday']);
-    // The data columns are partitioned across pages — all present, none duplicated.
-    const dataHeaders = pages.flatMap((p) => p.headers.slice(2));
-    expect(dataHeaders).toHaveLength(40);
-    expect(new Set(dataHeaders).size).toBe(40);
-  });
-});

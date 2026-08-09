@@ -78,8 +78,20 @@ export function ZmanBaseControl({
     const id = `${idPrefix}-${key}`;
     const disabled = capReached && !isSelected(key);
     return (
-      <label htmlFor={id} className={cn('flex items-center gap-2', disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer')}>
-        <Checkbox id={id} checked={isSelected(key)} disabled={disabled} onCheckedChange={(v) => setSelected(key, v === true)} />
+      // items-start, not items-center: a name that wraps to two or three lines
+      // ("Shaah Zmanis (astronomical hour)") would otherwise float the box down
+      // to the middle of the block. The offset centres it on the FIRST line.
+      <label
+        htmlFor={id}
+        className={cn('flex items-start gap-2', disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer')}
+      >
+        <Checkbox
+          id={id}
+          className="mt-0.5 shrink-0"
+          checked={isSelected(key)}
+          disabled={disabled}
+          onCheckedChange={(v) => setSelected(key, v === true)}
+        />
         <span className="text-sm">{name}</span>
       </label>
     );
@@ -89,9 +101,10 @@ export function ZmanBaseControl({
   const panelId = `${idPrefix}-base-panel-${base}`;
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <Checkbox
           id={`${idPrefix}-base-${base}`}
+          className="mt-0.5 shrink-0"
           aria-label={name}
           checked={selectedCount === keys.length ? true : selectedCount === 0 ? false : 'indeterminate'}
           // At the cap, "select all" would overshoot — disable it (clearing stays allowed).
@@ -108,10 +121,15 @@ export function ZmanBaseControl({
           aria-expanded={open}
           aria-controls={panelId}
           onClick={onToggleOpen}
-          className="flex flex-1 items-center justify-between gap-2 text-start"
+          className="flex min-w-0 flex-1 items-start justify-between gap-2 text-start"
         >
-          <span className="text-sm">{name}</span>
-          <span className="flex items-center gap-1.5">
+          {/* break-words: a single long term ("Мишеякир") would otherwise
+              overflow its box in a narrow column and run under the count. */}
+          <span className="min-w-0 text-sm break-words">{name}</span>
+          {/* shrink-0, or a long wrapping name squeezes the count and pushes the
+              chevron past the panel's edge, where it gets clipped. Pinned to the
+              first line so it reads as part of the name, not of its last line. */}
+          <span className="flex shrink-0 items-center gap-1.5 pt-px">
             <span className="text-muted-foreground text-xs tabular-nums">
               {selectedCount}/{keys.length}
             </span>
@@ -131,9 +149,15 @@ export function ZmanBaseControl({
               <label
                 key={key}
                 htmlFor={id}
-                className={cn('flex items-center gap-2', disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer')}
+                className={cn('flex items-start gap-2', disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer')}
               >
-                <Checkbox id={id} checked={isSelected(key)} disabled={disabled} onCheckedChange={(v) => setSelected(key, v === true)} />
+                <Checkbox
+                  id={id}
+                  className="shrink-0"
+                  checked={isSelected(key)}
+                  disabled={disabled}
+                  onCheckedChange={(v) => setSelected(key, v === true)}
+                />
                 <span className="text-muted-foreground text-xs">{shitaLabel(key)}</span>
               </label>
             );

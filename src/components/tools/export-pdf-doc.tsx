@@ -1,0 +1,271 @@
+'use client';
+
+import { DateTime } from 'luxon';
+import type { ReactNode } from 'react';
+
+import { dirForLocale } from '@/i18n/routing';
+import {
+  alternateMonthsTitle,
+  buildExportDocument,
+  buildZmanimTable,
+  type ExportColumn,
+  type ExportDocSheet,
+  type ExportHeader,
+  monthTitle,
+  type PageFootnote,
+} from '@/lib/export';
+import type { LearningCycleKey } from '@/lib/learning';
+import type { AppLocation } from '@/lib/location';
+import { SITE_HOST } from '@/lib/site';
+import { type HavdalahOpinion, havdalahZmanKey, ZMANIM } from '@/lib/zmanim';
+
+import { reportTranslator } from './export-i18n';
+import { ExportTablePage } from './export-table-page';
+
+/** Bases with several shitot get a spanning name + per-opinion sub-label. */
+const BASE_KEY_COUNT = new Map<string, number>();
+for (const z of ZMANIM) BASE_KEY_COUNT.set(z.base, (BASE_KEY_COUNT.get(z.base) ?? 0) + 1);
+
+export interface PdfColumnFlags {
+  date: boolean;
+  weekday: boolean;
+  hebrewDate: boolean;
+  holiday: boolean;
+  parsha: boolean;
+  candles: boolean;
+  fasts: boolean;
+  mevarchim: boolean;
+  omer: boolean;
+}
+
+/** Everything the PDF document depends on — one plain object, so the live preview can rebuild from it. */
+export interface PdfDocConfig {
+  startIso: string;
+  endIso: string;
+  /** Selected zman keys (any order). */
+  keys: string[];
+  learningKeys: LearningCycleKey[];
+  columns: PdfColumnFlags;
+  /** Weekly layout (one calendar week per sheet) instead of month sheets. */
+  weekly: boolean;
+  /** Page by Hebrew month (a sheet per Elul) instead of civil month. */
+  hebrewMonths: boolean;
+  location: AppLocation;
+  locationLabel: string;
+  candleLightingOffset: number;
+  havdalahOpinion: HavdalahOpinion;
+  /** The user's hidden fast-end opinions, so the fast footnote answers with the ones they show. */
+  hiddenFastEnd: string[];
+  useElevation: boolean;
+  lehumra: boolean;
+  reportLocale: string;
+}
+
+/**
+ * Build the whole PDF document as rendered pages: the zmanim table with
+ * plain print-style times ("4:53", no AM/PM — column context disambiguates,
+ * as on every printed luach), the fitted sheets, and one ExportTablePage per
+ * sheet. Shared verbatim by the download path and the dialog preview, so the
+ * preview IS the export.
+ */
+export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sheets: ExportDocSheet[] } {
+  const tr = reportTranslator(cfg.reportLocale);
+  const dir = dirForLocale(cfg.reportLocale) === 'rtl' ? 'rtl' : 'ltr';
+  let start = DateTime.fromISO(cfg.startIso);
+  let end = DateTime.fromISO(cfg.endIso);
+  if (cfg.weekly) {
+    // Weekly sheets carry whole Sunday–Saturday weeks: a month starting on
+    // Shabbat would otherwise open with a one-day sheet, so the edges are
+    // padded with the neighbouring months' days. (Luxon weekday: Mon=1…Sun=7.)
+    start = start.minus({ days: start.weekday % 7 });
+    end = end.plus({ days: 6 - (end.weekday % 7) });
+  }
+
+  const table = buildZmanimTable({
+    start,
+    end,
+    keys: cfg.keys,
+    location: cfg.location,
+    candleLightingOffset: cfg.candleLightingOffset,
+    useElevation: cfg.useElevation,
+    lehumra: cfg.lehumra,
+    locale: cfg.reportLocale,
+    havdalahOpinion: cfg.havdalahOpinion,
+    specialShabbatLabel: (name) => tr('panel.specialShabbat', { name }),
+    mevarchimLabel: cfg.columns.mevarchim ? tr('panel.shabbatMevarchim') : undefined,
+    // The molad footnote follows the Mevarchim toggle: both are the "Shabbat
+    // announcements" material.
+    moladTitle: cfg.columns.mevarchim ? (month) => tr('export.moladTitle', { month }) : undefined,
+    learningKeys: cfg.learningKeys,
+    plainTimes: true,
+    hiddenFastEnd: cfg.hiddenFastEnd,
+    // Compact shita labels in the footer blocks ("5.95°", "ГР״А") — the same
+    // register as the column sub-headers; the dialog's picker keeps the
+    // spelled-out names.
+    opinionLabel: (key) => tr(`zmanim.shitotShort.${key}`),
+  });
+
+  // Compact print headers: the parenthetical qualifier is dropped from the
+  // zman name — "Zman Shma (reading time)" → "Zman Shma" — and multi-shita
+  // bases span their opinions, labelled by the curated SHORT shita vocabulary
+  // ("MGA 16.1°", "GRA") on month sheets. The weekly sheet spells the shita
+  // out (`shitotPrint`) instead: its label column has the width, and a sheet
+  // read by people who never saw the app shouldn't make them expand "МА 72".
+  const shortName = (key: string) =>
+    tr(`zmanim.names.${key}`)
+      .replace(/\s*\([^)]*\)/g, '')
+      .trim();
+  const zmanHeader = (key: string): ExportHeader => {
+    const def = ZMANIM.find((z) => z.key === key);
+    const multi = def ? (BASE_KEY_COUNT.get(def.base) ?? 1) > 1 : false;
+    if (!multi) return { label: shortName(key) };
+    return {
+      label: shortName(key),
+      sub: tr(`zmanim.${cfg.weekly ? 'shitotPrint' : 'shitotShort'}.${key}`),
+      group: def?.base,
+    };
+  };
+
+  // The day identity, in two slim adjacent columns: the paged calendar's day
+  // with the weekday ("8 сб") — its month is already the sheet's title — and
+  // the OTHER calendar's full date beside it ("25 Ава"), whose month names do
+  // change mid-sheet. In Hebrew-month mode the two swap roles.
+  const monthly = !cfg.weekly;
+  const dayFields = cfg.hebrewMonths
+    ? [
+        ...(cfg.columns.hebrewDate ? ([monthly ? 'hebrewDay' : 'hebrewDate'] as const) : []),
+        ...(cfg.columns.weekday ? (['weekday'] as const) : []),
+      ]
+    : [
+        ...(cfg.columns.date ? ([monthly ? 'dayOfMonth' : 'dayWithMonth'] as const) : []),
+        ...(cfg.columns.weekday ? (['weekday'] as const) : []),
+      ];
+  const otherCalendarField = cfg.hebrewMonths
+    ? cfg.columns.date
+      ? ('dayWithMonth' as const)
+      : null
+    : cfg.columns.hebrewDate
+      ? ('hebrewDate' as const)
+      : null;
+  // Mevarchim is deliberately NOT an events field: it announces the molad, so
+  // it rides the molad footer block instead of spending column width.
+  const eventFields = [
+    ...(cfg.columns.holiday ? (['holiday'] as const) : []),
+    ...(cfg.columns.parsha ? (['parsha'] as const) : []),
+  ];
+  const dayOnlyWeekday = dayFields.length === 1 && dayFields[0] === 'weekday';
+  const dayColumns: ExportColumn[] = [
+    ...(dayFields.length > 0
+      ? [
+          {
+            key: 'dayWithMonth' as const,
+            header: tr(
+              dayOnlyWeekday ? 'export.colWeekday' : cfg.hebrewMonths ? 'export.colHebrewDate' : 'export.colDate',
+            ),
+            fields: [...dayFields],
+            separator: ' ',
+            maxWeight: 2.5,
+            identity: true,
+          },
+        ]
+      : []),
+    ...(otherCalendarField
+      ? [
+          {
+            key: otherCalendarField,
+            header: tr(cfg.hebrewMonths ? 'export.colDate' : 'export.colHebrewDate'),
+            maxWeight: 2.5,
+            identity: true,
+          },
+        ]
+      : []),
+    ...(eventFields.length > 0
+      ? [{ key: 'events' as const, header: tr('export.colEvents'), fields: [...eventFields], maxWeight: 5 }]
+      : []),
+    ...(cfg.columns.candles
+      ? [
+          { key: 'candleLighting' as const, header: tr('events.candle'), emphasis: true },
+          { key: 'havdalah' as const, header: tr('events.havdalah') },
+        ]
+      : []),
+    ...(cfg.columns.omer ? [{ key: 'omer' as const, header: tr('export.colOmer') }] : []),
+  ];
+
+  const sheets = buildExportDocument({
+    table,
+    dayColumns,
+    zmanHeaders: table.keys.map(zmanHeader),
+    learningColumns: cfg.learningKeys.map((key) => ({ key, header: tr(`learning.${key}`) })),
+    weekly: cfg.weekly,
+    hebrewMonths: cfg.hebrewMonths,
+    includeFastNotes: cfg.columns.fasts,
+    fastLabels: {
+      start: tr('events.fastStart'),
+      ends: tr('events.fastEnd'),
+      chatzos: shortName('chatzos'),
+      chametzEat: shortName('sofZmanAchilasChametzGRA'),
+      chametzBurn: shortName('sofZmanBiurChametzGRA'),
+      chalakim: tr('export.chalakim'),
+    },
+  });
+
+  const footer = tr('export.generatedBy', { site: SITE_HOST });
+  // The calculation block: everything that shaped these times, as the same
+  // headed label→value groups the other footer blocks use — so a printed
+  // sheet answers "which opinions is this?" without the app in hand.
+  const elevated = cfg.useElevation && typeof cfg.location.elevation === 'number' && cfg.location.elevation > 0;
+  const calculation: PageFootnote = {
+    label: tr('export.noteCalculation'),
+    text: '',
+    groups: [
+      {
+        heading: tr('events.candle'),
+        pairs: [{ label: '', time: tr('export.calcBeforeShkia', { minutes: cfg.candleLightingOffset }) }],
+      },
+      ...(elevated
+        ? [
+            {
+              heading: tr('export.calcElevation'),
+              pairs: [{ label: '', time: tr('export.calcMeters', { meters: cfg.location.elevation ?? 0 }) }],
+            },
+          ]
+        : []),
+      ...(cfg.lehumra ? [{ heading: tr('settings.lehumra'), pairs: [] }] : []),
+      {
+        heading: tr('events.havdalah'),
+        pairs: [{ label: '', time: tr(`zmanim.shitot.${havdalahZmanKey(cfg.havdalahOpinion)}`) }],
+      },
+    ],
+  };
+
+  const titleFor = (sheet: ExportDocSheet) =>
+    `${sheet.kind === 'learning' ? tr('learning.title') : tr('export.tableTitle')} · ${cfg.locationLabel}`;
+  const subtitleFor = (sheet: ExportDocSheet) => {
+    const part = sheet.parts > 1 ? ` · ${sheet.part}/${sheet.parts}` : '';
+    if (sheet.kind === 'week') {
+      const from = DateTime.fromISO(sheet.startIso).setLocale(cfg.reportLocale).toLocaleString(DateTime.DATE_MED);
+      const to = DateTime.fromISO(sheet.endIso).setLocale(cfg.reportLocale).toLocaleString(DateTime.DATE_MED);
+      return `${from} – ${to}${part}`;
+    }
+    // The month in both calendars, like the app header: "September 2026 ·
+    // Elul 5786 – Tishrei 5787" — or Hebrew-first when paging by Hebrew month.
+    const month = DateTime.fromISO(sheet.startIso);
+    const mode = cfg.hebrewMonths ? 'hebrew' : 'gregorian';
+    return `${monthTitle(month, mode, cfg.reportLocale)} · ${alternateMonthsTitle(month, mode, cfg.reportLocale)}${part}`;
+  };
+
+  const pages = sheets.map((sheet, i) => (
+    <ExportTablePage
+      key={i}
+      title={titleFor(sheet)}
+      subtitle={subtitleFor(sheet)}
+      pageLabel={`${i + 1} / ${sheets.length}`}
+      sheet={sheet}
+      footer={footer}
+      calculation={calculation}
+      dir={dir}
+    />
+  ));
+
+  return { pages, sheets };
+}

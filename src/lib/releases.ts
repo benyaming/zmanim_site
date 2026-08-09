@@ -22,6 +22,27 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.25',
+    date: '2026-08-09',
+    notes: {
+      en: [
+        'The zmanim PDF is rebuilt: a month per sheet — civil or Hebrew — with fasts and molad in the footer.',
+        'Daily learning prints on its own sheet, and a live preview shows every page before you download.',
+        'The zmanim export remembers your last selection.',
+      ],
+      he: [
+        'ה־PDF של הזמנים נבנה מחדש: חודש בכל עמוד — לועזי או עברי — והצומות והמולד בתחתית העמוד.',
+        'הלימוד היומי מודפס בעמוד משלו, ותצוגה מקדימה מציגה כל עמוד לפני ההורדה.',
+        'ייצוא הזמנים זוכר את הבחירה האחרונה שלך.',
+      ],
+      ru: [
+        'PDF зманим переработан: месяц на листе — григорианский или еврейский, посты и молад — внизу листа.',
+        'Ежедневная учёба печатается отдельным листом, а предпросмотр показывает каждый лист до скачивания.',
+        'Экспорт зманим запоминает последний выбор.',
+      ],
+    },
+  },
+  {
     version: '1.24',
     date: '2026-07-26',
     notes: {

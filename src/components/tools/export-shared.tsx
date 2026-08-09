@@ -15,11 +15,16 @@ import { REPORT_LOCALES } from './export-i18n';
 /**
  * Report-language choice: defaults to the UI language, exports can use any.
  * The option names come from the language switcher's catalog entries.
+ *
+ * `initial` restores a remembered choice (see lib/export/preset.ts). It is read
+ * once, as the initial state — a tool that passes it must already be mounted
+ * past prefs hydration, which the tools dialog guarantees by mounting each tool
+ * only when it is opened.
  */
-export function useReportLocale(): { reportLocale: string; field: ReactNode } {
+export function useReportLocale(initial?: string): { reportLocale: string; field: ReactNode } {
   const tLang = useTranslations('language');
   const uiLocale = useLocale();
-  const [reportLocale, setReportLocale] = useState(uiLocale);
+  const [reportLocale, setReportLocale] = useState(initial ?? uiLocale);
 
   const field = (
     <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
@@ -48,10 +53,19 @@ export function useReportLocale(): { reportLocale: string; field: ReactNode } {
  * shows the current location read-only with a hint that saving locations
  * unlocks the choice.
  */
-export function useExportLocation(): { location: AppLocation; field: ReactNode } {
+export function useExportLocation(initialId?: string): {
+  location: AppLocation;
+  /** 'current', or the id of the chosen saved location — for remembering the choice. */
+  locationId: string;
+  field: ReactNode;
+} {
   const t = useTranslations('export');
   const { location: current, savedLocations } = useAppState();
-  const [selectedId, setSelectedId] = useState('current');
+  // A remembered id whose bookmark has since been deleted falls back to the
+  // current location, rather than leaving the Select on a value it can't show.
+  const [selectedId, setSelectedId] = useState(() =>
+    initialId && initialId !== 'current' && savedLocations.some((e) => e.id === initialId) ? initialId : 'current',
+  );
 
   const entry = savedLocations.find((e) => e.id === selectedId);
   const location = entry ? resolveSavedLocation(entry) : current;
@@ -90,7 +104,7 @@ export function useExportLocation(): { location: AppLocation; field: ReactNode }
       </div>
     );
 
-  return { location, field };
+  return { location, locationId: selectedId, field };
 }
 
 /**
@@ -99,15 +113,19 @@ export function useExportLocation(): { location: AppLocation; field: ReactNode }
  * The elevation checkbox shows the chosen location's detected elevation,
  * mirroring the calendar-settings row.
  */
-export function useExportComputeOptions(location: AppLocation): {
+export function useExportComputeOptions(
+  location: AppLocation,
+  /** Remembered per-export overrides; absent = start from the app settings. */
+  initial?: { useElevation: boolean; lehumra: boolean },
+): {
   useElevation: boolean;
   lehumra: boolean;
   field: ReactNode;
 } {
   const tSettings = useTranslations('settings');
   const app = useAppState();
-  const [useElevation, setUseElevation] = useState(app.useElevation);
-  const [lehumra, setLehumra] = useState(app.lehumra);
+  const [useElevation, setUseElevation] = useState(initial?.useElevation ?? app.useElevation);
+  const [lehumra, setLehumra] = useState(initial?.lehumra ?? app.lehumra);
 
   const field = (
     <div className="space-y-1.5">

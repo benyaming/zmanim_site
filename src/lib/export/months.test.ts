@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   hebrewMonthAnchor,
+  hebrewMonthSpan,
   hebrewMonthsOfYear,
   isHebrewLeapYear,
   MAX_GRID_MONTHS,
@@ -51,6 +52,17 @@ describe('hebrewMonthsOfYear', () => {
     const leap = hebrewMonthsOfYear(5787, 'en');
     expect(leap).toHaveLength(13);
     expect(leap.map((m) => m.month).slice(5, 7)).toEqual([12, 13]); // Adar I, Adar II
+  });
+});
+
+describe('hebrewMonthSpan', () => {
+  it('returns the civil first and last day of the containing Hebrew month', () => {
+    // Av 5786 runs Jul 15 – Aug 13 2026; Elul begins Aug 14.
+    const av = hebrewMonthSpan(DateTime.fromISO('2026-08-09'));
+    expect(av.start.toISODate()).toBe('2026-07-15');
+    expect(av.end.toISODate()).toBe('2026-08-13');
+    const elul = hebrewMonthSpan(DateTime.fromISO('2026-08-14'));
+    expect(elul.start.toISODate()).toBe('2026-08-14');
   });
 });
 

@@ -29,7 +29,19 @@ interface ToolEntry {
 
 const TOOLS: ToolEntry[] = [
   { key: 'calendar', Icon: CalendarRange, Tool: ExportCalendarTool, nameKey: 'calendarName', descKey: 'calendarDesc', dialogClass: 'sm:max-w-lg lg:max-w-4xl', download: true },
-  { key: 'zmanim', Icon: Table2, Tool: ExportZmanimTool, nameKey: 'zmanimName', descKey: 'zmanimDesc', dialogClass: 'sm:max-w-lg lg:max-w-3xl', download: true },
+  // As big as the screen allows: this one is a print dialog — controls rail +
+  // live sheet preview — and every pixel of width goes to the preview. The cap
+  // keeps the preview (width × 794/1123) from outgrowing the dialog's height
+  // on very wide screens.
+  {
+    key: 'zmanim',
+    Icon: Table2,
+    Tool: ExportZmanimTool,
+    nameKey: 'zmanimName',
+    descKey: 'zmanimDesc',
+    dialogClass: 'sm:max-w-lg lg:max-h-[94dvh] lg:max-w-[min(96rem,calc(100vw-3rem),calc(24rem+118dvh))]',
+    download: true,
+  },
   { key: 'personalDates', Icon: CalendarHeart, Tool: PersonalDatesTool, nameKey: 'personalDatesName', descKey: 'personalDatesDesc', dialogClass: 'sm:max-w-lg', download: false },
 ];
 

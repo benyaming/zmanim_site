@@ -98,3 +98,14 @@ export function hebrewMonthAnchor(year: number, month: number): DateTime {
   jd.setJewishDate(year, month === 13 && !isHebrewLeapYear(year) ? 12 : month, 15);
   return jewishToLocalDay(jd);
 }
+
+/**
+ * The civil first and last day of the Hebrew month containing `date` — what a
+ * range snaps to when the export switches to Hebrew-month sheets.
+ */
+export function hebrewMonthSpan(date: DateTime): { start: DateTime; end: DateTime } {
+  const jd = new JewishDate(date);
+  jd.setJewishDayOfMonth(1);
+  const start = jewishToLocalDay(jd);
+  return { start, end: start.plus({ days: jd.getDaysInJewishMonth() - 1 }) };
+}
