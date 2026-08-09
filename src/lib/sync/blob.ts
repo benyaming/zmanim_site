@@ -242,6 +242,9 @@ export function prefsHoldUserData(data: SectionData): boolean {
   if (prefs.zmanimCustomized === true || prefs.lehumraCustomized === true || prefs.fastEndCustomized === true) {
     return true;
   }
+  // An export preset exists only after a real export — the prefs writer omits
+  // the key until then — so its presence is deliberate, never a mount default.
+  if (prefs.export !== undefined) return true;
   // Deliberate on the web, where this check runs (default off there; the Mini
   // App defaults it on, but Mini App stores never take the content path).
   // Covers devices that enabled it before the lehumraCustomized marker existed.
