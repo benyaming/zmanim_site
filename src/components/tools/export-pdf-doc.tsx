@@ -70,8 +70,15 @@ export interface PdfDocConfig {
 export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sheets: ExportDocSheet[] } {
   const tr = reportTranslator(cfg.reportLocale);
   const dir = dirForLocale(cfg.reportLocale) === 'rtl' ? 'rtl' : 'ltr';
-  const start = DateTime.fromISO(cfg.startIso);
-  const end = DateTime.fromISO(cfg.endIso);
+  let start = DateTime.fromISO(cfg.startIso);
+  let end = DateTime.fromISO(cfg.endIso);
+  if (cfg.weekly) {
+    // Weekly sheets carry whole Sunday–Saturday weeks: a month starting on
+    // Shabbat would otherwise open with a one-day sheet, so the edges are
+    // padded with the neighbouring months' days. (Luxon weekday: Mon=1…Sun=7.)
+    start = start.minus({ days: start.weekday % 7 });
+    end = end.plus({ days: 6 - (end.weekday % 7) });
+  }
 
   const table = buildZmanimTable({
     start,
