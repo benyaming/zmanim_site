@@ -148,6 +148,34 @@ describe('sectionFingerprint', () => {
     // A real coordinate change still shows.
     expect(sectionFingerprint('prefs', { location: { lat: 31, lng: 34 } })).not.toBe(sectionFingerprint('prefs', en));
   });
+
+  it('is key-order-insensitive at every nesting depth (the Mini App restart bug)', () => {
+    // The same event written by the editor ({...event, id} — id last) and by
+    // the load-time sanitizer ({id, kind, anchor, …} — id first). Equal content
+    // MUST fingerprint equal, or one mount flips the bytes of an unchanged
+    // section and the equal-stamp tie-break adopts-and-reloads on every open.
+    const idLast = {
+      personalDates: {
+        people: [{ id: 'p1', name: 'M', events: [{ kind: 'birth', anchor: { hebrew: { year: 5754, month: 6, day: 1 } }, overrides: { batMitzvah: 'off' }, id: 'e1' }] }],
+        occasions: [],
+      },
+    };
+    const idFirst = {
+      personalDates: {
+        people: [{ id: 'p1', name: 'M', events: [{ id: 'e1', kind: 'birth', anchor: { hebrew: { day: 1, month: 6, year: 5754 } }, overrides: { batMitzvah: 'off' } }] }],
+        occasions: [],
+      },
+    };
+    expect(sectionFingerprint('prefs', idLast)).toBe(sectionFingerprint('prefs', idFirst));
+    // A real content change still shows.
+    const edited = structuredClone(idFirst);
+    edited.personalDates.people[0].events[0].anchor.hebrew.day = 2;
+    expect(sectionFingerprint('prefs', edited)).not.toBe(sectionFingerprint('prefs', idFirst));
+  });
+
+  it('treats undefined-valued keys like JSON.stringify does (absent)', () => {
+    expect(sectionFingerprint('prefs', { a: 1, b: undefined } as never)).toBe(sectionFingerprint('prefs', { a: 1 }));
+  });
 });
 
 describe('parse / serialize', () => {

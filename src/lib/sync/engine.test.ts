@@ -177,6 +177,28 @@ describe('reconcileTargets', () => {
     expect(state.pushes).toHaveLength(0);
   });
 
+  it('does not adopt (reload) when local and remote differ only in JSON key order', async () => {
+    // The production oscillation: the blob held an event as {...event, id}
+    // (id last, written by the editor), while every mount re-persisted the
+    // sanitizer's {id, kind, anchor, …} shape — same content, same stamp,
+    // different bytes. The store's ordering won the byte tie-break, so the
+    // startup reconcile adopted and reloaded the Mini App on every open.
+    const stamp = '2026-08-05T04:22:48.360Z';
+    const event = { kind: 'birth', anchor: { hebrew: { year: 5754, month: 6, day: 1 } }, id: 'e1' };
+    const person = (ev: object) => ({ people: [{ id: 'p1', name: 'M', events: [ev] }], occasions: [] });
+    window.localStorage.setItem(
+      PREFS_STORAGE_KEY,
+      JSON.stringify({ personalDates: person({ id: 'e1', kind: 'birth', anchor: { hebrew: { year: 5754, month: 6, day: 1 } } }) }),
+    );
+    stampSection('prefs', stamp);
+    const { target, state } = memoryTarget(blob({ prefs: { data: { personalDates: person(event) }, t: stamp } }));
+
+    const result = await reconcileTargets([target]);
+
+    expect(result.outcome).toBe('clean'); // no adopt → no reload, and nothing pushed
+    expect(state.pushes).toEqual([]);
+  });
+
   it('ignores a newer remote prefs that differs only in the geocoded location label', async () => {
     window.localStorage.setItem(
       PREFS_STORAGE_KEY,

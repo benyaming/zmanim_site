@@ -117,11 +117,19 @@ agreed on lives in `zmanim:sync-synced:v1`.
   stamped by the change watcher, which fires only when the freshly persisted
   prefs differ from `zmanim:sync-synced:v1` — so mount-time auto-detect /
   elevation / relabel churn doesn't re-stamp prefs and clobber another device.
-- **The prefs fingerprint drops the location's `label`/`labelLocale`** — they're
-  derived by per-device, per-language reverse geocoding (the same place reads
-  "Petah Tikva" / "Петах-Тиква" / "פתח תקווה"), so keeping them would make two
-  devices in one place sync forever. Coordinates, elevation, timezone and any
-  user `customLabel` still count.
+- **Fingerprints are canonical: content identity, not byte identity.** A
+  section's fingerprint serializes with recursively sorted keys, so it cannot
+  depend on the ORDER a writer happened to emit keys in. Two writers commonly
+  emit the same content differently — a personal-date event is `{...event, id}`
+  from the editors but `{id, kind, anchor, …}` from their load-time sanitizer —
+  and with a byte-sensitive fingerprint one mount flipped an unchanged
+  section's bytes: at an equal stamp the store's copy won the tie-break, and
+  the startup reconcile adopted-and-reloaded the Mini App on every single
+  open. The **prefs fingerprint also drops the location's
+  `label`/`labelLocale`** — they're derived by per-device, per-language reverse
+  geocoding (the same place reads "Petah Tikva" / "Петах-Тиква" / "פתח תקווה"),
+  so keeping them would make two devices in one place sync forever.
+  Coordinates, elevation, timezone and any user `customLabel` still count.
 - **A push never destroys irreplaceable content.** Stamps order whole
   *sections*, so a device whose prefs are merely newer wins the section
   outright — carrying away personal dates or saved locations another device
