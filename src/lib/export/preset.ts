@@ -75,7 +75,7 @@ const ALL_COLUMNS: ExportPresetColumns = {
 
 export const COLUMN_KEYS = Object.keys(ALL_COLUMNS) as (keyof ExportPresetColumns)[];
 
-/** The tool's default span: today plus the next 30 days. */
+/** The tool's default span: about a month (seeded as the current calendar month). */
 export const DEFAULT_EXPORT_RANGE_DAYS = 31;
 
 const ZMAN_KEYS: ReadonlySet<string> = new Set(ZMANIM.map((z) => z.key));

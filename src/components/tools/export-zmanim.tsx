@@ -87,19 +87,25 @@ export function ExportZmanimTool() {
   };
 
   const today = DateTime.now().startOf('day');
-  // A remembered range is re-anchored on today: the saved LENGTH is what the
-  // user meant ("a month"), not the dates they happened to pick last time.
-  // A Hebrew-months preset re-anchors THROUGH the month snap, keeping the
-  // whole-month promise the toggle made — without it, reopening produced
-  // partial first and last sheets.
+  // The tool's home range is the CURRENT MONTH, first day to last — whole
+  // sheets, never "today + N". A remembered range re-anchors its LENGTH here
+  // too, read in months: someone who printed three months in January wants
+  // February–April now, not a mid-month stub. Hebrew-months presets count the
+  // same length in Hebrew months from this Rosh Chodesh.
   const presetHebrewMonths = preset?.hebrewMonths ?? false;
-  const [startIso, setStartIso] = useState(
-    () => (presetHebrewMonths ? hebrewMonthSpan(today).start : today).toISODate() ?? '',
-  );
-  const [endIso, setEndIso] = useState(() => {
-    const end = today.plus({ days: (preset?.rangeDays ?? DEFAULT_EXPORT_RANGE_DAYS) - 1 });
-    return (presetHebrewMonths ? hebrewMonthSpan(end).end : end).toISODate() ?? '';
-  });
+  const seedMonths = Math.max(1, Math.round((preset?.rangeDays ?? DEFAULT_EXPORT_RANGE_DAYS) / 29.5));
+  const seedRange = () => {
+    if (presetHebrewMonths) {
+      let span = hebrewMonthSpan(today);
+      const start = span.start;
+      for (let i = 1; i < seedMonths; i++) span = hebrewMonthSpan(span.end.plus({ days: 1 }));
+      return { start, end: span.end };
+    }
+    const start = today.startOf('month');
+    return { start, end: start.plus({ months: seedMonths - 1 }).endOf('month') };
+  };
+  const [startIso, setStartIso] = useState(() => seedRange().start.toISODate() ?? '');
+  const [endIso, setEndIso] = useState(() => seedRange().end.toISODate() ?? '');
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
     () => new Set(preset?.keys ?? CONFIGURABLE_ZMANIM.filter((z) => !hiddenZmanim.includes(z.key)).map((z) => z.key)),
   );
