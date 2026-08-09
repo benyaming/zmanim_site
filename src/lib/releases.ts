@@ -26,18 +26,18 @@ export const RELEASES: readonly Release[] = [
     date: '2026-08-09',
     notes: {
       en: [
-        'The zmanim PDF is rebuilt: one month per sheet — civil or Hebrew — with opinions grouped under shared headings and fasts, molad and the calculation in footer blocks.',
-        'Daily learning prints on its own sheet, and a live preview in the export dialog shows every page before you download.',
+        'The zmanim PDF is rebuilt: a month per sheet — civil or Hebrew — with fasts and molad in the footer.',
+        'Daily learning prints on its own sheet, and a live preview shows every page before you download.',
         'The zmanim export remembers your last selection.',
       ],
       he: [
-        'ה־PDF של הזמנים נבנה מחדש: חודש בכל עמוד — לועזי או עברי — השיטות מקובצות תחת כותרת משותפת, והצומות, המולד והחישוב בתחתית העמוד.',
-        'הלימוד היומי מודפס בעמוד משלו, ותצוגה מקדימה בחלון הייצוא מציגה כל עמוד לפני ההורדה.',
+        'ה־PDF של הזמנים נבנה מחדש: חודש בכל עמוד — לועזי או עברי — והצומות והמולד בתחתית העמוד.',
+        'הלימוד היומי מודפס בעמוד משלו, ותצוגה מקדימה מציגה כל עמוד לפני ההורדה.',
         'ייצוא הזמנים זוכר את הבחירה האחרונה שלך.',
       ],
       ru: [
-        'PDF зманим полностью переработан: месяц на листе — григорианский или еврейский — мнения сгруппированы под общими заголовками, посты, молад и расчёт — блоками внизу листа.',
-        'Ежедневная учёба печатается отдельным листом, а предпросмотр в окне экспорта показывает каждый лист до скачивания.',
+        'PDF зманим переработан: месяц на листе — григорианский или еврейский, посты и молад — внизу листа.',
+        'Ежедневная учёба печатается отдельным листом, а предпросмотр показывает каждый лист до скачивания.',
         'Экспорт зманим запоминает последний выбор.',
       ],
     },

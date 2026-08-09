@@ -95,8 +95,11 @@ export function sanitizeExportPreset(raw: unknown): ExportPreset | null {
   const p = raw as Record<string, unknown>;
 
   // Keys and columns are the substance of a preset; a blob carrying neither is
-  // noise (an empty object written by some older shape), not a choice.
-  if (!Array.isArray(p.keys) && typeof p.columns !== 'object') return null;
+  // noise (an empty object written by some older shape), not a choice. The
+  // columns check demands a real object — `null` types as 'object' too, and
+  // this is untrusted persisted/synced data.
+  const columnsPresent = typeof p.columns === 'object' && p.columns !== null && !Array.isArray(p.columns);
+  if (!Array.isArray(p.keys) && !columnsPresent) return null;
 
   const rangeDays =
     typeof p.rangeDays === 'number' && Number.isFinite(p.rangeDays)

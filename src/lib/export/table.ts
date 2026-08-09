@@ -291,7 +291,7 @@ export function pageFootnotes(
   // one month differ in text and are kept.
   const seen = new Set<string>();
   return lines.filter((line) => {
-    const key = `${line.label} ${line.text}`;
+    const key = `${line.label}\u0000${line.text}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

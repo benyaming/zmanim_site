@@ -68,6 +68,11 @@ describe('sanitizeExportPreset', () => {
     expect(preset.learning).toEqual([...LEARNING_CYCLE_KEYS]);
   });
 
+  it('rejects a columns value that is not a real object', () => {
+    expect(sanitizeExportPreset({ columns: null })).toBeNull();
+    expect(sanitizeExportPreset({ columns: ['date'] })).toBeNull();
+  });
+
   it('keeps only known fast-end opinions, and leaves the field absent when unsaved', () => {
     expect(parse({ ...VALID, fastEnds: ['tzais', 'notAnOpinion', 'tzais72'] }).fastEnds).toEqual(['tzais', 'tzais72']);
     expect(parse(VALID).fastEnds).toBeUndefined();
