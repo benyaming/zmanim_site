@@ -28,7 +28,13 @@ This is **everything the user can configure**, split into independent
 `theme` are localStorage values copied verbatim. `language` is the odd one: it
 lives in the URL (the next-intl locale), not localStorage — captured from
 `<html lang>` and *applied by navigating* to that locale's path, not by a plain
-reload (`reloadForSync`). Per-device flags (the Telegram/Google credentials,
+reload (`reloadForSync`). Inside the **Mini App** the language is **passive**:
+Telegram relaunches the app at the bot-language path (`/he`|`/ru`) on every
+open, so the URL locale is the bot's, not the user's — the local side
+contributes no language to the merge (the blob's value rides through intact)
+and a remote language is never adopted (adopting navigates, i.e. visibly
+restarts the webview on every open). An explicit in-session pick (dirty) still
+propagates. Per-device flags (the Telegram/Google credentials,
 the "seen the swipe hint" and "last release seen" dismissals) are deliberately
 **not** in the blob.
 
@@ -234,6 +240,13 @@ See [`telegram-mini-app.md`](telegram-mini-app.md)).
   providers would keep showing the old values); the next load adopts them.
 - **Import** (link `#settings=…` or file): asks first, then applies with a
   fresh stamp so the import wins everywhere on the next sync.
+- **Debugging a reload**: every adopt leaves a breadcrumb in
+  `zmanim:sync-last-adopt:v1` (`{at, adopt}`) — readable from a webview console
+  after the fact, no flag to pre-arm. Adopting everything on every open points
+  at storage that didn't persist; one recurring section points at whatever
+  rewrites it at mount. Live tracing:
+  `localStorage.setItem('zmanim:sync-debug','1')` prints reconcile decisions
+  with a `[zmanim-sync]` tag.
 
 The Sync & backup tool (Tools menu, `src/components/tools/sync-backup.tsx`)
 is the control panel: Telegram sign-in (Login Widget), Sign in with Google,
