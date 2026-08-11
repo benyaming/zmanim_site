@@ -143,7 +143,7 @@ export interface ZmanimTableOptions {
   opinionLabel?: (zmanKey: string) => string;
 }
 
-/** One labelled time in a footer block ("Виленский Гаон 10:03"). */
+/** One labelled time in a footer block ("ГР״А 10:03"). */
 export interface OpinionPair {
   label: string;
   time: string;

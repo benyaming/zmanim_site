@@ -75,27 +75,33 @@ describe('zman label catalogs', () => {
   });
 
   /**
-   * Russian spells authorities out rather than carrying the Hebrew-style
-   * acronym: a reader of the Russian catalog is not expected to expand ГР״А,
-   * МА or Р״Т. Those rows carry no short override at all and resolve to the
-   * full label through the fallback — which costs nothing on a sheet, since a
-   * column is sized by its widest label and the spelled-out forms set it
-   * anyway. A unit may still be abbreviated ("72 врем."); a person may not.
+   * The two Russian registers answer to different rules, which is the whole
+   * reason the short one exists.
+   *
+   * `shitot` is what the app, the picker and the weekly sheet show, and it
+   * spells authorities out — a reader is not expected to expand ГР״А. Only
+   * `shitotShort` may abbreviate, because it fills month-sheet columns and
+   * footer blocks where the width genuinely is not there.
    */
-  it('russian spells authorities out instead of abbreviating them', () => {
+  it('russian spells authorities out in the canonical register', () => {
     const z = CATALOGS.ru.zmanim as unknown as Registers;
-    for (const register of ['shitot', 'shitotShort'] as const) {
-      for (const [key, label] of Object.entries(z[register] ?? {})) {
-        // The gershayim is what makes ГР״А and Р״Т acronyms.
-        expect(label, `ru.${register}.${key}`).not.toContain('״');
-        // МА carries none, so pin it by name.
-        expect(label, `ru.${register}.${key}`).not.toMatch(/^МА(\s|$)/);
-      }
+    for (const [key, label] of Object.entries(z.shitot)) {
+      // The gershayim is what makes ГР״А and Р״Т acronyms.
+      expect(label, `ru.shitot.${key}`).not.toContain('״');
+      // МА carries none, so pin it by name.
+      expect(label, `ru.shitot.${key}`).not.toMatch(/^МА(\s|$)/);
     }
     const labels = zmanLabels(translator('ru'));
-    expect(labels.shitaShort('sofZmanShmaGRA')).toBe('Виленский Гаон');
-    expect(labels.shitaShort('sofZmanShmaMGA161')).toBe('Маген Авраам · алот 16,1°');
-    expect(labels.shitaShort('tzais72')).toBe('Рабейну Там · 72 минуты');
+    expect(labels.shita('sofZmanShmaGRA')).toBe('Виленский Гаон');
+    expect(labels.shita('sofZmanShmaMGA161')).toBe('Маген Авраам · алот 16,1°');
+    expect(labels.shita('tzais72')).toBe('Рабейну Там · 72 минуты');
+  });
+
+  it('russian keeps the abbreviations in the print-column register', () => {
+    const labels = zmanLabels(translator('ru'));
+    expect(labels.shitaShort('sofZmanShmaGRA')).toBe('ГР״А');
+    expect(labels.shitaShort('sofZmanShmaMGA161')).toBe('МА 16,1°');
+    expect(labels.shitaShort('tzais72')).toBe('Р״Т 72');
   });
 
   /**
