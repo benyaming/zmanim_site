@@ -37,7 +37,7 @@ export function HelpMenu({ variant = 'icon' }: { variant?: 'icon' | 'link' }) {
         {t('help')}
       </button>
     ) : (
-      <Button variant="outline" size="icon" aria-label={doc.title}>
+      <Button variant="outline" size="icon" aria-label={doc.title} data-hdr="help">
         <CircleQuestionMark className="size-4" />
       </Button>
     );

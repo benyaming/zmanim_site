@@ -5,7 +5,15 @@ import en from '../../../messages/en.json';
 import ru from '../../../messages/ru.json';
 import { LEARNING_CYCLE_KEYS } from '@/lib/learning';
 import { DEFAULT_LOCATION } from '@/lib/location';
-import { CONFIGURABLE_ZMANIM, DEFAULT_HIDDEN_ZMANIM, ZMANIM } from '@/lib/zmanim';
+import {
+  CONFIGURABLE_ZMANIM,
+  DEFAULT_HIDDEN_ZMANIM,
+  type LabelTranslator,
+  zmanLabels,
+  type ZmanLabels,
+  zmanNameShortForKey,
+  ZMANIM,
+} from '@/lib/zmanim';
 
 import { buildExportDocument, type ExportDocumentInput } from './document';
 import { type ExportColumn, type ExportHeader, MAX_TABLE_FONT_PX, MIN_TABLE_FONT_PX } from './grid';
@@ -19,6 +27,27 @@ interface Catalog {
   learning: Record<string, string>;
 }
 const CATALOGS = { en, ru } as unknown as Record<string, Catalog>;
+const RAW: Record<string, unknown> = { en, ru };
+
+/**
+ * A translator over the real catalog, so the headers below are built by the
+ * SAME code the exporter uses. Hand-rolling the label logic here let the test
+ * drift from production: it kept a parenthetical-stripping regex the exporter
+ * no longer has, and indexed `shitotShort` directly — which is now a sparse
+ * override register, so every key without an override produced `undefined`
+ * where production renders the canonical label through the fallback.
+ */
+function labelsFor(locale: string): ZmanLabels {
+  const read = (key: string): unknown =>
+    key.split('.').reduce<unknown>((acc, part) => (acc as Record<string, unknown>)?.[part], RAW[locale]);
+  const tr = ((key: string) => {
+    const value = read(key);
+    if (typeof value !== 'string') throw new Error(`missing message ${locale}:${key}`);
+    return value;
+  }) as LabelTranslator;
+  tr.has = (key: string) => typeof read(key) === 'string';
+  return zmanLabels(tr);
+}
 
 /** The zmanim the export tool ticks by default — a month of these is the real workload. */
 const DEFAULT_SELECTION = CONFIGURABLE_ZMANIM.filter((z) => !DEFAULT_HIDDEN_ZMANIM.includes(z.key)).map((z) => z.key);
@@ -64,13 +93,13 @@ function dayColumns(): ExportColumn[] {
 
 /** Zman headers with the real short shita vocabulary, as the month sheets print them. */
 function printHeaders(keys: string[], locale: string): ExportHeader[] {
-  const { zmanim } = CATALOGS[locale];
+  const labels = labelsFor(locale);
   const perBase = new Map<string, number>();
   for (const z of ZMANIM) perBase.set(z.base, (perBase.get(z.base) ?? 0) + 1);
   return keys.map((key) => {
     const def = ZMANIM.find((z) => z.key === key)!;
-    const label = zmanim.names[key].replace(/\s*\([^)]*\)/g, '').trim();
-    return (perBase.get(def.base) ?? 1) > 1 ? { label, sub: zmanim.shitotShort[key], group: def.base } : { label };
+    const label = zmanNameShortForKey(labels, key);
+    return (perBase.get(def.base) ?? 1) > 1 ? { label, sub: labels.shitaShort(key), group: def.base } : { label };
   });
 }
 

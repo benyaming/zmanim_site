@@ -50,9 +50,10 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
   // The calendar depends on the current date; render only after mount so server
   // and client agree (no hydration mismatch on "today"/selected highlights).
   const mounted = useIsClient();
-  // Header fit: fold the Calendar button into Settings only when the controls
-  // actually run out of room (not at a fixed breakpoint). The wordmark stays.
-  const { barRef, foldCalendar } = useHeaderStage();
+  // Header fit: fold the Calendar button into Settings, then drop Help, only
+  // as the controls actually run out of room (not at a fixed breakpoint). The
+  // wordmark stays.
+  const { barRef, foldCalendar, foldHelp } = useHeaderStage();
 
   return (
     <QueryProvider>
@@ -73,7 +74,9 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
             right={
               <>
                 <LocationPicker />
-                <HelpMenu />
+                {/* Folds away first when the header runs out of room — it is
+                    the one control with a second home, in the footer. */}
+                {!foldHelp && <HelpMenu />}
                 <ToolsMenu />
                 {/* Calendar preferences: their own button, sitting beside the
                     Settings gear — until the header runs out of room, when they

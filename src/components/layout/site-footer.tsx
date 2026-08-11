@@ -76,7 +76,10 @@ export function SiteFooter() {
   if (isMiniApp) {
     return (
       <footer className="text-muted-foreground bg-card/80 supports-[backdrop-filter]:bg-card/60 sticky bottom-0 z-30 shrink-0 border-t py-2.5 text-center text-[0.6875rem] leading-tight backdrop-blur">
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center gap-2">
+          {/* Help rides here too: on a narrow header it folds away (see
+              use-header-stage), and this sheet has no other entry point. */}
+          <HelpMenu variant="link" />
           <ReleaseNotesPane />
         </div>
       </footer>
