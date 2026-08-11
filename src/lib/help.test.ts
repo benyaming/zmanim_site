@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
 
 import { HELP, type HelpLocale } from './help';
@@ -12,6 +13,18 @@ import {
 import { ZMANIM } from './zmanim';
 
 const LOCALES: HelpLocale[] = ['en', 'he', 'ru'];
+
+/**
+ * The page renders its examples for the CURRENT year so the dates never read
+ * stale, which would make these assertions depend on the wall clock — a failure
+ * in some future year could not be reproduced on a machine set to today. The
+ * year is therefore passed in: a fixed one for the exact-value cases, and a
+ * sweep for the claims the prose actually makes, which must hold in whatever
+ * year the reader opens the panel. Mid-year so no timezone can shift it.
+ */
+const at = (year: number) => DateTime.fromObject({ year, month: 6, day: 15, hour: 12 }, { zone: 'utc' });
+const PINNED = at(2026);
+const SWEEP = Array.from({ length: 22 }, (_, i) => 2024 + i);
 
 describe('help document', () => {
   it('exists in every locale with the same sections in the same order', () => {
@@ -87,11 +100,29 @@ describe('help examples', () => {
    */
   it('shows degree and minute opinions coinciding at the equinox anchor', () => {
     const keys = EQUINOX_PAIRS.flatMap((p) => [p.degrees, p.minutes]);
-    const times = anchorZmanim(EQUINOX_ANCHOR, keys);
+    const times = anchorZmanim(EQUINOX_ANCHOR, keys, PINNED);
     for (const pair of EQUINOX_PAIRS) {
       const gap = gapSeconds(times.get(pair.degrees) ?? null, times.get(pair.minutes) ?? null);
       expect(gap).not.toBeNull();
       expect(gap!).toBeLessThan(60);
+    }
+  });
+
+  /**
+   * The same claim, for every year the panel could render. March 20 is not the
+   * astronomical equinox in each of them — it drifts across the leap cycle —
+   * so this pins that the coincidence survives that drift rather than holding
+   * only in the year the test was written.
+   */
+  it('keeps the degree/minute coincidence in any year the panel may render', () => {
+    const keys = EQUINOX_PAIRS.flatMap((p) => [p.degrees, p.minutes]);
+    for (const year of SWEEP) {
+      const times = anchorZmanim(EQUINOX_ANCHOR, keys, at(year));
+      for (const pair of EQUINOX_PAIRS) {
+        const gap = gapSeconds(times.get(pair.degrees) ?? null, times.get(pair.minutes) ?? null);
+        expect(gap, `${year} ${pair.degrees}/${pair.minutes}`).not.toBeNull();
+        expect(gap!, `${year} ${pair.degrees}/${pair.minutes}`).toBeLessThan(60);
+      }
     }
   });
 
@@ -101,12 +132,20 @@ describe('help examples', () => {
    * the inversion the section describes.
    */
   it('shows degree opinions blank and minute opinions resolved on a short night', () => {
-    const times = anchorZmanim(SHORT_NIGHT_ANCHOR, SHORT_NIGHT_KEYS);
+    const times = anchorZmanim(SHORT_NIGHT_ANCHOR, SHORT_NIGHT_KEYS, PINNED);
     for (const key of ['alos198', 'alos18', 'alosHashachar']) expect(times.get(key)).toBeNull();
     // Not `toBeInstanceOf(DateTime)`: kosher-zmanim bundles its own luxon copy,
     // so a returned DateTime is a different class identity than the one imported
     // here even though it is a perfectly valid DateTime.
     for (const key of ['alos90', 'alos72', 'alos72Zmanis']) expect(times.get(key)?.isValid).toBe(true);
     expect(times.get('alos72Zmanis')!.toMillis()).toBeLessThan(times.get('alos90')!.toMillis());
+  });
+
+  it('keeps the short-night blanks in any year the panel may render', () => {
+    for (const year of SWEEP) {
+      const times = anchorZmanim(SHORT_NIGHT_ANCHOR, SHORT_NIGHT_KEYS, at(year));
+      for (const key of ['alos198', 'alos18', 'alosHashachar']) expect(times.get(key), `${year} ${key}`).toBeNull();
+      for (const key of ['alos90', 'alos72', 'alos72Zmanis']) expect(times.get(key)?.isValid, `${year} ${key}`).toBe(true);
+    }
   });
 });

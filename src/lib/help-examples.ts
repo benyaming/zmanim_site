@@ -84,12 +84,22 @@ export function anchorDate(anchor: HelpAnchor, now: DateTime = DateTime.now()): 
   );
 }
 
-/** Compute an anchor's zmanim, keyed for lookup by zman key. */
-export function anchorZmanim(anchor: HelpAnchor, keys: readonly string[]): Map<string, DateTime | null> {
+/**
+ * Compute an anchor's zmanim, keyed for lookup by zman key.
+ *
+ * `now` selects the year, defaulting to the current one so the rendered page
+ * never shows a stale date. Tests pass it explicitly: a case whose input moves
+ * with the wall clock cannot be reproduced once it fails.
+ */
+export function anchorZmanim(
+  anchor: HelpAnchor,
+  keys: readonly string[],
+  now?: DateTime,
+): Map<string, DateTime | null> {
   const computed = computeZmanim({
     lat: anchor.lat,
     lng: anchor.lng,
-    date: anchorDate(anchor),
+    date: anchorDate(anchor, now),
     timeZoneId: anchor.timeZoneId,
     keys,
   });
