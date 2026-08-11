@@ -1,5 +1,7 @@
 export { computeZmanim, computeZmanimSorted, isPolarDay } from './calculator';
 export { ZMANIM } from './definitions';
+export { baseOfZmanKey, zmanLabels, zmanNameShortForKey } from './labels';
+export type { LabelTranslator, ZmanLabels } from './labels';
 export {
   buildZmanimGroups,
   type ZmanBaseGroup,

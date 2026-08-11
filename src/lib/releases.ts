@@ -22,6 +22,24 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.26',
+    date: '2026-08-11',
+    notes: {
+      en: [
+        'A new panel explains the calculation methods behind the zmanim.',
+        'Method labels now state each opinion in its own unit — degrees as degrees, minutes as minutes.',
+      ],
+      he: [
+        'לוח חדש מסביר את שיטות החישוב של הזמנים.',
+        'תוויות השיטה מציינות כל דעה ביחידות שלה — מעלות כמעלות ודקות כדקות.',
+      ],
+      ru: [
+        'Новая панель объясняет методы расчёта зманим.',
+        'Обозначения методов называют мнение в его единицах: градусы — градусами, минуты — минутами.',
+      ],
+    },
+  },
+  {
     version: '1.25',
     date: '2026-08-09',
     notes: {

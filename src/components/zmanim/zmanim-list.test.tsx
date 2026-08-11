@@ -1,4 +1,5 @@
 import { render as renderBare, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
@@ -33,6 +34,16 @@ const withFamilies = (item: Omit<ZmanBaseGroup, 'families' | 'grouped' | 'order'
   // `order` drives base layout in buildZmanimGroups, not the rendered list, so a
   // fixed placeholder is fine for these render fixtures.
   return { ...item, order: 0, families, grouped: families.filter((f) => f.rows.length > 1).length >= 2 };
+};
+
+/**
+ * Open an info popover by its trigger's accessible name and return its text.
+ * The short-night explanation lives behind these icons rather than as visible
+ * inline prose, so asserting on it means opening the popover.
+ */
+const openDetails = async (name: string) => {
+  await userEvent.click(screen.getByRole('button', { name: `${name} — details` }));
+  return (await screen.findByRole('dialog')).textContent ?? '';
 };
 
 // InfoHint reads its aria-label translation, so the tree needs intl context.
@@ -165,7 +176,7 @@ describe('ZmanimList', () => {
 
   const NOTE = 'The sun never gets that low here.';
 
-  it('shows the blank caption once per family when the family has any blank', () => {
+  it('explains a blank from the family it belongs to, not from a sibling family', async () => {
     render(
       <ZmanimList
         groups={alot([
@@ -178,14 +189,17 @@ describe('ZmanimList', () => {
         noDegreeTimeNote={NOTE}
       />,
     );
-    // One visible caption for the blank degrees family — not per row, and not on
-    // the fixed-minute family (which has times).
-    expect(screen.getAllByText(NOTE)).toHaveLength(1);
-    // The family headings still carry their method description.
-    expect(screen.getByRole('button', { name: 'fam:degrees — details' })).toBeInTheDocument();
+    // Never visible prose — it is behind the icon beside the affected heading.
+    expect(screen.queryByText(NOTE)).not.toBeInTheDocument();
+    // The blank degrees family explains itself, keeping its method description.
+    const degrees = await openDetails('fam:degrees');
+    expect(degrees).toContain('famDesc:degrees');
+    expect(degrees).toContain(NOTE);
+    // The fixed-minute family has times, so it carries no explanation.
+    expect(await openDetails('fam:fixedMinutes')).not.toContain(NOTE);
   });
 
-  it('shows the caption for a partially-blank family too (some rows have times)', () => {
+  it('explains a partially-blank family too (some rows have times)', async () => {
     render(
       <ZmanimList
         groups={alot([
@@ -197,12 +211,13 @@ describe('ZmanimList', () => {
         noDegreeTimeNote={NOTE}
       />,
     );
-    // The degrees family has one blank (16.1°) → one caption; the real 19.8° and
-    // the fixed family need none.
-    expect(screen.getAllByText(NOTE)).toHaveLength(1);
+    // The degrees family has one blank (16.1°) → it explains; the fixed family
+    // resolves throughout and does not.
+    expect(await openDetails('fam:degrees')).toContain(NOTE);
+    expect(await openDetails('fam:fixedMinutes')).not.toContain(NOTE);
   });
 
-  it('captions a blank day-fraction opinion whose degree boundary is unreached', () => {
+  it('explains a blank day-fraction opinion whose degree boundary is unreached', async () => {
     // Sof zman Shma's Magen Avraham variants measure from a degree-based dawn, so
     // on a short night they go null too — despite being family `dawnToNightfall`,
     // not `degrees`. The caption still appears for that family.
@@ -230,14 +245,15 @@ describe('ZmanimList', () => {
         noDegreeTimeNote={NOTE}
       />,
     );
-    // One caption for the blank dawn-to-nightfall family; the GRA day resolves.
-    expect(screen.getAllByText(NOTE)).toHaveLength(1);
     expect(screen.getByText(/8:44/)).toBeInTheDocument();
+    // The blank dawn-to-nightfall family explains; the GRA day resolves.
+    expect(await openDetails('fam:dawnToNightfall')).toContain(NOTE);
+    expect(await openDetails('fam:sunriseToSunset')).not.toContain(NOTE);
   });
 
-  it('captions an all-blank flat (non-grouped) base once, not per row', () => {
+  it('explains an all-blank flat (non-grouped) base once, not per row', async () => {
     // Misheyakir is single-family (all degrees) so it never groups. At a very
-    // high latitude every opinion is blank; one caption for the base, not five.
+    // high latitude every opinion is blank; the base explains once, not per row.
     render(
       <ZmanimList
         groups={[
@@ -261,13 +277,15 @@ describe('ZmanimList', () => {
         noDegreeTimeNote={NOTE}
       />,
     );
-    expect(screen.getAllByText(NOTE)).toHaveLength(1);
     expect(screen.getAllByText('—')).toHaveLength(3);
-    // The base keeps its own description hint (the caption is separate inline text).
-    expect(screen.getByRole('button', { name: 'Misheyakir — details' })).toBeInTheDocument();
+    expect(screen.queryByText(NOTE)).not.toBeInTheDocument();
+    // The base's own popover carries both its description and the explanation.
+    const details = await openDetails('Misheyakir');
+    expect(details).toContain('Earliest tallit & tefillin.');
+    expect(details).toContain(NOTE);
   });
 
-  it('captions the everyday single-opinion default when it is blank', () => {
+  it('explains the everyday single-opinion default when it is blank', async () => {
     // The default panel shows one Alot (16.1°). At Düsseldorf it is null, so the
     // one-line row must still explain its own dash — the case a default user hits.
     render(
@@ -289,11 +307,11 @@ describe('ZmanimList', () => {
         noDegreeTimeNote={NOTE}
       />,
     );
-    expect(screen.getByText(NOTE)).toBeInTheDocument();
     expect(screen.getByText('—')).toBeInTheDocument();
+    expect(await openDetails('Alot ha-Shachar')).toContain(NOTE);
   });
 
-  it('suppresses the caption entirely when the note is empty (polar day)', () => {
+  it('suppresses the explanation entirely when the note is empty (polar day)', async () => {
     render(
       <ZmanimList
         groups={alot([{ key: 'alosHashachar', shita: '16.1°', family: 'degrees', detail: '', time: null }])}
@@ -301,7 +319,7 @@ describe('ZmanimList', () => {
       />,
     );
     expect(screen.getByText('—')).toBeInTheDocument();
-    expect(screen.queryByText(NOTE)).not.toBeInTheDocument();
+    expect(await openDetails('Alot ha-Shachar')).not.toContain(NOTE);
   });
 
   it('groups Sof zman Shma by day-definition, where the arithmetic is identical', () => {

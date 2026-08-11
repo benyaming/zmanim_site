@@ -16,14 +16,17 @@ import { SectionHeading } from './section-heading';
 const isBlankMoment = (row: ZmanRow): boolean => row.time === null && row.durationMillis === undefined;
 
 /**
- * The short-night explanation, shown as VISIBLE inline text next to the dashes
- * it explains — not tucked behind an info icon, since a blank a user can't
- * explain reads as broken data. Rendered once per affected base/family, never
- * per row.
+ * The short-night explanation, appended to the info popover of the thing it
+ * explains — the family heading in a grouped base, the zman name otherwise.
+ *
+ * It used to render as visible inline text on the theory that a dash a user
+ * can't explain reads as broken data. In a panel where several opinions go
+ * blank at once that repeated the same paragraph two or three times down the
+ * list and buried the times it was meant to clarify, so it now lives behind the
+ * info icon that already sits beside the affected heading. Still composed once
+ * per affected base/family, never per row.
  */
-function BlankCaption({ note }: { note: string }) {
-  return <p className="text-muted-foreground/80 text-[0.6875rem] leading-snug">{note}</p>;
-}
+const withBlankNote = (detail: string, note: string): string => (detail ? `${detail}\n\n${note}` : note);
 
 function Time({ time, durationMillis, locale }: Pick<ZmanRow, 'time' | 'durationMillis'> & { locale: string }) {
   // Duration zmanim (shaah zmanis) carry a length, not a moment — render h:mm:ss.
@@ -54,9 +57,9 @@ function BaseItem({
   locale: string;
   noDegreeTimeNote: string;
 }) {
-  // The caption explains any short-night blank in this base. Gated on the note
+  // The note explains any short-night blank in this base. Gated on the note
   // being present (the caller passes '' on a polar day, where it wouldn't hold).
-  const showBlankCaption = Boolean(noDegreeTimeNote) && item.rows.some(isBlankMoment);
+  const showBlankNote = Boolean(noDegreeTimeNote) && item.rows.some(isBlankMoment);
 
   // Single opinion → flat row, with the shita inline next to the name (an
   // indented one-row block would waste a line). flex-wrap drops the shita
@@ -69,16 +72,14 @@ function BaseItem({
       <li>
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-x-1.5">
-            <ZmanName name={item.name} description={item.description} />
+            <ZmanName
+              name={item.name}
+              description={showBlankNote ? withBlankNote(item.description, noDegreeTimeNote) : item.description}
+            />
             {row.shita && <span className="text-muted-foreground text-xs">{row.shita}</span>}
           </div>
           <Time time={row.time} durationMillis={row.durationMillis} locale={locale} />
         </div>
-        {showBlankCaption && (
-          <div className="mt-0.5 ps-3">
-            <BlankCaption note={noDegreeTimeNote} />
-          </div>
-        )}
       </li>
     );
   }
@@ -93,16 +94,13 @@ function BaseItem({
   // decision lives in buildZmanimGroups (`grouped`); everywhere else the list
   // stays flat, so the everyday one-shita-per-zman default never sees a heading.
   const grouped = item.grouped;
+  // Flat path: the base's own popover explains all its blanks. In the grouped
+  // path each family carries the note instead (below).
+  const description =
+    !grouped && showBlankNote ? withBlankNote(item.description, noDegreeTimeNote) : item.description;
   return (
     <li>
-      <ZmanName name={item.name} description={item.description} />
-      {/* Flat path: one caption for the base explains all its blanks. In the
-          grouped path each family carries its own caption instead (below). */}
-      {!grouped && showBlankCaption && (
-        <div className="mt-0.5 ps-3">
-          <BlankCaption note={noDegreeTimeNote} />
-        </div>
-      )}
+      <ZmanName name={item.name} description={description} />
       <div className="mt-1 space-y-1 ps-3">
         {grouped
           ? item.families.map((fam) => (
@@ -129,9 +127,9 @@ function ShitaRow({ row, locale }: { row: ZmanRow; locale: string }) {
 
 /**
  * One calculation family under a multi-family zman: a heading naming the method
- * (with an explanation of what it measures behind an info popover), its shitot,
- * and — when any of them is a short-night blank — one visible caption explaining
- * the dashes for the whole family.
+ * (with an explanation of what it measures behind an info popover) and its
+ * shitot. When any of those rows is a short-night blank, the explanation for
+ * the dashes joins that same popover — once for the family, never per row.
  */
 function FamilyBlock({
   fam,
@@ -142,18 +140,14 @@ function FamilyBlock({
   locale: string;
   noDegreeTimeNote: string;
 }) {
-  const showBlankCaption = Boolean(noDegreeTimeNote) && fam.rows.some(isBlankMoment);
+  const showBlankNote = Boolean(noDegreeTimeNote) && fam.rows.some(isBlankMoment);
+  const detail = showBlankNote ? withBlankNote(fam.description, noDegreeTimeNote) : fam.description;
   return (
     <div className="space-y-1">
       <span className="text-muted-foreground/80 flex items-center gap-1 text-[0.6875rem] font-medium">
         {fam.label}
-        {fam.description && <InfoHint detail={fam.description} label={fam.label} />}
+        {detail && <InfoHint detail={detail} label={fam.label} />}
       </span>
-      {showBlankCaption && (
-        <div className="ps-2">
-          <BlankCaption note={noDegreeTimeNote} />
-        </div>
-      )}
       <div className="space-y-1 ps-2">
         {fam.rows.map((row) => (
           <ShitaRow key={row.key} row={row} locale={locale} />
