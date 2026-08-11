@@ -100,7 +100,7 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
     learningKeys: cfg.learningKeys,
     plainTimes: true,
     hiddenFastEnd: cfg.hiddenFastEnd,
-    // Compact shita labels in the footer blocks ("5,95°", "ГР״А") — the same
+    // Compact shita labels in the footer blocks ("5,95°", "מג״א 72") — the same
     // register as the column sub-headers; the dialog's picker keeps the
     // spelled-out names.
     opinionLabel: (key) => labels.shitaShort(key),
@@ -109,7 +109,7 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
   // Compact print headers: the column name comes from the short register
   // (`namesShort`, falling back to the full name), and multi-shita bases span
   // their opinions. Month sheets label those with the narrow vocabulary
-  // ("МА 16,1°", "ГР״А"); the weekly sheet uses the canonical label instead —
+  // ("МА 16,1°", "Виленский Гаон"); the weekly sheet uses the canonical label —
   // its column has the width, and a sheet read by people who never saw the app
   // shouldn't make them expand "МА 72".
   const zmanHeader = (key: string): ExportHeader => {
