@@ -109,7 +109,8 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
   // Compact print headers: the column name comes from the short register
   // (`namesShort`, falling back to the full name), and multi-shita bases span
   // their opinions. Month sheets label those with the narrow vocabulary
-  // ("МА 16,1°", "Виленский Гаон"); the weekly sheet uses the canonical label —
+  // ("מג״א 16.1°", "Виленский Гаон" — Russian spells authorities out); the
+  // weekly sheet uses the canonical label —
   // its column has the width, and a sheet read by people who never saw the app
   // shouldn't make them expand "МА 72".
   const zmanHeader = (key: string): ExportHeader => {

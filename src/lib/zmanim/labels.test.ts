@@ -76,18 +76,26 @@ describe('zman label catalogs', () => {
 
   /**
    * Russian spells authorities out rather than carrying the Hebrew-style
-   * acronym: a reader of the Russian catalog is not expected to expand ГР״А.
-   * The Vilna Gaon rows therefore have no short override at all and resolve to
-   * the full label through the fallback.
+   * acronym: a reader of the Russian catalog is not expected to expand ГР״А,
+   * МА or Р״Т. Those rows carry no short override at all and resolve to the
+   * full label through the fallback — which costs nothing on a sheet, since a
+   * column is sized by its widest label and the spelled-out forms set it
+   * anyway. A unit may still be abbreviated ("72 врем."); a person may not.
    */
-  it('russian never abbreviates the Vilna Gaon', () => {
+  it('russian spells authorities out instead of abbreviating them', () => {
     const z = CATALOGS.ru.zmanim as unknown as Registers;
     for (const register of ['shitot', 'shitotShort'] as const) {
       for (const [key, label] of Object.entries(z[register] ?? {})) {
-        expect(label, `ru.${register}.${key}`).not.toMatch(/ГР/);
+        // The gershayim is what makes ГР״А and Р״Т acronyms.
+        expect(label, `ru.${register}.${key}`).not.toContain('״');
+        // МА carries none, so pin it by name.
+        expect(label, `ru.${register}.${key}`).not.toMatch(/^МА(\s|$)/);
       }
     }
-    expect(zmanLabels(translator('ru')).shitaShort('sofZmanShmaGRA')).toBe('Виленский Гаон');
+    const labels = zmanLabels(translator('ru'));
+    expect(labels.shitaShort('sofZmanShmaGRA')).toBe('Виленский Гаон');
+    expect(labels.shitaShort('sofZmanShmaMGA161')).toBe('Маген Авраам · алот 16,1°');
+    expect(labels.shitaShort('tzais72')).toBe('Рабейну Там · 72 минуты');
   });
 
   /**
