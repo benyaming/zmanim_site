@@ -6,6 +6,7 @@ import { CalendarGrid } from '@/components/calendar/calendar-grid';
 import { CalendarView } from '@/components/calendar/calendar-view';
 import { AccountMenu } from '@/components/layout/account-menu';
 import { CalendarSettings } from '@/components/layout/calendar-settings';
+import { HelpMenu } from '@/components/layout/help-menu';
 import { SettingsMenu } from '@/components/layout/settings-menu';
 import { ToolsMenu } from '@/components/layout/tools-menu';
 import { SiteFooter } from '@/components/layout/site-footer';
@@ -72,6 +73,7 @@ export function App({ initialLocation }: { initialLocation?: AppLocation }) {
             right={
               <>
                 <LocationPicker />
+                <HelpMenu />
                 <ToolsMenu />
                 {/* Calendar preferences: their own button, sitting beside the
                     Settings gear — until the header runs out of room, when they

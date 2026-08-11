@@ -6,6 +6,7 @@ import type { ReactNode, SVGProps } from 'react';
 import { useIsMiniApp } from '@/hooks/use-mini-app';
 import { Link } from '@/i18n/navigation';
 
+import { HelpMenu } from './help-menu';
 import { ReleaseNotesPane } from './release-notes';
 
 const TELEGRAM_URL = 'https://t.me/benyomin';
@@ -122,6 +123,9 @@ export function SiteFooter() {
         {/* Required to be reachable from the site for the Google OAuth app
             (see docs/settings-sync.md), and useful regardless. */}
         <span className="inline-flex items-center gap-2">
+          {/* Same dialog as the header icon — the pages that show this footer
+              without the app header (privacy, terms, city) have no other way in. */}
+          <HelpMenu variant="link" />
           <Link href="/privacy" className="hover:text-foreground underline underline-offset-2">
             {t('privacy')}
           </Link>

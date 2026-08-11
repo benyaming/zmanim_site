@@ -28,7 +28,7 @@ import {
 } from '@/lib/export';
 import { LEARNING_CYCLE_KEYS, type LearningCycleKey } from '@/lib/learning';
 import { SITE_HOST } from '@/lib/site';
-import { CONFIGURABLE_ZMANIM, ZMANIM } from '@/lib/zmanim';
+import { CONFIGURABLE_ZMANIM, zmanLabels, zmanNameShortForKey, ZMANIM } from '@/lib/zmanim';
 
 import { reportTranslator } from './export-i18n';
 import { buildZmanimPdfPages, type PdfDocConfig } from './export-pdf-doc';
@@ -71,19 +71,17 @@ export function ExportZmanimTool() {
   // Report content follows the chosen report language; the dialog (incl. the
   // zmanim picker) stays in the UI language.
   const tr = reportTranslator(reportLocale);
+  const labels = zmanLabels(tr);
   const reportDir = dirForLocale(reportLocale) === 'rtl' ? 'rtl' : 'ltr';
 
   // Flat "name · shita" headers for the data exports. The PDF builds its own
   // two-tier headers (export-pdf-doc.tsx); CSV and Excel keep every label
   // spelled out in one cell, where width costs nothing.
-  const shortName = (key: string) =>
-    tr(`zmanim.names.${key}`)
-      .replace(/\s*\([^)]*\)/g, '')
-      .trim();
   const zmanHeader = (key: string): ExportHeader => {
     const def = ZMANIM.find((z) => z.key === key);
+    const label = zmanNameShortForKey(labels, key);
     const multi = def ? (BASE_KEY_COUNT.get(def.base) ?? 1) > 1 : false;
-    return multi ? { label: shortName(key), sub: tr(`zmanim.shitot.${key}`), group: def?.base } : { label: shortName(key) };
+    return multi ? { label, sub: labels.shita(key), group: def?.base } : { label };
   };
 
   const today = DateTime.now().startOf('day');

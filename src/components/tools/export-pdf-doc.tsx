@@ -17,7 +17,7 @@ import {
 import type { LearningCycleKey } from '@/lib/learning';
 import type { AppLocation } from '@/lib/location';
 import { SITE_HOST } from '@/lib/site';
-import { type HavdalahOpinion, havdalahZmanKey, ZMANIM } from '@/lib/zmanim';
+import { type HavdalahOpinion, havdalahZmanKey, zmanLabels, zmanNameShortForKey, ZMANIM } from '@/lib/zmanim';
 
 import { reportTranslator } from './export-i18n';
 import { ExportTablePage } from './export-table-page';
@@ -70,6 +70,7 @@ export interface PdfDocConfig {
  */
 export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sheets: ExportDocSheet[] } {
   const tr = reportTranslator(cfg.reportLocale);
+  const labels = zmanLabels(tr);
   const dir = dirForLocale(cfg.reportLocale) === 'rtl' ? 'rtl' : 'ltr';
   let start = DateTime.fromISO(cfg.startIso);
   let end = DateTime.fromISO(cfg.endIso);
@@ -99,29 +100,26 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
     learningKeys: cfg.learningKeys,
     plainTimes: true,
     hiddenFastEnd: cfg.hiddenFastEnd,
-    // Compact shita labels in the footer blocks ("5.95°", "ГР״А") — the same
+    // Compact shita labels in the footer blocks ("5,95°", "ГР״А") — the same
     // register as the column sub-headers; the dialog's picker keeps the
     // spelled-out names.
-    opinionLabel: (key) => tr(`zmanim.shitotShort.${key}`),
+    opinionLabel: (key) => labels.shitaShort(key),
   });
 
-  // Compact print headers: the parenthetical qualifier is dropped from the
-  // zman name — "Zman Shma (reading time)" → "Zman Shma" — and multi-shita
-  // bases span their opinions, labelled by the curated SHORT shita vocabulary
-  // ("MGA 16.1°", "GRA") on month sheets. The weekly sheet spells the shita
-  // out (`shitotPrint`) instead: its label column has the width, and a sheet
-  // read by people who never saw the app shouldn't make them expand "МА 72".
-  const shortName = (key: string) =>
-    tr(`zmanim.names.${key}`)
-      .replace(/\s*\([^)]*\)/g, '')
-      .trim();
+  // Compact print headers: the column name comes from the short register
+  // (`namesShort`, falling back to the full name), and multi-shita bases span
+  // their opinions. Month sheets label those with the narrow vocabulary
+  // ("МА 16,1°", "ГР״А"); the weekly sheet uses the canonical label instead —
+  // its column has the width, and a sheet read by people who never saw the app
+  // shouldn't make them expand "МА 72".
   const zmanHeader = (key: string): ExportHeader => {
     const def = ZMANIM.find((z) => z.key === key);
+    const label = zmanNameShortForKey(labels, key);
     const multi = def ? (BASE_KEY_COUNT.get(def.base) ?? 1) > 1 : false;
-    if (!multi) return { label: shortName(key) };
+    if (!multi) return { label };
     return {
-      label: shortName(key),
-      sub: tr(`zmanim.${cfg.weekly ? 'shitotPrint' : 'shitotShort'}.${key}`),
+      label,
+      sub: cfg.weekly ? labels.shita(key) : labels.shitaShort(key),
       group: def?.base,
     };
   };
@@ -202,9 +200,9 @@ export function buildZmanimPdfPages(cfg: PdfDocConfig): { pages: ReactNode[]; sh
     fastLabels: {
       start: tr('events.fastStart'),
       ends: tr('events.fastEnd'),
-      chatzos: shortName('chatzos'),
-      chametzEat: shortName('sofZmanAchilasChametzGRA'),
-      chametzBurn: shortName('sofZmanBiurChametzGRA'),
+      chatzos: zmanNameShortForKey(labels, 'chatzos'),
+      chametzEat: zmanNameShortForKey(labels, 'sofZmanAchilasChametzGRA'),
+      chametzBurn: zmanNameShortForKey(labels, 'sofZmanBiurChametzGRA'),
       chalakim: tr('export.chalakim'),
     },
   });
