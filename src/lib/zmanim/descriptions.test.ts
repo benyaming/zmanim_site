@@ -55,14 +55,21 @@ const EQUINOX_WORDS: Record<Loc, RegExp> = {
 };
 
 /**
- * The anchor the "≈ N minutes" figures are quoted against — Jerusalem at the
- * March equinox, the same reference docs/zmanim.md pins the golden values to.
- * Fixed year: a test whose input moves with the clock cannot be reproduced.
+ * The anchor the minute figures are quoted against.
+ *
+ * Deliberately the SAME Jerusalem equinox the golden fixtures use
+ * (`calculator.golden.test.ts`, `calculator.elevation.test.ts`) — coordinates
+ * and date included. docs/zmanim.md requires the description figures to match
+ * those fixtures, so checking them against any other point would verify a
+ * different claim; and that anchor is the one cross-validated to the second
+ * against Hebcal, where an arbitrary city-centre coordinate is validated
+ * against nothing. Keep the three in step: a second "Jerusalem equinox" in the
+ * suite is a second thing to drift.
  */
 const EQUINOX = computeZmanim({
-  lat: 31.7683,
-  lng: 35.2137,
-  date: DateTime.fromObject({ year: 2026, month: 3, day: 20, hour: 12 }, { zone: 'Asia/Jerusalem' }),
+  lat: 31.778,
+  lng: 35.2354,
+  date: DateTime.fromObject({ year: 2024, month: 3, day: 20, hour: 12 }, { zone: 'Asia/Jerusalem' }),
   timeZoneId: 'Asia/Jerusalem',
 });
 const at = (key: string) => EQUINOX.find((z) => z.key === key)?.time ?? null;
