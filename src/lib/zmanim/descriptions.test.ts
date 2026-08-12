@@ -42,17 +42,6 @@ const anglesIn = (s: string): number[] =>
 const minutesIn = (s: string): number[] =>
   [...s.matchAll(/(\d+)[\s -]*(?:мин|minute|min\b|דק)/gi)].map((m) => Number(m[1]));
 
-/**
- * An APPROXIMATE offset — "≈50 min", "примерно 50 минут", "כ-50 דק׳".
- *
- * This is the construction CLAUDE.md rule 7 governs: a measured gap that only
- * holds at the anchor. It is deliberately distinguished from naming an
- * opinion's provenance ("the degree form of his 72-minute nightfall"), which
- * states which shita an angle was derived from rather than an offset the
- * reader could apply, and so carries no qualifier in en/he.
- */
-const APPROX_OFFSET = /(?:≈|~|примерно|about|כ[-־])\s*\d+/i;
-
 /** Wording that anchors a minute figure to Jerusalem at the equinox. */
 const ANCHOR_WORDS: Record<Loc, RegExp> = {
   ru: /Иерусалим/i,
@@ -146,23 +135,30 @@ describe('zman descriptions', () => {
     }
     // Guard the guard: if the phrasing changes so nothing parses, this test
     // would silently assert nothing.
-    expect(checked, `${loc}: no equinox figures parsed — has the phrasing changed?`).toBeGreaterThanOrEqual(8);
+    expect(checked, `${loc}: no equinox figures parsed — has the phrasing changed?`).toBeGreaterThanOrEqual(10);
   });
 
   /**
-   * CLAUDE.md rule 7: the minute figure on a degree zman is location- and
-   * season-dependent, so it may never be stated bare.
+   * CLAUDE.md rule 7: a minute figure on a degree zman is location- and
+   * season-dependent, so it may never be stated bare — in ANY construction.
+   *
+   * This covers naming an opinion's provenance too, not only "≈ N min"
+   * measurements. en/he used to say "the degree form of his 72-minute
+   * nightfall" for alos198, alosHashachar and tzais161, which reads as an
+   * identity and invites exactly the conclusion the labels were rewritten to
+   * prevent — that 16.1° simply IS 72 minutes. All three locales now state the
+   * relation as an anchored figure with the caveat.
    */
   it.each(LOCALES)('%s never quotes a minute figure without the equinox qualifier', (loc) => {
     const { descriptions } = catalog(loc);
     let checked = 0;
     for (const def of DEGREE_ZMANIM) {
       const desc = descriptions[def.key]!;
-      if (!APPROX_OFFSET.test(desc)) continue;
+      if (minutesIn(desc).length === 0) continue;
       expect(ANCHOR_WORDS[loc].test(desc), `${loc}: descriptions.${def.key} omits Jerusalem`).toBe(true);
       expect(EQUINOX_WORDS[loc].test(desc), `${loc}: descriptions.${def.key} omits the equinox`).toBe(true);
       checked++;
     }
-    expect(checked, `${loc}: no approximate offsets parsed — has the phrasing changed?`).toBeGreaterThanOrEqual(8);
+    expect(checked, `${loc}: no minute figures parsed — has the phrasing changed?`).toBeGreaterThanOrEqual(10);
   });
 });
