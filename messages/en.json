@@ -339,14 +339,6 @@
     "fastEnd": "Fast ends",
     "candleOffset": "{minutes} min before sunset",
     "candleAfterNightfall": "not before nightfall",
-    "fastEndOpinions": {
-      "tzaisGeonim": "Baal HaTanya · 5.95°",
-      "tzaisGeonim645": "R' Tukachinsky · 6.45°",
-      "tzaisGeonim7083": "R' Moshe Feinstein · 7.083°",
-      "tzais": "3 small stars · 8.5°",
-      "tzais42": "42 min",
-      "tzais72": "Rabbeinu Tam · 72 min fixed"
-    },
     "fastEndKinds": {
       "gmarTaanis": "Minor fasts · three medium stars",
       "nightfall": "All fasts · three small stars"

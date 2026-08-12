@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { ZMAN_PICKER_SECTIONS, ZmanBaseControl } from '@/components/zmanim/zman-picker';
 import { dirForLocale } from '@/i18n/routing';
-import { FAST_END_OPINIONS } from '@/lib/calendar';
+import { FAST_END_OPINIONS, fastEndZmanKey } from '@/lib/calendar';
 import {
   buildExportGrid,
   buildZmanimTable,
@@ -48,7 +48,6 @@ export function ExportZmanimTool() {
   const tGroup = useTranslations('zmanim.groups');
   const tPanel = useTranslations('panel');
   const tLearning = useTranslations('learning');
-  const tFastEnd = useTranslations('events.fastEndOpinions');
   const {
     candleLightingOffset,
     havdalahOpinion,
@@ -507,7 +506,7 @@ export function ExportZmanimTool() {
                       })
                     }
                   />
-                  <span className="text-muted-foreground text-xs">{tFastEnd(opinion.key)}</span>
+                  <span className="text-muted-foreground text-xs">{tShita(fastEndZmanKey(opinion.key))}</span>
                 </label>
               ))}
             </div>

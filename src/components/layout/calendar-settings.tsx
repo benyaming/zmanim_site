@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { ZMAN_PICKER_SECTIONS, ZmanBaseControl } from '@/components/zmanim/zman-picker';
-import { FAST_END_OPINIONS, type FastEndKind, isDefaultHiddenFastEnd } from '@/lib/calendar';
+import { FAST_END_OPINIONS, type FastEndKind, fastEndZmanKey, isDefaultHiddenFastEnd } from '@/lib/calendar';
 import { LEARNING_CYCLE_KEYS } from '@/lib/learning';
 import {
   HAVDALAH_OPINIONS,
@@ -67,7 +67,6 @@ export function CalendarSettingsBody() {
   const tShita = useTranslations('zmanim.shitot');
   const tGroup = useTranslations('zmanim.groups');
   const tLearning = useTranslations('learning');
-  const tFastEnd = useTranslations('events.fastEndOpinions');
   const tFastEndKind = useTranslations('events.fastEndKinds');
   const {
     location,
@@ -253,7 +252,7 @@ export function CalendarSettingsBody() {
                 <ZmanCheckboxRow
                   key={key}
                   id={`fastend-${key}`}
-                  label={tFastEnd(key)}
+                  label={tShita(fastEndZmanKey(key))}
                   checked={!hiddenFast.has(key)}
                   onChange={(visible) => setFastEndVisible(key, visible)}
                 />

@@ -43,7 +43,8 @@ export interface DayEvent {
    * The opinion this time comes from.
    *
    * On `fastEnd` — emitted once per visible opinion for the fast's severity —
-   * it is the fast-end opinion key, translatable via `events.fastEndOpinions`.
+   * it is the fast-end opinion key; label it via `zmanim.shitot` after mapping
+   * through `fastEndZmanKey`.
    * On `fastStart` it is the zman key that supplied the time (see
    * FAST_START_ZMAN_KEYS), translatable via `zmanim.shitot`, so the row always
    * says which dawn it is showing. Absent on Tisha B'Av's sunset onset, and on
