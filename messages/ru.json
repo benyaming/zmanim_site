@@ -340,14 +340,6 @@
     "fastEnd": "Окончание поста",
     "candleOffset": "{minutes} мин до заката",
     "candleAfterNightfall": "не раньше выхода звёзд",
-    "fastEndOpinions": {
-      "tzaisGeonim": "Бааль а-Тания · 5.95°",
-      "tzaisGeonim645": "Рав Тукачинский · 6.45°",
-      "tzaisGeonim7083": "Рав Моше Файнштейн · 7.083°",
-      "tzais": "3 малые звезды · 8.5°",
-      "tzais42": "42 мин",
-      "tzais72": "Рабейну Там · 72 мин фикс."
-    },
     "fastEndKinds": {
       "gmarTaanis": "Малые посты · три средние звезды",
       "nightfall": "Все посты · три малые звезды"

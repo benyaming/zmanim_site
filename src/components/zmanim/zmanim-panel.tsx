@@ -28,6 +28,7 @@ import { useZmanim } from '@/hooks/use-zmanim';
 import {
   DEFAULT_HIDDEN_FAST_END,
   dayEventZmanKeys,
+  fastEndZmanKey,
   getDayEvents,
   getDayInfo,
   isErevPesach,
@@ -281,7 +282,6 @@ export function ZmanimPanel() {
   const tCat = useTranslations('categories');
   const tPanel = useTranslations('panel');
   const tEvents = useTranslations('events');
-  const tFastEnd = useTranslations('events.fastEndOpinions');
   const tPersonal = useTranslations('personalDates');
 
   const info = getDayInfo(selectedDay, undefined, locale, location.inIsrael);
@@ -423,7 +423,7 @@ export function ZmanimPanel() {
                 <div className="mt-1 space-y-1 ps-6">
                   {fastEndEvents.map((event) => (
                     <div key={event.zmanKey} className="flex items-center justify-between gap-3">
-                      <span className="text-muted-foreground text-xs">{event.zmanKey ? tFastEnd(event.zmanKey) : ''}</span>
+                      <span className="text-muted-foreground text-xs">{event.zmanKey ? tShita(fastEndZmanKey(event.zmanKey)) : ''}</span>
                       <time className="font-mono text-sm tabular-nums">{formatTime(event.time, locale)}</time>
                     </div>
                   ))}

@@ -3,6 +3,7 @@ export { type DayEvent, type DayEventType, dayEventZmanKeys, getDayEvents } from
 export {
   DEFAULT_HIDDEN_FAST_END,
   FAST_END_OPINIONS,
+  fastEndZmanKey,
   type FastEndKind,
   type FastEndOpinionDef,
   type FastEndOpinionKey,

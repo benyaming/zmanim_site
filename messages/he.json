@@ -339,14 +339,6 @@
     "fastEnd": "סיום הצום",
     "candleOffset": "{minutes} דק׳ לפני השקיעה",
     "candleAfterNightfall": "לא לפני צאת הכוכבים",
-    "fastEndOpinions": {
-      "tzaisGeonim": "בעל התניא · 5.95°",
-      "tzaisGeonim645": "הרב טוקצ׳ינסקי · 6.45°",
-      "tzaisGeonim7083": "הרב משה פיינשטיין · 7.083°",
-      "tzais": "3 כוכבים קטנים · 8.5°",
-      "tzais42": "42 דק׳",
-      "tzais72": "רבנו תם · 72 דק׳ קבועות"
-    },
     "fastEndKinds": {
       "gmarTaanis": "תעניות קלות · שלושה כוכבים בינוניים",
       "nightfall": "כל התעניות · שלושה כוכבים קטנים"

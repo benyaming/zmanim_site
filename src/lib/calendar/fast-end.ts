@@ -21,7 +21,7 @@
 export type FastEndKind = 'gmarTaanis' | 'nightfall';
 
 export interface FastEndOpinionDef {
-  /** Stable id: the hide-list key, the `events.fastEndOpinions` label key, and DayEvent.zmanKey. */
+  /** Stable id: the hide-list key and DayEvent.zmanKey. Not a label key — see fastEndZmanKey. */
   key: string;
   kind: FastEndKind;
   /** The computed-zman key whose time this opinion uses. */
@@ -53,6 +53,26 @@ export type FastEndOpinionKey = (typeof FAST_END_OPINIONS)[number]['key'];
 export const FAST_END_FALLBACK: FastEndOpinionDef = FAST_END_OPINIONS.find((o) => o.key === 'tzais72')!;
 
 const FAST_END_KEYS = new Set(FAST_END_OPINIONS.map((o) => o.key));
+
+const ZMAN_KEY_BY_OPINION = new Map(FAST_END_OPINIONS.map((o) => [o.key, o.zmanKey]));
+
+/**
+ * The `zmanim.shitot` key an opinion is labelled by.
+ *
+ * Fast-end opinions used to carry their own `events.fastEndOpinions` strings —
+ * a fourth copy of labels the zmanim catalog already had. It drifted: after the
+ * shitot were rewritten to state each opinion in its own unit, every fast-end
+ * label still read the old way ("Рабейну Там · 72 мин фикс." beside the panel's
+ * "Рабейну Там · 72 минуты"), so the same nightfall appeared two ways depending
+ * on where you looked. They now resolve through the canonical register, as
+ * havdalah always has (see havdalahZmanKey).
+ *
+ * An opinion's key and its zmanKey happen to coincide today; going through the
+ * definition keeps that a coincidence rather than an assumption.
+ */
+export function fastEndZmanKey(key: string): string {
+  return ZMAN_KEY_BY_OPINION.get(key) ?? key;
+}
 
 /** The computed-zman keys the fast-end opinions read their time from. */
 export const FAST_END_ZMAN_KEYS: readonly string[] = FAST_END_OPINIONS.map((o) => o.zmanKey);
