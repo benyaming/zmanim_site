@@ -10,7 +10,7 @@ The codebase is split into a **pure domain layer** and a **UI layer**, with a th
 src/lib/  (pure, framework-free, unit-tested)
   zmanim/     time computation + display grouping
   calendar/   month grid, day classification, day events, navigation
-  geo/        geocoding + timezone + settlements index
+  geo/        geocoding + timezone + localities index
   location.ts site.ts cities.ts format.ts
 
 src/components/providers/  client state (app-state, accessibility, theme, query)
@@ -88,4 +88,4 @@ The defining UI constraint: **the month must always fit the screen without scrol
 
 `src/lib/geo/geocoding.ts` — forward city search via **Open-Meteo**, reverse (coords → name) via **BigDataCloud**'s free client endpoint. `src/lib/geo/timezone.ts` — timezone resolved **offline** with `tz-lookup`. There are no API keys anywhere; the legacy Mapbox dependency was intentionally dropped.
 
-Both external services fail on Israeli settlements (missing/variant GeoNames spellings; BigDataCloud labels users there with neighboring Palestinian cities), so `src/lib/geo/settlements.ts` bundles a curated trilingual index that backstops both directions: settlement matches are merged into search results and win reverse-geocode labels within 3 km. `tzFromLatLng` also normalizes `Asia/Hebron`/`Asia/Gaza` (tz-lookup's coarse polygons swallow Gilo, Ma'ale Adumim, Ariel) to `Asia/Jerusalem`, which keeps `inIsrael` — and with it the Israel luach — correct near the Green Line.
+Both external services fail on a set of Israeli localities (missing/variant GeoNames spellings, and no Hebrew entry at all for cities like Rosh HaAyin and El'ad; BigDataCloud labels users with neighboring Palestinian cities and governorates — "Ramallah" for Psagot, "Salfit" from ~2 km east of Rosh HaAyin's center outward), so `src/lib/geo/localities.ts` bundles a curated trilingual index that backstops both directions: local matches are merged into search results and win reverse-geocode labels within each entry's own `radiusKm` (default 3 km; `0` means search-only, for entries the reverse geocoder already names correctly). `normalizeName` folds Hebrew כתיב מלא onto כתיב חסר, so `קרית`/`קריית` and `נוה`/`נווה` match either way. `tzFromLatLng` also normalizes `Asia/Hebron`/`Asia/Gaza` (tz-lookup's coarse polygons swallow Gilo, Ma'ale Adumim, Ariel) to `Asia/Jerusalem`, which keeps `inIsrael` — and with it the Israel luach — correct near the Green Line.

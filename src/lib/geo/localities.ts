@@ -1,29 +1,55 @@
 /**
- * Curated index of Israeli settlements in Judea & Samaria (plus the adjacent
- * localities most affected), bundled locally because the external geocoders
- * fail on them:
+ * Curated gazetteer of Israeli localities the external geocoders get wrong,
+ * bundled locally as a backstop in both directions:
  *
- * - Open-Meteo's GeoNames index misses most of them, does no fuzzy matching
- *   (it has "Modiin Ilit" but not "Modiin Illit"), and has no Hebrew/Russian
- *   entries for them.
- * - BigDataCloud's reverse geocoder labels users there with neighboring
- *   Palestinian cities ("Ramallah" for Psagot / Kochav Yaakov).
+ * - Open-Meteo's GeoNames index misses many of them, does no fuzzy matching
+ *   (it has "Modiin Ilit" but not "Modiin Illit"), and often has no Hebrew or
+ *   Russian entry at all — Rosh HaAyin and El'ad are unreachable by a Hebrew
+ *   query even though the records exist under a Latin name.
+ * - BigDataCloud's reverse geocoder labels users with neighboring Palestinian
+ *   cities ("Ramallah" for Psagot / Kochav Yaakov), and its governorate
+ *   polygons are coarse enough to reach well inside the Green Line: every
+ *   point more than ~2 km east of Rosh HaAyin's center reverse-geocodes to
+ *   "Salfit", a town 21 km away.
  *
- * Coordinates were sourced from OpenStreetMap (locality centers; a few hundred
- * meters of drift is negligible for zmanim). Names follow the transliteration
- * conventions shared with the companion zmanim_bot project.
+ * Most entries are in Judea & Samaria because that is where both services fail
+ * hardest, but membership is decided by "the geocoder gets this wrong", not by
+ * location — hence `localities`, not `settlements`.
+ *
+ * Coordinates were sourced from OpenStreetMap and Open-Meteo (locality centers;
+ * a few hundred meters of drift is negligible for zmanim). Names follow the
+ * transliteration conventions shared with the companion zmanim_bot project.
  */
 
-export interface Settlement {
+export interface Locality {
   slug: string;
   lat: number;
   lng: number;
   names: { en: string; he: string; ru: string };
   /** Alternate spellings / transliterations (any language), matched after normalization. */
   aliases?: string[];
+  /**
+   * Radius around {@link lat}/{@link lng} within which reverse geocoding claims
+   * a point for this locality, in km. Defaults to {@link DEFAULT_CLAIM_KM},
+   * which suits a village; `0` opts out of claiming entirely, leaving the entry
+   * searchable but letting the reverse geocoder answer.
+   *
+   * Ignored when {@link bounds} is set.
+   */
+  radiusKm?: number;
+  /**
+   * Claim area as `[south, north, west, east]`, for localities a circle can't
+   * describe. Reach for this only when a radius wide enough to cover the place
+   * would also swallow a neighbor the reverse geocoder already names correctly
+   * — a circle is centered, but a mislabel usually isn't.
+   */
+  bounds?: [number, number, number, number];
 }
 
-export const SETTLEMENTS: readonly Settlement[] = [
+/** Claim radius for entries that don't set one — roughly a village's extent. */
+export const DEFAULT_CLAIM_KM = 3;
+
+export const LOCALITIES: readonly Locality[] = [
   { slug: 'modiin-illit', lat: 31.9324, lng: 35.0433, names: { en: "Modi'in Illit", he: 'מודיעין עילית', ru: 'Модиин-Илит' }, aliases: ['kiryat sefer', 'קרית ספר', 'modiin ilit'] },
   { slug: 'beitar-illit', lat: 31.7019, lng: 35.1073, names: { en: 'Beitar Illit', he: 'ביתר עילית', ru: 'Бейтар-Илит' }, aliases: ['betar illit', 'betar ilit', 'beitar ilit'] },
   { slug: 'maale-adumim', lat: 31.7706, lng: 35.2987, names: { en: "Ma'ale Adumim", he: 'מעלה אדומים', ru: 'Маале-Адумим' } },
@@ -109,19 +135,70 @@ export const SETTLEMENTS: readonly Settlement[] = [
   { slug: 'sansana', lat: 31.3629, lng: 34.9034, names: { en: 'Sansana', he: 'סנסנה', ru: 'Сансана' } },
   { slug: 'maale-amos', lat: 31.5963, lng: 35.2281, names: { en: "Ma'ale Amos", he: 'מעלה עמוס', ru: 'Маале-Амос' } },
   { slug: 'kfar-eldad', lat: 31.6541, lng: 35.2509, names: { en: 'Kfar Eldad', he: 'כפר אלדד', ru: 'Кфар-Эльдад' } },
+
+  // Inside the Green Line. BigDataCloud's Salfit governorate polygon reaches to
+  // ~2 km east of Rosh HaAyin's center, so the city claims its own municipal
+  // area to keep residents from being labeled with a West Bank town 21 km away.
+  //
+  // Bounds, not a radius: the mislabel is one-directional (BigDataCloud is
+  // right up to ~2 km east and wrong beyond it, and right on every western
+  // approach), so a circle wide enough to reach the bad side also reaches 3.3 km
+  // west into Givat HaShlosha and relabels a kibbutz the service names fine.
+  // The box is OSM's administrative boundary for the municipality.
+  { slug: 'rosh-haayin', lat: 32.0956, lng: 34.9566, names: { en: 'Rosh HaAyin', he: 'ראש העין', ru: 'Рош-ха-Аин' }, aliases: ["rosh ha'ayin", 'rosh ayin'], bounds: [32.0692, 32.1157, 34.9344, 34.9932] },
+  // Einat sits in the southwest corner of that box. It is its own kibbutz and
+  // BigDataCloud names it correctly, so it needs an entry of its own to win the
+  // nearest-claimant tie — kept tight enough not to reach the city proper.
+  { slug: 'einat', lat: 32.0828, lng: 34.9394, names: { en: 'Einat', he: 'עינת', ru: 'Эйнат' }, aliases: ['enat'], radiusKm: 0.8 },
+  // El'ad is search-only: Open-Meteo has no Hebrew entry for it, but BigDataCloud
+  // labels it correctly across its own area and never reaches for Salfit nearby,
+  // so a claim here would only override correct answers — a 3 km one relabeled
+  // the neighboring moshav Mazor.
+  { slug: 'elad', lat: 32.0498, lng: 34.9538, names: { en: "El'ad", he: 'אלעד', ru: 'Эльад' }, aliases: ['elad'], radiusKm: 0 },
+
+  // Search-only (`radiusKm: 0`): Open-Meteo has no Hebrew entry for these, or
+  // indexes them only under a spelling users don't type, but BigDataCloud
+  // reverse-geocodes them correctly — so they must not claim points.
+  { slug: 'telz-stone', lat: 31.803, lng: 35.102, names: { en: 'Telz-Stone', he: 'טלזסטון', ru: 'Тельз-Стоун' }, aliases: ['kiryat yearim', 'קריית יערים', 'telzstone'], radiusKm: 0 },
+  { slug: 'nahariya', lat: 33.0089, lng: 35.0981, names: { en: 'Nahariya', he: 'נהריה', ru: 'Нагария' }, aliases: ['nahariyya'], radiusKm: 0 },
+  { slug: 'yehud-monosson', lat: 32.0332, lng: 34.8909, names: { en: 'Yehud-Monosson', he: 'יהוד-מונוסון', ru: 'Йехуд-Моносон' }, aliases: ['yehud', 'יהוד', 'monosson'], radiusKm: 0 },
+  { slug: 'rahat', lat: 31.3955, lng: 34.757, names: { en: 'Rahat', he: 'רהט', ru: 'Рахат' }, radiusKm: 0 },
+  { slug: 'tayibe', lat: 32.2662, lng: 35.0089, names: { en: 'Tayibe', he: 'טייבה', ru: 'Тайибе' }, aliases: ['et taiyiba', 'taiyiba'], radiusKm: 0 },
+  { slug: 'tamra', lat: 32.853, lng: 35.1987, names: { en: 'Tamra', he: 'טמרה', ru: 'Тамра' }, radiusKm: 0 },
+  { slug: 'sakhnin', lat: 32.8651, lng: 35.2977, names: { en: 'Sakhnin', he: "סח'נין", ru: 'Сахнин' }, aliases: ['סחנין'], radiusKm: 0 },
+  { slug: 'umm-al-fahm', lat: 32.5176, lng: 35.154, names: { en: 'Umm al-Fahm', he: 'אום אל-פחם', ru: 'Умм-эль-Фахм' }, radiusKm: 0 },
+  { slug: 'or-akiva', lat: 32.5064, lng: 34.9209, names: { en: 'Or Akiva', he: 'אור עקיבא', ru: 'Ор-Акива' }, radiusKm: 0 },
+  { slug: 'kfar-chabad', lat: 31.9879, lng: 34.8516, names: { en: 'Kfar Chabad', he: 'כפר חב"ד', ru: 'Кфар-Хабад' }, aliases: ['kfar habad'], radiusKm: 0 },
+  { slug: 'beit-hilkia', lat: 31.7928, lng: 34.8105, names: { en: 'Beit Hilkia', he: 'בית חלקיה', ru: 'Бейт-Хилкия' }, radiusKm: 0 },
+  { slug: 'tifrah', lat: 31.3266, lng: 34.6769, names: { en: 'Tifrah', he: 'תפרח', ru: 'Тифрах' }, radiusKm: 0 },
+  // Open-Meteo indexes these only under כתיב מלא ("קריית גת"); `normalizeName`
+  // now folds that to the חסר spelling so either one the user types matches.
+  { slug: 'kiryat-gat', lat: 31.61, lng: 34.7642, names: { en: 'Kiryat Gat', he: 'קריית גת', ru: 'Кирьят-Гат' }, radiusKm: 0 },
+  { slug: 'kiryat-ata', lat: 32.8115, lng: 35.1132, names: { en: 'Kiryat Ata', he: 'קריית אתא', ru: 'Кирьят-Ата' }, radiusKm: 0 },
+  { slug: 'kiryat-motzkin', lat: 32.8371, lng: 35.0776, names: { en: 'Kiryat Motzkin', he: 'קריית מוצקין', ru: 'Кирьят-Моцкин' }, radiusKm: 0 },
+  { slug: 'kiryat-yam', lat: 32.8497, lng: 35.0697, names: { en: 'Kiryat Yam', he: 'קריית ים', ru: 'Кирьят-Ям' }, radiusKm: 0 },
+  { slug: 'kiryat-bialik', lat: 32.8275, lng: 35.0858, names: { en: 'Kiryat Bialik', he: 'קריית ביאליק', ru: 'Кирьят-Бялик' }, radiusKm: 0 },
+  { slug: 'kiryat-shmona', lat: 33.212, lng: 35.5704, names: { en: 'Kiryat Shmona', he: 'קריית שמונה', ru: 'Кирьят-Шмона' }, radiusKm: 0 },
+  { slug: 'kiryat-malachi', lat: 31.7289, lng: 34.7463, names: { en: 'Kiryat Malachi', he: 'קריית מלאכי', ru: 'Кирьят-Малахи' }, radiusKm: 0 },
 ];
 
 /** Localized country label for search-result descriptions. */
 export const ISRAEL_LABEL: Record<string, string> = { en: 'Israel', he: 'ישראל', ru: 'Израиль' };
 
-export function settlementName(s: Settlement, language: string): string {
-  return s.names[language as keyof Settlement['names']] ?? s.names.en;
+export function localityName(l: Locality, language: string): string {
+  return l.names[language as keyof Locality['names']] ?? l.names.en;
 }
 
 /**
  * Case-, apostrophe- and diacritic-insensitive key so "Modi'in Illit",
  * "modiin illit" and "Giv'at Ze'ev" all match user input typed without
  * punctuation. Also strips Hebrew niqqud and geresh/gershayim (ניל"י → נילי).
+ *
+ * The last two steps collapse doubled yod and vav, folding Hebrew כתיב מלא onto
+ * כתיב חסר: קריית ↔ קרית, נהרייה ↔ נהריה, נווה ↔ נוה. Both spellings are in
+ * everyday use and neither is wrong, so whichever one an entry happens to store
+ * has to match whichever one the user happens to type — before this, "קריית
+ * ארבע" found Kiryat Arba and "קרית ארבע" found nothing.
  */
 function normalizeName(s: string): string {
   return s
@@ -131,28 +208,34 @@ function normalizeName(s: string): string {
     .replace(/['‘’`׳״"]/g, '')
     .replace(/[-_.,()]/g, ' ')
     .replace(/\s+/g, ' ')
-    .trim();
+    .trim()
+    .replace(/יי/g, 'י')
+    .replace(/וו/g, 'ו');
 }
 
-const INDEX = SETTLEMENTS.map((s) => ({
-  s,
-  keys: [s.names.en, s.names.he, s.names.ru, ...(s.aliases ?? [])].map(normalizeName),
+const INDEX = LOCALITIES.map((l) => ({
+  l,
+  keys: [l.names.en, l.names.he, l.names.ru, ...(l.aliases ?? [])].map(normalizeName),
 }));
 
 /**
- * Autocomplete-style local search: a settlement matches when the query is a
+ * Autocomplete-style local search: a locality matches when the query is a
  * prefix of any known name/alias, or of any word inside one ("adumim" finds
  * Ma'ale Adumim). Full-name prefix matches rank first; within a tier the
  * dataset's rough population order is kept.
+ *
+ * Search covers every entry, including the `radiusKm: 0` ones that never claim
+ * a reverse-geocoded point — being unfindable and being mislabeled are separate
+ * failures, and an entry can fix one without touching the other.
  */
-export function searchSettlements(query: string, limit = 6): Settlement[] {
+export function searchLocalities(query: string, limit = 6): Locality[] {
   const q = normalizeName(query);
   if (q.length < 2) return [];
-  const full: Settlement[] = [];
-  const word: Settlement[] = [];
-  for (const { s, keys } of INDEX) {
-    if (keys.some((k) => k.startsWith(q))) full.push(s);
-    else if (keys.some((k) => k.split(' ').some((w) => w.startsWith(q)))) word.push(s);
+  const full: Locality[] = [];
+  const word: Locality[] = [];
+  for (const { l, keys } of INDEX) {
+    if (keys.some((k) => k.startsWith(q))) full.push(l);
+    else if (keys.some((k) => k.split(' ').some((w) => w.startsWith(q)))) word.push(l);
   }
   return [...full, ...word].slice(0, limit);
 }
@@ -165,14 +248,33 @@ export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: numb
   return 2 * 6371 * Math.asin(Math.sqrt(a));
 }
 
-/** The closest settlement within `maxKm`, or null. Linear scan — the list is tiny. */
-export function nearestSettlement(lat: number, lng: number, maxKm: number): Settlement | null {
-  let best: Settlement | null = null;
-  let bestKm = maxKm;
-  for (const s of SETTLEMENTS) {
-    const d = haversineKm(lat, lng, s.lat, s.lng);
-    if (d <= bestKm) {
-      best = s;
+/**
+ * The closest locality whose own claim area contains the point, or null.
+ * Linear scan — the list is tiny.
+ *
+ * The claim area is per-entry rather than a single global cutoff because the
+ * entries are not one size: a hilltop village is fully covered by 3 km, while
+ * Rosh HaAyin's eastern half sits outside it — and that gap is precisely where
+ * BigDataCloud starts answering "Salfit". Entries with `radiusKm: 0` opt out of
+ * claiming entirely; entries with {@link Locality.bounds} claim a box instead.
+ *
+ * Overlaps resolve to the claimant whose center is nearest, so a small locality
+ * enclosed by a larger one's area keeps its own name.
+ */
+export function nearestLocality(lat: number, lng: number): Locality | null {
+  let best: Locality | null = null;
+  let bestKm = Infinity;
+  for (const l of LOCALITIES) {
+    if (l.bounds) {
+      const [south, north, west, east] = l.bounds;
+      if (lat < south || lat > north || lng < west || lng > east) continue;
+    } else {
+      const radius = l.radiusKm ?? DEFAULT_CLAIM_KM;
+      if (radius <= 0 || haversineKm(lat, lng, l.lat, l.lng) > radius) continue;
+    }
+    const d = haversineKm(lat, lng, l.lat, l.lng);
+    if (d < bestKm) {
+      best = l;
       bestKm = d;
     }
   }

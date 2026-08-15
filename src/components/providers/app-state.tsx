@@ -628,7 +628,7 @@ export function AppStateProvider({
   }, [location, locale, urlProvided]);
 
   // Backfill elevation for locations that arrived without one (GPS/IP fixes,
-  // settlement picks, deep links, saves that predate the field). Best-effort
+  // locality picks, deep links, saves that predate the field). Best-effort
   // and patch-only — like the relabel effect it must not lock the location,
   // and it only applies if the coordinates haven't changed meanwhile. Runs at
   // most once per location since a successful patch persists the value.
