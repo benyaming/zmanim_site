@@ -2,7 +2,7 @@
  * Keyless elevation lookup (Open-Meteo, Copernicus DEM 90 m) — same provider as
  * forward geocoding, so no new dependency or token. Used to backfill
  * `AppLocation.elevation` for locations that don't come with one (GPS fix, IP
- * detection, bundled settlements, legacy saves). Forward-geocoded picks carry
+ * detection, bundled localities, legacy saves). Forward-geocoded picks carry
  * elevation directly from the search response and skip this request.
  *
  * Returns meters above sea level — can be negative (Dead Sea area); the zmanim

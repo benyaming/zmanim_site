@@ -1,11 +1,11 @@
 import {
   haversineKm,
   ISRAEL_LABEL,
-  nearestSettlement,
-  searchSettlements,
-  type Settlement,
-  settlementName,
-} from './settlements';
+  type Locality,
+  localityName,
+  nearestLocality,
+  searchLocalities,
+} from './localities';
 
 /**
  * Keyless geocoding. Forward search uses Open-Meteo; reverse (coords -> name)
@@ -13,9 +13,9 @@ import {
  * app has no Mapbox dependency or billing. Timezone is resolved locally via
  * `tz-lookup`, so we don't rely on these services for it.
  *
- * Both directions are backstopped by the bundled settlement index (see
- * `settlements.ts`): the external services miss or mislabel Israeli
- * settlements, which broke search and produced "Ramallah"-style labels.
+ * Both directions are backstopped by the bundled locality index (see
+ * `localities.ts`): the external services miss or mislabel Israeli localities,
+ * which broke search and produced "Ramallah"- and "Salfit"-style labels.
  */
 
 export interface Place {
@@ -41,21 +41,21 @@ interface OpenMeteoResult {
   admin1?: string;
 }
 
-function settlementPlace(s: Settlement, language: string): Place {
-  const name = settlementName(s, language);
+function localityPlace(l: Locality, language: string): Place {
+  const name = localityName(l, language);
   return {
-    id: `settlement-${s.slug}`,
+    id: `locality-${l.slug}`,
     name,
     description: `${name}, ${ISRAEL_LABEL[language] ?? ISRAEL_LABEL.en}`,
-    lat: s.lat,
-    lng: s.lng,
+    lat: l.lat,
+    lng: l.lng,
   };
 }
 
 export async function searchCities(query: string, signal?: AbortSignal, language = 'en'): Promise<Place[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const local = searchSettlements(q).map((s) => settlementPlace(s, language));
+  const local = searchLocalities(q).map((l) => localityPlace(l, language));
 
   const url = new URL('https://geocoding-api.open-meteo.com/v1/search');
   url.searchParams.set('name', q);
@@ -75,9 +75,9 @@ export async function searchCities(query: string, signal?: AbortSignal, language
     data = {};
   }
 
-  // Drop remote entries that duplicate a local settlement (GeoNames has a few
-  // of them under variant spellings); coordinates are a more reliable identity
-  // than names across transliterations.
+  // Drop remote entries that duplicate a local one (GeoNames has a few of them
+  // under variant spellings); coordinates are a more reliable identity than
+  // names across transliterations.
   const remote = (data.results ?? [])
     .map((r) => ({
       id: String(r.id),
@@ -98,11 +98,12 @@ export async function reverseGeocode(
   signal?: AbortSignal,
   language = 'en',
 ): Promise<string | null> {
-  // Inside a settlement, BigDataCloud labels users with the nearest Palestinian
-  // city ("Ramallah" for Psagot) — prefer the bundled index there. 3 km covers
-  // a locality's built-up area without swallowing genuinely distinct neighbors.
-  const settlement = nearestSettlement(lat, lng, 3);
-  if (settlement) return settlementName(settlement, language);
+  // BigDataCloud labels users here with the nearest Palestinian city or
+  // governorate ("Ramallah" for Psagot, "Salfit" for eastern Rosh HaAyin) —
+  // prefer the bundled index, which claims each point by the locality's own
+  // radius so a city's outskirts stay covered.
+  const locality = nearestLocality(lat, lng);
+  if (locality) return localityName(locality, language);
 
   const url = new URL('https://api.bigdatacloud.net/data/reverse-geocode-client');
   url.searchParams.set('latitude', String(lat));

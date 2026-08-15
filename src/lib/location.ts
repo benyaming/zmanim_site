@@ -23,7 +23,7 @@ export interface AppLocation {
   /**
    * Meters above sea level. Can be negative (Dead Sea basin). Absent until
    * resolved — geocoder search results carry it; other sources (GPS, IP,
-   * settlements, legacy saves) are backfilled best-effort from the Open-Meteo
+   * bundled localities, legacy saves) are backfilled best-effort from the Open-Meteo
    * elevation API (see the app-state effect). Only affects zmanim when the
    * user opts in via the `useElevation` preference.
    */

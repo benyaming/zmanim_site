@@ -53,7 +53,11 @@ export function useGeolocation(onDone?: () => void): UseGeolocation {
         setError(err.message || t('failed'));
         setLocating(false);
       },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 },
+      // High accuracy: the user pressed a button and is waiting, and a coarse
+      // WiFi/IP fix can land kilometers away — enough to cross a reverse-geocode
+      // boundary and label someone in Rosh HaAyin with a West Bank town. The
+      // silent background path (`browserGeolocate`) stays coarse on purpose.
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5 * 60 * 1000 },
     );
   }, [setLocation, onDone, t, locale]);
 

@@ -49,7 +49,7 @@ src/
     zmanim/                definitions (locked mapping), calculator, groups, types
     calendar/              grid, navigation, day-info, day-events, holidays-ru
     learning/              daily-learning cycles (@hebcal/learning Base modules), he/ru names
-    geo/                   geocoding (keyless), timezone (offline), settlements (bundled index)
+    geo/                   geocoding (keyless), timezone (offline), localities (bundled index)
     sync/                  cross-device settings sync: blob, engine, stores (docs/settings-sync.md)
     location.ts site.ts cities.ts format.ts utils.ts
   proxy.ts                 next-intl middleware (Next 16's renamed middleware.ts)
