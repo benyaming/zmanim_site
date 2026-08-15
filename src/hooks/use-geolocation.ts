@@ -53,11 +53,19 @@ export function useGeolocation(onDone?: () => void): UseGeolocation {
         setError(err.message || t('failed'));
         setLocating(false);
       },
-      // High accuracy: the user pressed a button and is waiting, and a coarse
-      // WiFi/IP fix can land kilometers away — enough to cross a reverse-geocode
-      // boundary and label someone in Rosh HaAyin with a West Bank town. The
-      // silent background path (`browserGeolocate`) stays coarse on purpose.
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5 * 60 * 1000 },
+      // High accuracy, and never from cache: the user pressed a button and is
+      // waiting, and a coarse WiFi/IP fix can land kilometers away — enough to
+      // cross a reverse-geocode boundary and label someone in Rosh HaAyin with
+      // a West Bank town. `maximumAge` must be 0 rather than merely short,
+      // because the position cache is not accuracy-aware: the silent
+      // first-load path (`browserGeolocate`, coarse on purpose) can seed it
+      // seconds earlier, and any non-zero window would hand that same coarse
+      // fix straight back to the button meant to correct it.
+      //
+      // Timeout is longer than the background path's because a fresh
+      // high-accuracy fix is slower than a cached one, and getCurrentPosition
+      // errors out rather than degrading to a coarse reading on timeout.
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   }, [setLocation, onDone, t, locale]);
 
