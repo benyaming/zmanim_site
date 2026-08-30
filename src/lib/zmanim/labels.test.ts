@@ -79,27 +79,28 @@ describe('zman label catalogs', () => {
    * reason the short one exists.
    *
    * `shitot` is what the app, the picker and the weekly sheet show, and it
-   * spells authorities out — a reader is not expected to expand ГР״А. Only
+   * names authorities the way Russian writes them — "Агро" for the Vilna Gaon,
+   * "Маген Авраам" and "Рабейну Там" in full. Only
    * `shitotShort` may abbreviate, because it fills month-sheet columns and
    * footer blocks where the width genuinely is not there.
    */
   it('russian spells authorities out in the canonical register', () => {
     const z = CATALOGS.ru.zmanim as unknown as Registers;
     for (const [key, label] of Object.entries(z.shitot)) {
-      // The gershayim is what makes ГР״А and Р״Т acronyms.
+      // The gershayim is what makes Р״Т an acronym.
       expect(label, `ru.shitot.${key}`).not.toContain('״');
       // МА carries none, so pin it by name.
       expect(label, `ru.shitot.${key}`).not.toMatch(/^МА(\s|$)/);
     }
     const labels = zmanLabels(translator('ru'));
-    expect(labels.shita('sofZmanShmaGRA')).toBe('Виленский Гаон');
+    expect(labels.shita('sofZmanShmaGRA')).toBe('Агро');
     expect(labels.shita('sofZmanShmaMGA161')).toBe('Маген Авраам · алот 16,1°');
     expect(labels.shita('tzais72')).toBe('Рабейну Там · 72 минуты');
   });
 
   it('russian keeps the abbreviations in the print-column register', () => {
     const labels = zmanLabels(translator('ru'));
-    expect(labels.shitaShort('sofZmanShmaGRA')).toBe('ГР״А');
+    expect(labels.shitaShort('sofZmanShmaGRA')).toBe('Агро');
     expect(labels.shitaShort('sofZmanShmaMGA161')).toBe('МА 16,1°');
     expect(labels.shitaShort('tzais72')).toBe('Р״Т 72');
   });
