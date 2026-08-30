@@ -87,7 +87,8 @@ describe('zman label catalogs', () => {
   it('russian spells authorities out in the canonical register', () => {
     const z = CATALOGS.ru.zmanim as unknown as Registers;
     for (const [key, label] of Object.entries(z.shitot)) {
-      // The gershayim is what makes Р״Т an acronym.
+      // Gershayim in a canonical label would mark an acronym-style abbreviation
+      // of an authority (Р״Т, ГР״А) — the register that may do that is shitotShort.
       expect(label, `ru.shitot.${key}`).not.toContain('״');
       // МА carries none, so pin it by name.
       expect(label, `ru.shitot.${key}`).not.toMatch(/^МА(\s|$)/);
@@ -98,11 +99,14 @@ describe('zman label catalogs', () => {
     expect(labels.shita('tzais72')).toBe('Рабейну Там · 72 минуты');
   });
 
-  it('russian keeps the abbreviations in the print-column register', () => {
+  it('russian abbreviates in the print-column register only where it overrides', () => {
     const labels = zmanLabels(translator('ru'));
-    expect(labels.shitaShort('sofZmanShmaGRA')).toBe('Агро');
     expect(labels.shitaShort('sofZmanShmaMGA161')).toBe('МА 16,1°');
     expect(labels.shitaShort('tzais72')).toBe('Р״Т 72');
+    // "Агро" is already as short as it gets, so it carries no override and the
+    // print register resolves it by falling back to the canonical label.
+    expect((CATALOGS.ru.zmanim as unknown as Registers).shitotShort?.sofZmanShmaGRA).toBeUndefined();
+    expect(labels.shitaShort('sofZmanShmaGRA')).toBe(labels.shita('sofZmanShmaGRA'));
   });
 
   /**
