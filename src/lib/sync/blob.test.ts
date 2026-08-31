@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { PREFS_STORAGE_KEY } from '@/components/providers/app-state';
 import { A11Y_STORAGE_KEY } from '@/components/providers/accessibility-provider';
+import { DEFAULT_HIDDEN_LEARNING } from '@/lib/learning';
 import { THEME_STORAGE_KEY } from '@/lib/theme';
 import { installMemoryLocalStorage } from '@/test/memory-storage';
 
@@ -220,6 +221,8 @@ describe('prefsHoldUserData (legacy connect-gate content check)', () => {
   it('is false for absent prefs and for mount-written defaults', () => {
     expect(prefsHoldUserData(null)).toBe(false);
     expect(prefsHoldUserData({ candleLightingOffset: 18, useElevation: false, hiddenLearning: [] })).toBe(false);
+    // The learning default a fresh device writes is not a choice either.
+    expect(prefsHoldUserData({ hiddenLearning: [...DEFAULT_HIDDEN_LEARNING] })).toBe(false);
   });
 
   it('spots every deliberate choice a pre-stamp device can carry', () => {
@@ -231,6 +234,7 @@ describe('prefsHoldUserData (legacy connect-gate content check)', () => {
     expect(prefsHoldUserData({ lehumraCustomized: true })).toBe(true);
     expect(prefsHoldUserData({ lehumra: true })).toBe(true); // enabled before the marker existed
     expect(prefsHoldUserData({ fastEndCustomized: true })).toBe(true);
+    expect(prefsHoldUserData({ learningCustomized: true })).toBe(true);
     expect(prefsHoldUserData({ candleLightingOffset: 30 })).toBe(true);
     expect(prefsHoldUserData({ useElevation: true })).toBe(true);
     expect(prefsHoldUserData({ havdalahOpinion: 'tzeis_42_minutes' })).toBe(true);

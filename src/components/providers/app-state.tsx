@@ -29,7 +29,7 @@ import { fetchElevation } from '@/lib/geo/elevation';
 import { reverseGeocode } from '@/lib/geo/geocoding';
 import { ipGeolocate } from '@/lib/geo/ip-location';
 import { normalizeIsraelAreaTimezone } from '@/lib/geo/timezone';
-import { sanitizeHiddenLearning } from '@/lib/learning';
+import { DEFAULT_HIDDEN_LEARNING, sanitizeHiddenLearning } from '@/lib/learning';
 import { type AppLocation, DEFAULT_LOCATION, isDefaultLocation, isIsraelTimezone, makeLocation } from '@/lib/location';
 import { isTelegramMiniApp } from '@/lib/telegram/mini-app';
 import {
@@ -101,6 +101,8 @@ interface AppStateValue {
   hiddenLearning: string[];
   setLearningVisible: (key: string, visible: boolean) => void;
   showAllLearning: () => void;
+  /** Reset the day panel's learning cycles to the default set (Daf Yomi only). */
+  restoreDefaultLearning: () => void;
   /** Fast-end opinion keys the user chose to hide (see fast-end.ts). */
   hiddenFastEnd: string[];
   setFastEndVisible: (key: string, visible: boolean) => void;
@@ -188,8 +190,10 @@ interface PersistedPrefs {
    * newly added zmanim.
    */
   seenOptInZmanim?: string[];
-  /** Hidden learning cycles — same hide-list convention as hiddenZmanim. */
+  /** Hidden learning cycles — hide-list convention; applied only when customized. */
   hiddenLearning?: string[];
+  /** True once the user has touched the learning picker; only then does hiddenLearning override the default. */
+  learningCustomized?: boolean;
   /** Hidden fast-end opinions — hide-list convention; applied only when customized. */
   hiddenFastEnd?: string[];
   /** True once the user has touched the fast-end picker; only then does hiddenFastEnd override the default. */
@@ -400,13 +404,26 @@ export function AppStateProvider({
     setZmanimCustomized(true);
     setHiddenZmanim([...DEFAULT_HIDDEN_ZMANIM]);
   };
-  const [hiddenLearning, setHiddenLearning] = useState<string[]>([]);
-  const setLearningVisible = (key: string, visible: boolean) =>
+  // Learning cycles start at the default set (Daf Yomi only, see
+  // DEFAULT_HIDDEN_LEARNING) — same customized-flag rule as the fast-end list
+  // below, so a device that never picked follows changes to the default.
+  const [hiddenLearning, setHiddenLearning] = useState<string[]>([...DEFAULT_HIDDEN_LEARNING]);
+  const [learningCustomized, setLearningCustomized] = useState(false);
+  const setLearningVisible = (key: string, visible: boolean) => {
+    setLearningCustomized(true);
     setHiddenLearning((prev) => {
       if (visible) return prev.includes(key) ? prev.filter((k) => k !== key) : prev;
       return prev.includes(key) ? prev : [...prev, key];
     });
-  const showAllLearning = () => setHiddenLearning([]);
+  };
+  const showAllLearning = () => {
+    setLearningCustomized(true);
+    setHiddenLearning([]);
+  };
+  const restoreDefaultLearning = () => {
+    setLearningCustomized(true);
+    setHiddenLearning([...DEFAULT_HIDDEN_LEARNING]);
+  };
 
   // Fast-end opinions start at the curated default set (see DEFAULT_HIDDEN_FAST_END).
   // Only a persisted list from a user who actually customized it overrides the
@@ -519,11 +536,18 @@ export function AppStateProvider({
       setHiddenZmanim([...new Set([...savedHidden, ...unseenOptIn])]);
       setZmanimCustomized(true);
     }
+    // Same rule as fast-end below: a stored learning list overrides the default
+    // only once the user has actually customized. Legacy saves predate the flag —
+    // there a non-empty list was a deliberate hide, while an empty one just
+    // mirrored the old show-everything default, so those move to the default.
     const savedHiddenLearning = sanitizeHiddenLearning(prefs.hiddenLearning);
-    if (savedHiddenLearning.length > 0) setHiddenLearning(savedHiddenLearning);
-    // Fast-end default is a curated non-empty set (unlike learning's show-all),
-    // so a stored list overrides it only once the user has actually customized —
-    // otherwise the current default applies, so default tweaks reach them.
+    if (prefs.learningCustomized ?? savedHiddenLearning.length > 0) {
+      setHiddenLearning(savedHiddenLearning);
+      setLearningCustomized(true);
+    }
+    // A stored fast-end list overrides the default only once the user has
+    // actually customized — otherwise the current default applies, so default
+    // tweaks reach them.
     if (prefs.fastEndCustomized && Array.isArray(prefs.hiddenFastEnd)) {
       setHiddenFastEnd(sanitizeHiddenFastEnd(prefs.hiddenFastEnd));
       setFastEndCustomized(true);
@@ -669,6 +693,7 @@ export function AppStateProvider({
           zmanimCustomized,
           seenOptInZmanim: [...OPT_IN_ZMANIM],
           hiddenLearning,
+          learningCustomized,
           hiddenFastEnd,
           fastEndCustomized,
           personalDates,
@@ -680,7 +705,7 @@ export function AppStateProvider({
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [hydrated, location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, lehumraCustomized, hiddenZmanim, zmanimCustomized, hiddenLearning, hiddenFastEnd, fastEndCustomized, personalDates, exportPreset]);
+  }, [hydrated, location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, lehumraCustomized, hiddenZmanim, zmanimCustomized, hiddenLearning, learningCustomized, hiddenFastEnd, fastEndCustomized, personalDates, exportPreset]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
@@ -768,6 +793,7 @@ export function AppStateProvider({
     hiddenLearning,
     setLearningVisible,
     showAllLearning,
+    restoreDefaultLearning,
     hiddenFastEnd,
     setFastEndVisible,
     showAllFastEnd,

@@ -41,6 +41,29 @@ export const LEARNING_CYCLE_KEYS: readonly LearningCycleKey[] = [
 
 const LEARNING_KEY_SET: ReadonlySet<string> = new Set(LEARNING_CYCLE_KEYS);
 
+/**
+ * Shown out of the box: Daf Yomi alone — by far the most widely followed cycle,
+ * and the one people expect to see beside the day's zmanim. All seven at once
+ * made the day panel's learning block longer than the zmanim it sits above, so
+ * the other six stay available but off until picked in settings.
+ */
+const DEFAULT_VISIBLE_LEARNING: ReadonlySet<string> = new Set(['dafYomi']);
+
+/** The default hidden set — the complement of DEFAULT_VISIBLE_LEARNING. */
+export const DEFAULT_HIDDEN_LEARNING: readonly LearningCycleKey[] = LEARNING_CYCLE_KEYS.filter(
+  (key) => !DEFAULT_VISIBLE_LEARNING.has(key),
+);
+
+const DEFAULT_HIDDEN_LEARNING_SET: ReadonlySet<string> = new Set(DEFAULT_HIDDEN_LEARNING);
+
+/** True when a learning hide-list is exactly the default (as a set). */
+export function isDefaultHiddenLearning(hidden: readonly string[]): boolean {
+  const set = new Set(hidden);
+  if (set.size !== DEFAULT_HIDDEN_LEARNING_SET.size) return false;
+  for (const key of set) if (!DEFAULT_HIDDEN_LEARNING_SET.has(key)) return false;
+  return true;
+}
+
 /** Drop unknown/duplicate keys from a persisted hidden-learning list (self-heals stale saves). */
 export function sanitizeHiddenLearning(value: unknown): LearningCycleKey[] {
   if (!Array.isArray(value)) return [];

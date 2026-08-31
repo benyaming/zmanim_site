@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { ZMAN_PICKER_SECTIONS, ZmanBaseControl } from '@/components/zmanim/zman-picker';
 import { FAST_END_OPINIONS, type FastEndKind, fastEndZmanKey, isDefaultHiddenFastEnd } from '@/lib/calendar';
-import { LEARNING_CYCLE_KEYS } from '@/lib/learning';
+import { isDefaultHiddenLearning, LEARNING_CYCLE_KEYS } from '@/lib/learning';
 import {
   HAVDALAH_OPINIONS,
   havdalahZmanKey,
@@ -85,6 +85,7 @@ export function CalendarSettingsBody() {
     hiddenLearning,
     setLearningVisible,
     showAllLearning,
+    restoreDefaultLearning,
     hiddenFastEnd,
     setFastEndVisible,
     showAllFastEnd,
@@ -201,11 +202,18 @@ export function CalendarSettingsBody() {
       <div className="space-y-2">
         <div className="flex min-h-8 items-center justify-between gap-2">
           <span className="text-sm font-medium">{t('learningDisplay')}</span>
-          {hiddenLearning.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={showAllLearning}>
-              {t('zmanimShowAll')}
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {!isDefaultHiddenLearning(hiddenLearning) && (
+              <Button variant="ghost" size="sm" onClick={restoreDefaultLearning}>
+                {t('zmanimRestoreDefaults')}
+              </Button>
+            )}
+            {hiddenLearning.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={showAllLearning}>
+                {t('zmanimShowAll')}
+              </Button>
+            )}
+          </div>
         </div>
         <div className="space-y-1.5 rounded-lg border p-3">
           {LEARNING_CYCLE_KEYS.map((key) => (

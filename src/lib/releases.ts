@@ -22,6 +22,15 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.27',
+    date: '2026-08-31',
+    notes: {
+      en: ['Daily learning starts with Daf Yomi alone — the other six cycles are now opt-in.'],
+      he: ['הלימוד היומי מתחיל בדף היומי בלבד — ששת המסלולים האחרים לבחירה.'],
+      ru: ['Ежедневное изучение начинается только с Даф йоми — остальные шесть циклов по выбору.'],
+    },
+  },
+  {
     version: '1.26',
     date: '2026-08-11',
     notes: {
