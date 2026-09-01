@@ -248,6 +248,16 @@ See [`telegram-mini-app.md`](telegram-mini-app.md)).
   providers would keep showing the old values); the next load adopts them.
 - **Import** (link `#settings=…` or file): asks first, then applies with a
   fresh stamp so the import wins everywhere on the next sync.
+- **Derived values never count as content**: the fingerprint drops the
+  location's `label`/`labelLocale` (per-device, per-language geocoding),
+  `seenOptInZmanim` (the running *build's* opt-in list, not a user fact) and
+  any hide list whose `*Customized` marker says the user never picked — the
+  loader ignores such a list and applies the build's current default, so it is
+  a copy of one build's defaults, not a setting. Without this, two devices on
+  different builds (a Mini App webview on a cached bundle, a browser on the new
+  one) never agreed: each read the other's mount defaults as newer content,
+  adopted them, reloaded, then rewrote and pushed its own — a restart on every
+  open, with no release involved.
 - **After an app update**: a release that adds a preference key or changes a
   mount-written default moves the local prefs with nobody having edited
   anything, and at the *same* stamp — the equal-stamp tie-break decides by

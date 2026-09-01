@@ -73,7 +73,17 @@ from the calendar app: …", localized), so bot-side state never changes
 invisibly. The shared havdalah opinion keys and the candle-offset semantics are
 identical in both projects by design (`src/lib/zmanim/havdalah.ts`).
 
-**An app update was the last driver of the restart-on-open.** A release that
+**Two builds were the last driver of the restart-on-open.** Devices write
+their build's defaults into prefs at mount, and `seenOptInZmanim` is literally
+the running build's opt-in list — so a Mini App webview holding a cached bundle
+and a browser on a newer one disagreed about prefs while agreeing about
+everything the user chose. Each adopted the other's copy and reloaded, then
+rewrote and pushed its own, so the next open on the other side did the same:
+a restart on every open, no release needed. Derived values are now outside the
+content fingerprint (see [`settings-sync.md`](settings-sync.md) → *Derived
+values never count as content*).
+
+**An app update was another driver of the restart-on-open.** A release that
 adds a preference or changes a mount-written default moves the local prefs
 without anyone editing anything, and the equal-stamp tie-break handed the
 section to the store's pre-update copy — an adopt, i.e. a reload, on the first

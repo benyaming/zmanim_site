@@ -174,6 +174,52 @@ describe('sectionFingerprint', () => {
     expect(sectionFingerprint('prefs', edited)).not.toBe(sectionFingerprint('prefs', idFirst));
   });
 
+  it('drops seenOptInZmanim — it describes the build, not the user', () => {
+    // The persist writes today's OPT_IN_ZMANIM verbatim, so two devices on
+    // different builds carry different lists while agreeing about everything
+    // the user chose. Counting that as content made each adopt the other's
+    // prefs and reload on every open.
+    const older = { candleLightingOffset: 18, seenOptInZmanim: ['alos90', 'alos18'] };
+    const newer = { candleLightingOffset: 18, seenOptInZmanim: ['alos90', 'alos18', 'alos60'] };
+    expect(sectionFingerprint('prefs', older)).toBe(sectionFingerprint('prefs', newer));
+  });
+
+  it('drops a hide list the user never picked — the loader ignores it too', () => {
+    // With the marker false, app-state applies the build's current default and
+    // never reads the stored list, so it is a copy of one build's default, not
+    // a setting. Two builds must still look identical here.
+    const oldDefault = { hiddenZmanim: ['a', 'b'], zmanimCustomized: false };
+    const newDefault = { hiddenZmanim: ['a', 'b', 'c'], zmanimCustomized: false };
+    expect(sectionFingerprint('prefs', oldDefault)).toBe(sectionFingerprint('prefs', newDefault));
+    expect(
+      sectionFingerprint('prefs', { hiddenLearning: [...DEFAULT_HIDDEN_LEARNING], learningCustomized: false }),
+    ).toBe(sectionFingerprint('prefs', { hiddenLearning: [], learningCustomized: false }));
+    expect(sectionFingerprint('prefs', { hiddenFastEnd: ['x'], fastEndCustomized: false })).toBe(
+      sectionFingerprint('prefs', { hiddenFastEnd: ['y'], fastEndCustomized: false }),
+    );
+  });
+
+  it('keeps a hide list the user did pick', () => {
+    const picked = { hiddenZmanim: ['a'], zmanimCustomized: true };
+    expect(sectionFingerprint('prefs', picked)).not.toBe(
+      sectionFingerprint('prefs', { hiddenZmanim: ['a', 'b'], zmanimCustomized: true }),
+    );
+    // And picking at all is itself a difference, whatever the lists say.
+    expect(sectionFingerprint('prefs', picked)).not.toBe(
+      sectionFingerprint('prefs', { hiddenZmanim: ['a'], zmanimCustomized: false }),
+    );
+  });
+
+  it('keeps a pre-marker save\'s non-empty hide list, which the loader honors', () => {
+    // No marker at all: app-state treats a non-empty list as a deliberate hide
+    // (the old default was the empty show-everything list), so it is content.
+    expect(sectionFingerprint('prefs', { hiddenZmanim: ['a'] })).not.toBe(
+      sectionFingerprint('prefs', { hiddenZmanim: ['a', 'b'] }),
+    );
+    // An empty one only mirrored that default — nothing to keep.
+    expect(sectionFingerprint('prefs', { hiddenZmanim: [] })).toBe(sectionFingerprint('prefs', {}));
+  });
+
   it('treats undefined-valued keys like JSON.stringify does (absent)', () => {
     expect(sectionFingerprint('prefs', { a: 1, b: undefined } as never)).toBe(sectionFingerprint('prefs', { a: 1 }));
   });

@@ -453,6 +453,65 @@ describe('reconcileTargets', () => {
     });
   });
 
+  it('does not adopt another build\'s defaults, however much newer they are', async () => {
+    // The every-open restart. Two devices on different builds (the Mini App
+    // webview holds a cached bundle, the browser has the new one) write
+    // different mount defaults — seenOptInZmanim is literally the build's
+    // OPT_IN_ZMANIM list — while agreeing about everything the user chose.
+    // Each therefore saw the other's prefs as newer content, adopted them and
+    // reloaded; the mount then rewrote its own defaults and pushed them back,
+    // so the next open on the other device did the same. Forever, on every
+    // open, with no release and no changelog involved.
+    window.localStorage.setItem(
+      PREFS_STORAGE_KEY,
+      JSON.stringify({
+        candleLightingOffset: 18,
+        seenOptInZmanim: ['alos90', 'alos18', 'alos60'],
+        hiddenLearning: ['mishna-yomi', 'nach-yomi'],
+        learningCustomized: false,
+      }),
+    );
+    stampSection('prefs', '2026-08-01T00:00:00.000Z');
+    const { target } = memoryTarget(
+      blob({
+        prefs: {
+          data: {
+            candleLightingOffset: 18,
+            seenOptInZmanim: ['alos90', 'alos18'],
+            hiddenLearning: [],
+            learningCustomized: false,
+          },
+          t: '2026-08-09T00:00:00.000Z', // the other device pushed later
+        },
+      }),
+    );
+
+    const result = await reconcileTargets([target]);
+
+    expect(result.outcome).toBe('clean'); // same user settings → nothing to adopt, nothing to reload
+    expect(JSON.parse(window.localStorage.getItem(PREFS_STORAGE_KEY)!)).toMatchObject({
+      seenOptInZmanim: ['alos90', 'alos18', 'alos60'], // this build's list survives
+    });
+  });
+
+  it('still adopts a newer store that differs in something the user chose', async () => {
+    window.localStorage.setItem(
+      PREFS_STORAGE_KEY,
+      JSON.stringify({ candleLightingOffset: 18, seenOptInZmanim: ['alos90'] }),
+    );
+    stampSection('prefs', '2026-08-01T00:00:00.000Z');
+    const { target } = memoryTarget(
+      blob({
+        prefs: { data: { candleLightingOffset: 40, seenOptInZmanim: ['alos90', 'alos18'] }, t: '2026-08-09T00:00:00.000Z' },
+      }),
+    );
+
+    const result = await reconcileTargets([target]);
+
+    expect(result.outcome).toBe('applied');
+    expect(JSON.parse(window.localStorage.getItem(PREFS_STORAGE_KEY)!)).toMatchObject({ candleLightingOffset: 40 });
+  });
+
   it('records a forensic breadcrumb naming the winning store and the first differing bytes', async () => {
     document.documentElement.lang = '';
     window.localStorage.setItem(THEME_STORAGE_KEY, 'light');
