@@ -248,6 +248,17 @@ See [`telegram-mini-app.md`](telegram-mini-app.md)).
   providers would keep showing the old values); the next load adopts them.
 - **Import** (link `#settings=…` or file): asks first, then applies with a
   fresh stamp so the import wins everywhere on the next sync.
+- **After an app update**: a release that adds a preference key or changes a
+  mount-written default moves the local prefs with nobody having edited
+  anything, and at the *same* stamp — the equal-stamp tie-break decides by
+  fingerprint order, which a grown section loses by construction (`}`/`]` sort
+  above `,`/`"`), so the store's pre-update copy used to win and be adopted:
+  one reload on the first open after every such release. The store hadn't
+  moved, though — it still held exactly what this device last agreed on
+  (`lastSyncedPrefs`) — so the local copy is the mover and is re-stamped above
+  the tie and pushed instead, which is what the change watcher would do
+  2.5&nbsp;s later anyway. A store that really did move (different stamp, or
+  content that no longer matches the agreement) is still adopted.
 - **Debugging a reload**: every adopt leaves a breadcrumb in
   `zmanim:sync-last-adopt:v1` (`{at, adopt}`) — readable from a webview console
   after the fact, no flag to pre-arm. Adopting everything on every open points

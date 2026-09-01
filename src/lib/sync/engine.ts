@@ -46,6 +46,7 @@ import {
   collectSettingsBlob,
   deserializeSettingsBlob,
   dirtySections,
+  lastSyncedPrefs,
   lineageAccount,
   markUserEdit,
   mergeBlobs,
@@ -58,6 +59,7 @@ import {
   sectionFingerprint,
   SECTION_NAMES,
   serializeSettingsBlob,
+  stampSection,
   syncDebug,
   PULL_FAILED,
   type PullResult,
@@ -273,6 +275,30 @@ function nothingToLose(local: SettingsBlob, name: SectionName, realUnstamped: Re
 }
 
 /**
+ * Whether the local prefs are the only side that has moved since this device
+ * last agreed with the stores: every store holding prefs still carries exactly
+ * that agreed content, at the same stamp as the local copy, and the local
+ * content no longer matches it. Requires a recorded agreement
+ * (lastSyncedPrefs) — without one there is nothing to compare and the normal
+ * merge rules decide.
+ */
+function prefsMovedLocallyOnly(local: SettingsBlob, remotes: SettingsBlob[]): boolean {
+  const agreed = lastSyncedPrefs();
+  const mine = local.sections.prefs;
+  if (agreed === null || mine.data === null) return false;
+  if (sectionFingerprint('prefs', mine.data) === agreed) return false;
+  const holding = remotes.filter((r) => r.sections.prefs.data !== null);
+  return (
+    holding.length > 0 &&
+    holding.every(
+      (r) =>
+        Date.parse(r.sections.prefs.t) === Date.parse(mine.t) &&
+        sectionFingerprint('prefs', r.sections.prefs.data) === agreed,
+    )
+  );
+}
+
+/**
  * The pull-merge-push reconcile over a concrete target set — the pure core of
  * runSync, separated so it can be tested without the store plumbing.
  */
@@ -408,6 +434,30 @@ export async function reconcileTargets(
     local.sections[name] = { ...local.sections[name], t };
   }
   syncDebug('reconcile: dirty=', dirty, 'remotes=', remotes.length);
+
+  // A release that changes what the app writes into prefs at mount — a new
+  // preference key, a new default for an existing one — moves the local
+  // section without anyone editing anything, and nothing stamps it, so both
+  // sides sit at the SAME stamp. The equal-stamp tie-break then decides by
+  // fingerprint ORDER, which a grown section loses by construction (canonical
+  // JSON puts '}' and ']' above ',' and '"'), so the store's pre-update copy
+  // won and was ADOPTED: a page reload on the first open after every such
+  // release. On the website that is a race the mount-time persist usually wins;
+  // inside the Mini App the pull is preceded by the Telegram SDK load, so the
+  // migrated prefs are always in place by then — the reload was reliable there,
+  // and a reload right after launch reads as the webview restarting.
+  //
+  // Nothing was newer, though. The store still holds exactly the prefs this
+  // device last agreed on with it and only the local copy moved, so the local
+  // copy is the mover: stamp it above the tie so it wins the merge and is
+  // pushed out — which is what the change watcher does 2.5s later anyway
+  // (settings-sync.tsx), one reload too late. A store that really did move is
+  // untouched: its stamp differs, or its content no longer matches the
+  // agreement. Dirty prefs already restamp above, so they skip this.
+  if (!dirty.includes('prefs') && prefsMovedLocallyOnly(local, remotes)) {
+    local.sections.prefs = { ...local.sections.prefs, t: stampSection('prefs') };
+    syncDebug('reconcile: local prefs moved since the last agreed sync — restamped, not adopted');
+  }
 
   // Merge section-by-section, newest of each wins. A change to one section on
   // another device (e.g. language) can no longer drag along this device's

@@ -8,6 +8,8 @@ import { installMemoryLocalStorage, installMemorySessionStorage } from '@/test/m
 import {
   dirtySections,
   lineageAccount,
+  recordSyncedPrefs,
+  sectionFingerprint,
   markUserEdit,
   PULL_FAILED,
   recordLineage,
@@ -356,6 +358,98 @@ describe('reconcileTargets', () => {
 
       expect(result.outcome).toBe('applied'); // the web behavior is unchanged
       expect(result.appliedLanguage).toBe('ru');
+    });
+  });
+
+  describe('an app update that changes the prefs written at mount', () => {
+    // The reload-on-first-open-after-a-release bug. A release that adds a
+    // preference key (or changes a default, e.g. 1.27's Daf-Yomi-only learning
+    // list) makes the mount-written prefs differ from the account's copy with
+    // nobody having edited anything — at the SAME stamp, because nothing
+    // stamped it. The equal-stamp tie-break decides by fingerprint order, and a
+    // grown section LOSES it by construction ('}' and ']' sort above ',' and
+    // '"'), so the store's pre-update copy was adopted and the page reloaded.
+    // Inside the Mini App that reads as the webview restarting right after
+    // launch — and it swallowed the "What's new" popup along with it.
+    const STAMP = '2026-08-01T00:00:00.000Z';
+    const agreedPrefs = { candleLightingOffset: 18, hiddenLearning: [] as string[] };
+
+    /** The device is up to date with the store, then the app updates under it. */
+    function seedUpdatedDevice(updated: Record<string, unknown>) {
+      window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(updated));
+      stampSection('prefs', STAMP);
+      recordSyncedPrefs(sectionFingerprint('prefs', agreedPrefs));
+      return memoryTarget(blob({ prefs: { data: agreedPrefs, t: STAMP } }));
+    }
+
+    it('pushes the new defaults instead of adopting the pre-update copy', async () => {
+      const { target, state } = seedUpdatedDevice({
+        ...agreedPrefs,
+        hiddenLearning: ['mishna-yomi', 'nach-yomi'],
+        learningCustomized: false,
+      });
+
+      const result = await reconcileTargets([target]);
+
+      expect(result.outcome).toBe('pushed'); // NOT 'applied' — no reload
+      expect(state.blob?.sections.prefs.data).toMatchObject({ learningCustomized: false });
+      // And the local copy is left alone, so the reload would have nothing to show.
+      expect(JSON.parse(window.localStorage.getItem(PREFS_STORAGE_KEY)!)).toMatchObject({
+        hiddenLearning: ['mishna-yomi', 'nach-yomi'],
+      });
+    });
+
+    it('stamps the pushed prefs above the tie so the update sticks on the next run', async () => {
+      const { target, state } = seedUpdatedDevice({ ...agreedPrefs, learningCustomized: false });
+
+      await reconcileTargets([target]);
+      expect(Date.parse(state.blob!.sections.prefs.t)).toBeGreaterThan(Date.parse(STAMP));
+
+      const second = await reconcileTargets([target]);
+      expect(second.outcome).toBe('clean'); // converged — no second push, no adopt
+    });
+
+    it('still adopts a store that genuinely moved since the last agreed sync', async () => {
+      // Same equal stamp, but the store no longer holds what we last agreed on:
+      // another device edited it. That IS newer information — adopt it.
+      window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify({ ...agreedPrefs, learningCustomized: false }));
+      stampSection('prefs', STAMP);
+      recordSyncedPrefs(sectionFingerprint('prefs', agreedPrefs));
+      const { target } = memoryTarget(
+        blob({ prefs: { data: { candleLightingOffset: 40, hiddenLearning: [] }, t: STAMP } }),
+      );
+
+      const result = await reconcileTargets([target]);
+
+      expect(result.outcome).toBe('applied');
+      expect(JSON.parse(window.localStorage.getItem(PREFS_STORAGE_KEY)!)).toMatchObject({
+        candleLightingOffset: 40,
+      });
+    });
+
+    it('still adopts a newer remote at a higher stamp', async () => {
+      window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify({ ...agreedPrefs, learningCustomized: false }));
+      stampSection('prefs', STAMP);
+      recordSyncedPrefs(sectionFingerprint('prefs', agreedPrefs));
+      const { target } = memoryTarget(
+        blob({ prefs: { data: agreedPrefs, t: '2026-08-02T00:00:00.000Z' } }),
+      );
+
+      const result = await reconcileTargets([target]);
+
+      expect(result.outcome).toBe('applied');
+    });
+
+    it('does nothing on a device that never agreed with the store', async () => {
+      // No recorded agreement (lastSyncedPrefs) — nothing to compare against,
+      // so the ordinary merge rules decide, unchanged.
+      window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify({ ...agreedPrefs, learningCustomized: false }));
+      stampSection('prefs', STAMP);
+      const { target } = memoryTarget(blob({ prefs: { data: agreedPrefs, t: STAMP } }));
+
+      const result = await reconcileTargets([target]);
+
+      expect(result.outcome).toBe('applied');
     });
   });
 
