@@ -264,16 +264,15 @@ export function prefsHoldUserData(data: SectionData): boolean {
   const differsFromDefault = (value: unknown, defaults: readonly string[]): boolean =>
     Array.isArray(value) && [...value].sort().join('\n') !== [...defaults].sort().join('\n');
   if (differsFromDefault(prefs.hiddenZmanim, DEFAULT_HIDDEN_ZMANIM)) return true;
-  // Non-empty and not the default set — a pre-flag-era hide list. The default
-  // every fresh device writes reads as pristine, as does the empty list written
-  // by devices on the older show-every-cycle default.
-  if (
-    Array.isArray(prefs.hiddenLearning) &&
-    prefs.hiddenLearning.length > 0 &&
-    !isDefaultHiddenLearning(prefs.hiddenLearning)
-  ) {
-    return true;
-  }
+  // A non-empty learning hide list is a choice unless it is the default a
+  // post-1.27 device writes at mount, which the marker identifies: those
+  // devices always persist learningCustomized, so `false` means "wrote the
+  // default, never picked". Pre-flag devices wrote no marker at all, and there
+  // any non-empty list was deliberate — the old default was the empty show-all
+  // list — including one that happens to match today's default set.
+  const hiddenLearning: string[] = Array.isArray(prefs.hiddenLearning) ? prefs.hiddenLearning : [];
+  const mountWrittenLearning = prefs.learningCustomized === false && isDefaultHiddenLearning(hiddenLearning);
+  if (hiddenLearning.length > 0 && !mountWrittenLearning) return true;
   if (differsFromDefault(prefs.hiddenFastEnd, DEFAULT_HIDDEN_FAST_END)) return true;
   const location = prefs.location as { lat?: unknown; lng?: unknown } | undefined;
   if (

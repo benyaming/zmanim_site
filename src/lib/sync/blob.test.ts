@@ -221,8 +221,12 @@ describe('prefsHoldUserData (legacy connect-gate content check)', () => {
   it('is false for absent prefs and for mount-written defaults', () => {
     expect(prefsHoldUserData(null)).toBe(false);
     expect(prefsHoldUserData({ candleLightingOffset: 18, useElevation: false, hiddenLearning: [] })).toBe(false);
-    // The learning default a fresh device writes is not a choice either.
-    expect(prefsHoldUserData({ hiddenLearning: [...DEFAULT_HIDDEN_LEARNING] })).toBe(false);
+    // The learning default a fresh device writes is not a choice either — it
+    // carries the marker (false), which is what tells it apart from a pre-flag
+    // device that deliberately hid the same cycles.
+    expect(prefsHoldUserData({ hiddenLearning: [...DEFAULT_HIDDEN_LEARNING], learningCustomized: false })).toBe(
+      false,
+    );
   });
 
   it('spots every deliberate choice a pre-stamp device can carry', () => {
@@ -240,6 +244,9 @@ describe('prefsHoldUserData (legacy connect-gate content check)', () => {
     expect(prefsHoldUserData({ havdalahOpinion: 'tzeis_42_minutes' })).toBe(true);
     expect(prefsHoldUserData({ hiddenZmanim: ['sunrise'] })).toBe(true); // list edited pre-flag-era
     expect(prefsHoldUserData({ hiddenLearning: ['dafYomi'] })).toBe(true);
+    // Pre-flag device that hid everything but Daf Yomi by hand: no marker, so
+    // the list is deliberate even though it matches today's default set.
+    expect(prefsHoldUserData({ hiddenLearning: [...DEFAULT_HIDDEN_LEARNING] })).toBe(true);
     expect(prefsHoldUserData({ hiddenFastEnd: ['some-opinion'] })).toBe(true);
     expect(prefsHoldUserData({ location: { lat: 32.08, lng: 34.78 } })).toBe(true); // not the default city
     expect(prefsHoldUserData({ export: { rangeDays: 31, keys: [] } })).toBe(true); // written only by a real export
