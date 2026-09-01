@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { PREFS_STORAGE_KEY } from '@/components/providers/app-state';
+import { DEFAULT_HIDDEN_LEARNING } from '@/lib/learning';
 import { A11Y_STORAGE_KEY } from '@/components/providers/accessibility-provider';
 import { THEME_STORAGE_KEY } from '@/lib/theme';
 import { installMemoryLocalStorage, installMemorySessionStorage } from '@/test/memory-storage';
@@ -407,6 +408,47 @@ describe('reconcileTargets', () => {
 
       const second = await reconcileTargets([target]);
       expect(second.outcome).toBe('clean'); // converged — no second push, no adopt
+    });
+
+    it('reproduces the field the Mini App actually got stuck on (hiddenLearning, 1.27)', async () => {
+      // The breadcrumb from the field: adopt ["prefs"], source telegram-bot,
+      // localT === winnerT, diffAt inside "hiddenLearning" — local carrying
+      // 1.27's six-cycle default and the store still holding the pre-1.27 `[]`
+      // (and no learningCustomized, which 1.27 introduced).
+      //
+      // It never converged, which is why it looked unrelated to any release:
+      // the adopt rewrote localStorage with the store's copy under the mounted
+      // providers, nothing re-ran their persist effect, so the change watcher
+      // then read back the adopted copy, matched lastSyncedPrefs and pushed
+      // nothing. Every later open re-derived the default, lost the same
+      // tie-break and reloaded again — for days, on the same frozen stamp.
+      const preUpdate = {
+        candleLightingOffset: 18,
+        hiddenFastEnd: ['tzais72'],
+        hiddenLearning: [],
+        hiddenZmanim: ['alos90', 'alos198'],
+        zmanimCustomized: false,
+      };
+      const postUpdate = {
+        ...preUpdate,
+        hiddenLearning: [...DEFAULT_HIDDEN_LEARNING],
+        learningCustomized: false,
+      };
+      window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(postUpdate));
+      stampSection('prefs', STAMP);
+      recordSyncedPrefs(sectionFingerprint('prefs', preUpdate));
+      const { target, state } = memoryTarget(blob({ prefs: { data: preUpdate, t: STAMP } }));
+
+      const first = await reconcileTargets([target]);
+
+      expect(first.outcome).not.toBe('applied'); // the reload is what the user saw
+      expect(state.blob?.sections.prefs.data).toMatchObject({ learningCustomized: false });
+      // The device keeps its own prefs — nothing was overwritten underneath it.
+      expect(JSON.parse(window.localStorage.getItem(PREFS_STORAGE_KEY)!)).toMatchObject({
+        hiddenLearning: [...DEFAULT_HIDDEN_LEARNING],
+      });
+      // And it settles, instead of repeating on every open for days.
+      expect((await reconcileTargets([target])).outcome).toBe('clean');
     });
 
     it('still adopts a store that genuinely moved since the last agreed sync', async () => {

@@ -269,6 +269,12 @@ See [`telegram-mini-app.md`](telegram-mini-app.md)).
   the tie and pushed instead, which is what the change watcher would do
   2.5&nbsp;s later anyway. A store that really did move (different stamp, or
   content that no longer matches the agreement) is still adopted.
+  This never healed itself, which is what made it look unrelated to any
+  release: the adopt rewrote `zmanim:prefs:v1` under the mounted providers,
+  nothing re-ran their persist effect, so the watcher read the adopted copy
+  back, matched `lastSyncedPrefs` and pushed nothing — leaving the same
+  divergence to be re-derived and re-adopted on every open, for days, on one
+  frozen stamp.
 - **Debugging a reload**: every adopt leaves a breadcrumb in
   `zmanim:sync-last-adopt:v1` (`{at, adopt}`) — readable from a webview console
   after the fact, no flag to pre-arm. Adopting everything on every open points
