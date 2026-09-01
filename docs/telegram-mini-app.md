@@ -90,8 +90,8 @@ section to the store's pre-update copy — an adopt, i.e. a reload, on the first
 open after such a release. It showed up here and not on the website because the
 Mini App's pull waits for the Telegram SDK to load first, so the migrated prefs
 are always in place by the time the reconcile snapshots them. It also swallowed
-the "What's new" popup, which is why the restart was only ever noticed when
-there was a new changelog. Fixed in `reconcileTargets` (see
+the "What's new" popup — the popup stamps itself seen on render, so a changelog
+eaten by a restart never comes back. Fixed in `reconcileTargets` (see
 [`settings-sync.md`](settings-sync.md) → *After an app update*).
 
 **The language works like the deep-link location.** The bot launches the app at
