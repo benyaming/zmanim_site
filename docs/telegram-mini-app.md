@@ -73,6 +73,27 @@ from the calendar app: …", localized), so bot-side state never changes
 invisibly. The shared havdalah opinion keys and the candle-offset semantics are
 identical in both projects by design (`src/lib/zmanim/havdalah.ts`).
 
+**Two builds were the last driver of the restart-on-open.** Devices write
+their build's defaults into prefs at mount, and `seenOptInZmanim` is literally
+the running build's opt-in list — so a Mini App webview holding a cached bundle
+and a browser on a newer one disagreed about prefs while agreeing about
+everything the user chose. Each adopted the other's copy and reloaded, then
+rewrote and pushed its own, so the next open on the other side did the same:
+a restart on every open, no release needed. Derived values are now outside the
+content fingerprint (see [`settings-sync.md`](settings-sync.md) → *Derived
+values never count as content*).
+
+**An app update was another driver of the restart-on-open.** A release that
+adds a preference or changes a mount-written default moves the local prefs
+without anyone editing anything, and the equal-stamp tie-break handed the
+section to the store's pre-update copy — an adopt, i.e. a reload, on the first
+open after such a release. It showed up here and not on the website because the
+Mini App's pull waits for the Telegram SDK to load first, so the migrated prefs
+are always in place by the time the reconcile snapshots them. It also swallowed
+the "What's new" popup — the popup stamps itself seen on render, so a changelog
+eaten by a restart never comes back. Fixed in `reconcileTargets` (see
+[`settings-sync.md`](settings-sync.md) → *After an app update*).
+
 **The language works like the deep-link location.** The bot launches the app at
 its own language path (`/he`|`/ru`) on every open, so inside the Mini App the
 page locale is the bot's, not the user's. The sync engine is therefore

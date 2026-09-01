@@ -376,12 +376,22 @@ function canonicalJson(value: unknown): string {
 
 /**
  * Stable content identity for one section — canonical (key-order-insensitive)
- * by construction, see canonicalJson. The prefs location's
- * `label`/`labelLocale` are dropped: they're derived by per-device,
- * per-language reverse geocoding (the same place reads "Petah Tikva" /
- * "Петах-Тиква" / "פתח תקווה"), so keeping them would make two devices in one
- * place look different and sync forever. Coordinates, elevation, timezone and
- * any user `customLabel` still count.
+ * by construction, see canonicalJson. Values that are DERIVED rather than
+ * chosen are dropped, because two devices that agree about the user can still
+ * disagree about them, and every such disagreement is a difference the
+ * reconcile would resolve by adopting one side and RELOADING the page:
+ *
+ * - The prefs location's `label`/`labelLocale`: per-device, per-language
+ *   reverse geocoding (the same place reads "Petah Tikva" / "Петах-Тиква" /
+ *   "פתח תקווה"). Coordinates, elevation, timezone and any user `customLabel`
+ *   still count.
+ * - `seenOptInZmanim`: bookkeeping about the running BUILD (the persist writes
+ *   today's OPT_IN_ZMANIM verbatim), not about the user.
+ * - A hide list the user never picked (`*Customized` false): the loader
+ *   ignores it and applies the build's current default instead, so it isn't
+ *   content — it is a copy of whatever default that device's build happened to
+ *   ship. Two devices on different builds would otherwise never agree, each
+ *   adopting the other's defaults and reloading on every open.
  */
 export function sectionFingerprint(name: SectionName, data: SectionData): string {
   if (name === 'prefs' && data && typeof data === 'object') {
@@ -390,12 +400,31 @@ export function sectionFingerprint(name: SectionName, data: SectionData): string
   return canonicalJson(data ?? null);
 }
 
+/**
+ * Whether a stored hide list is the user's pick, mirroring how the loader
+ * decides (app-state): the marker settles it, and a save from before the
+ * marker existed counts a non-empty list as deliberate — the old default was
+ * the empty show-everything list. `legacyCountsAsPicked` is false for lists
+ * whose loader has no such fallback (fast-end).
+ */
+function hideListIsPicked(customized: unknown, list: unknown, legacyCountsAsPicked = true): boolean {
+  if (typeof customized === 'boolean') return customized;
+  return legacyCountsAsPicked && Array.isArray(list) && list.length > 0;
+}
+
 function normalizeForFingerprint(prefs: Record<string, unknown>): Record<string, unknown> {
-  if (typeof prefs.location !== 'object' || prefs.location === null) return prefs;
-  const location = { ...(prefs.location as Record<string, unknown>) };
-  delete location.label;
-  delete location.labelLocale;
-  return { ...prefs, location };
+  const out = { ...prefs };
+  if (typeof out.location === 'object' && out.location !== null) {
+    const location = { ...(out.location as Record<string, unknown>) };
+    delete location.label;
+    delete location.labelLocale;
+    out.location = location;
+  }
+  delete out.seenOptInZmanim;
+  if (!hideListIsPicked(out.zmanimCustomized, out.hiddenZmanim)) delete out.hiddenZmanim;
+  if (!hideListIsPicked(out.learningCustomized, out.hiddenLearning)) delete out.hiddenLearning;
+  if (!hideListIsPicked(out.fastEndCustomized, out.hiddenFastEnd, false)) delete out.hiddenFastEnd;
+  return out;
 }
 
 /** The prefs fingerprint this device last agreed on with the stores, if any. */
