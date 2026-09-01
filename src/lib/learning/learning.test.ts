@@ -10,7 +10,14 @@ import { JewishCalendar, YerushalmiYomiCalculator, YomiCalculator } from 'kosher
 import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
 
-import { getDailyLearning, LEARNING_CYCLE_KEYS, sanitizeHiddenLearning, type LearningCycleKey } from './index';
+import {
+  DEFAULT_HIDDEN_LEARNING,
+  getDailyLearning,
+  isDefaultHiddenLearning,
+  LEARNING_CYCLE_KEYS,
+  sanitizeHiddenLearning,
+  type LearningCycleKey,
+} from './index';
 import { learningName } from './names';
 import { LEARNING_NAMES_RU } from './names-ru';
 
@@ -217,6 +224,21 @@ describe('GPL bundle guard', () => {
     };
     walk(join(process.cwd(), 'src'));
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('DEFAULT_HIDDEN_LEARNING', () => {
+  it('leaves Daf Yomi as the only cycle visible out of the box', () => {
+    const hidden = new Set<string>(DEFAULT_HIDDEN_LEARNING);
+    expect(LEARNING_CYCLE_KEYS.filter((k) => !hidden.has(k))).toEqual(['dafYomi']);
+  });
+
+  it('recognizes the default set regardless of order, and nothing else', () => {
+    expect(isDefaultHiddenLearning([...DEFAULT_HIDDEN_LEARNING])).toBe(true);
+    expect(isDefaultHiddenLearning([...DEFAULT_HIDDEN_LEARNING].reverse())).toBe(true);
+    // A show-all list and a hide-all list are both explicit choices, not the default.
+    expect(isDefaultHiddenLearning([])).toBe(false);
+    expect(isDefaultHiddenLearning([...LEARNING_CYCLE_KEYS])).toBe(false);
   });
 });
 

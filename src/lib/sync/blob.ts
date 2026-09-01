@@ -20,6 +20,7 @@
 import { DEFAULT_CANDLE_OFFSET, PREFS_STORAGE_KEY } from '@/components/providers/app-state';
 import { A11Y_STORAGE_KEY } from '@/components/providers/accessibility-provider';
 import { DEFAULT_HIDDEN_FAST_END } from '@/lib/calendar';
+import { isDefaultHiddenLearning } from '@/lib/learning';
 import { DEFAULT_LOCATION } from '@/lib/location';
 import { THEME_STORAGE_KEY } from '@/lib/theme';
 import { DEFAULT_HAVDALAH_OPINION, DEFAULT_HIDDEN_ZMANIM } from '@/lib/zmanim';
@@ -239,7 +240,12 @@ export function prefsHoldUserData(data: SectionData): boolean {
   if ((personal?.people?.length ?? 0) > 0 || (personal?.occasions?.length ?? 0) > 0) return true;
   if (Array.isArray(prefs.customDates) && prefs.customDates.length > 0) return true; // pre-1.23 shape
   if (Array.isArray(prefs.savedLocations) && prefs.savedLocations.length > 0) return true;
-  if (prefs.zmanimCustomized === true || prefs.lehumraCustomized === true || prefs.fastEndCustomized === true) {
+  if (
+    prefs.zmanimCustomized === true ||
+    prefs.lehumraCustomized === true ||
+    prefs.learningCustomized === true ||
+    prefs.fastEndCustomized === true
+  ) {
     return true;
   }
   // An export preset exists only after a real export — the prefs writer omits
@@ -258,7 +264,15 @@ export function prefsHoldUserData(data: SectionData): boolean {
   const differsFromDefault = (value: unknown, defaults: readonly string[]): boolean =>
     Array.isArray(value) && [...value].sort().join('\n') !== [...defaults].sort().join('\n');
   if (differsFromDefault(prefs.hiddenZmanim, DEFAULT_HIDDEN_ZMANIM)) return true;
-  if (Array.isArray(prefs.hiddenLearning) && prefs.hiddenLearning.length > 0) return true;
+  // A non-empty learning hide list is a choice unless it is the default a
+  // post-1.27 device writes at mount, which the marker identifies: those
+  // devices always persist learningCustomized, so `false` means "wrote the
+  // default, never picked". Pre-flag devices wrote no marker at all, and there
+  // any non-empty list was deliberate — the old default was the empty show-all
+  // list — including one that happens to match today's default set.
+  const hiddenLearning: string[] = Array.isArray(prefs.hiddenLearning) ? prefs.hiddenLearning : [];
+  const mountWrittenLearning = prefs.learningCustomized === false && isDefaultHiddenLearning(hiddenLearning);
+  if (hiddenLearning.length > 0 && !mountWrittenLearning) return true;
   if (differsFromDefault(prefs.hiddenFastEnd, DEFAULT_HIDDEN_FAST_END)) return true;
   const location = prefs.location as { lat?: unknown; lng?: unknown } | undefined;
   if (
