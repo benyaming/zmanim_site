@@ -42,21 +42,31 @@ import {
 } from './export-month';
 import { reportTranslator } from './export-i18n';
 import { renderExportPages } from './export-render';
-import { useExportComputeOptions, useExportLocation, useReportLocale } from './export-shared';
+import { EXPORT_FIELD_LABEL, useExportComputeOptions, useExportLocation, useReportLocale } from './export-shared';
 
 /** The appearance menu's text-size steps (see --ui-scale in globals.css), applied to the page type. */
 const TEXT_SCALES: Record<FontScale, number> = { default: 1, lg: 1.125, xl: 1.25, xxl: 1.4 };
 const FONT_SCALE_KEYS: FontScale[] = ['default', 'lg', 'xl', 'xxl'];
 
+/** Message key for each page style (export.themeColor / themeMono / themeDark). */
+const THEME_LABEL_KEY: Record<ExportGridTheme, string> = {
+  color: 'themeColor',
+  mono: 'themeMono',
+  dark: 'themeDark',
+};
+
 /** Month + year pickers for one end of the range, in the active calendar mode. */
 function MonthField({
   label,
+  yearLabel,
   mode,
   value,
   onChange,
   locale,
 }: {
   label: string;
+  /** Word for "year", so the two controls in the row don't announce the same name. */
+  yearLabel: string;
   mode: CalendarMode;
   /** Month anchor (the 15th) in the active mode. */
   value: DateTime;
@@ -68,10 +78,10 @@ function MonthField({
     const year = jd.getJewishYear();
     const month = jd.getJewishMonth();
     return (
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground min-w-[3.75rem] shrink-0 text-xs">{label}</span>
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+        <span className={EXPORT_FIELD_LABEL}>{label}</span>
         <Select value={String(month)} onValueChange={(v) => onChange(hebrewMonthAnchor(year, Number(v)))}>
-          <SelectTrigger className="flex-1">
+          <SelectTrigger className="w-full" aria-label={label}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -91,8 +101,8 @@ function MonthField({
             const n = Number(e.target.value);
             if (Number.isInteger(n) && n >= 4000 && n <= 6999) onChange(hebrewMonthAnchor(n, month));
           }}
-          className="w-24"
-          aria-label={label}
+          className="w-20"
+          aria-label={`${label} · ${yearLabel}`}
         />
       </div>
     );
@@ -100,13 +110,13 @@ function MonthField({
 
   const months = LuxonInfo.months('long', { locale });
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-muted-foreground min-w-[3.75rem] shrink-0 text-xs">{label}</span>
+    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+      <span className={EXPORT_FIELD_LABEL}>{label}</span>
       <Select
         value={String(value.month)}
         onValueChange={(v) => onChange(DateTime.fromObject({ year: value.year, month: Number(v), day: 15 }))}
       >
-        <SelectTrigger className="flex-1">
+        <SelectTrigger className="w-full" aria-label={label}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -128,8 +138,8 @@ function MonthField({
             onChange(DateTime.fromObject({ year: n, month: value.month, day: 15 }));
           }
         }}
-        className="w-24"
-        aria-label={label}
+        className="w-20"
+        aria-label={`${label} · ${yearLabel}`}
       />
     </div>
   );
@@ -175,6 +185,8 @@ export function ExportCalendarTool() {
   const { monthDate, mode, candleLightingOffset, havdalahOpinion, personalDates } = useAppState();
   const { fontScale: appFontScale } = useAccessibility();
   const [includePersonalDates, setIncludePersonalDates] = useState(true);
+  const [includeCandles, setIncludeCandles] = useState(true);
+  const [includeFasts, setIncludeFasts] = useState(true);
   // Zmanim and/or learnings shown inside each day cell — up to MAX_CELL_ITEMS,
   // any opinion; kept in canonical order (zmanim first, then learnings).
   const [cellItems, setCellItems] = useState<string[]>([]);
@@ -211,6 +223,8 @@ export function ExportCalendarTool() {
     havdalahOpinion,
     useElevation,
     lehumra,
+    includeCandles,
+    includeFasts,
     personalDates: includePersonalDates ? personalDates : EMPTY_PERSONAL_DATES,
     cellItemKeys: cellItems,
     labels: {
@@ -302,46 +316,60 @@ export function ExportCalendarTool() {
       </ToggleGroup>
 
       <div className="space-y-2">
-        <MonthField label={t('from')} mode={gridMode} value={start} onChange={setStart} locale={locale} />
-        <MonthField label={t('to')} mode={gridMode} value={end} onChange={setEnd} locale={locale} />
+        <MonthField label={t('from')} yearLabel={tCal('year')} mode={gridMode} value={start} onChange={setStart} locale={locale} />
+        <MonthField label={t('to')} yearLabel={tCal('year')} mode={gridMode} value={end} onChange={setEnd} locale={locale} />
         {locationField}
         {languageField}
+
+        {/* A Select, not a segmented control: the three style names are far
+            wider than the rail in some languages, and a dropdown keeps this row
+            aligned with the ones above it at every text size. */}
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+          <span className={EXPORT_FIELD_LABEL}>{t('theme')}</span>
+          <Select value={theme} onValueChange={(v) => setTheme(v as ExportGridTheme)}>
+            <SelectTrigger className="w-full" aria-label={t('theme')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {EXPORT_GRID_THEMES.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {t(THEME_LABEL_KEY[option])}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+          <span className={EXPORT_FIELD_LABEL}>{tSettings('textSize')}</span>
+          <Select value={fontScale} onValueChange={(v) => setFontScale(v as FontScale)}>
+            <SelectTrigger className="w-full" aria-label={tSettings('textSize')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {FONT_SCALE_KEYS.map((key) => (
+                <SelectItem key={key} value={key}>
+                  {tSettings(`size_${key}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground min-w-[3.75rem] shrink-0 text-xs">{t('theme')}</span>
-        <ToggleGroup
-          type="single"
-          value={theme}
-          onValueChange={(v) => v && setTheme(v as ExportGridTheme)}
-          variant="outline"
-          size="sm"
-        >
-          {EXPORT_GRID_THEMES.map((option) => (
-            <ToggleGroupItem key={option} value={option}>
-              {t(option === 'color' ? 'themeColor' : option === 'mono' ? 'themeMono' : 'themeDark')}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+      {/* Elevation + lehumra, then the grid's own content switches — one block
+          of checkboxes rather than several separated groups. */}
+      <div className="space-y-1.5">
+        {computeField}
+        <label htmlFor="export-candles" className="flex cursor-pointer items-center gap-2">
+          <Checkbox id="export-candles" checked={includeCandles} onCheckedChange={(v) => setIncludeCandles(v === true)} />
+          <span className="text-sm">{t('includeCandles')}</span>
+        </label>
+        <label htmlFor="export-fasts" className="flex cursor-pointer items-center gap-2">
+          <Checkbox id="export-fasts" checked={includeFasts} onCheckedChange={(v) => setIncludeFasts(v === true)} />
+          <span className="text-sm">{t('includeFasts')}</span>
+        </label>
       </div>
-
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground min-w-[3.75rem] shrink-0 text-xs">{tSettings('textSize')}</span>
-        <Select value={fontScale} onValueChange={(v) => setFontScale(v as FontScale)}>
-          <SelectTrigger className="flex-1">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {FONT_SCALE_KEYS.map((key) => (
-              <SelectItem key={key} value={key}>
-                {tSettings(`size_${key}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {computeField}
 
       <div className="space-y-1.5">
         <span className="text-sm font-medium">

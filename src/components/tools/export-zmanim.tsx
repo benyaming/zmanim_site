@@ -34,7 +34,7 @@ import { reportTranslator } from './export-i18n';
 import { buildZmanimPdfPages, type PdfDocConfig } from './export-pdf-doc';
 import { ExportPdfPreview } from './export-preview';
 import { renderExportPages } from './export-render';
-import { useExportComputeOptions, useExportLocation, useReportLocale } from './export-shared';
+import { EXPORT_FIELD_LABEL, useExportComputeOptions, useExportLocation, useReportLocale } from './export-shared';
 
 /** Bases with several shitot get "name · shita" labels; single-opinion ones just the name. */
 const BASE_KEY_COUNT = new Map<string, number>();
@@ -355,7 +355,7 @@ export function ExportZmanimTool() {
       <div className="space-y-3">
         <div className="space-y-2">
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-            <label htmlFor="export-table-start" className="text-muted-foreground min-w-[3.75rem] text-xs">
+            <label htmlFor="export-table-start" className={EXPORT_FIELD_LABEL}>
               {t('from')}
             </label>
             {/* The pickers follow the sheet calendar: Hebrew-month sheets are
@@ -369,7 +369,7 @@ export function ExportZmanimTool() {
             />
           </div>
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-            <label htmlFor="export-table-end" className="text-muted-foreground min-w-[3.75rem] text-xs">
+            <label htmlFor="export-table-end" className={EXPORT_FIELD_LABEL}>
               {t('to')}
             </label>
             <DatePicker

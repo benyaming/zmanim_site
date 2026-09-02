@@ -113,6 +113,32 @@ function observedShift(jc: JewishCalendar): DayInfo['observedShift'] {
   return null;
 }
 
+/**
+ * Days Yizkor is recited — the memorial prayer said after the Torah reading on
+ * four festival days. Two of them land on a different Hebrew date in Israel,
+ * where a festival's last day comes a day earlier (one day of Yom Tov, not two):
+ *
+ * - Yom Kippur — 10 Tishrei, everywhere.
+ * - Shemini Atzeret — 22 Tishrei, everywhere (in Israel the same day as Simchat Torah).
+ * - The last day of Pesach — 21 Nissan in Israel, 22 Nissan in the diaspora.
+ * - Shavuot — 6 Sivan in Israel, its second day (7 Sivan) in the diaspora.
+ *
+ * kosher-zmanim has no Yizkor predicate, so this reads the Hebrew date directly.
+ */
+function isYizkorDay(jc: JewishCalendar, inIsrael: boolean): boolean {
+  const day = jc.getJewishDayOfMonth();
+  switch (jc.getJewishMonth()) {
+    case JewishCalendar.NISSAN:
+      return day === (inIsrael ? 21 : 22);
+    case JewishCalendar.SIVAN:
+      return day === (inIsrael ? 6 : 7);
+    case JewishCalendar.TISHREI:
+      return day === 10 || day === 22;
+    default:
+      return false;
+  }
+}
+
 /** Is the day Erev Pesach (14 Nissan) — when the chametz deadlines apply? */
 export function isErevPesach(date: DateTime): boolean {
   return new JewishCalendar(date).getYomTovIndex() === JewishCalendar.EREV_PESACH;
@@ -150,6 +176,7 @@ export function getDayInfo(date: DateTime, formatter?: HebrewDateFormatter, loca
     // incoming month.
     molad: isRoshChodesh || isShabbosMevorchim ? getMolad(date) : null,
     observedShift: observedShift(jc),
+    isYizkor: isYizkorDay(jc, inIsrael),
     hebrewDayOfMonth: jc.getJewishDayOfMonth(),
     hebrewMonth: hebrewMonthLabel(jc, fmt, locale),
   };

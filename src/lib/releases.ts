@@ -22,6 +22,24 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.28',
+    date: '2026-09-02',
+    notes: {
+      en: [
+        'The day panel marks the days Yizkor is recited.',
+        'The calendar export can leave out candle lighting, havdala and fast times.',
+      ],
+      he: [
+        'לוח היום מציין את הימים שאומרים בהם יזכור.',
+        'בייצוא לוח השנה אפשר להשמיט הדלקת נרות, הבדלה וזמני צום.',
+      ],
+      ru: [
+        'Панель дня отмечает дни, когда читают Изкор.',
+        'В экспорте календаря можно убрать зажигание свечей, авдалу и времена постов.',
+      ],
+    },
+  },
+  {
     version: '1.27',
     date: '2026-08-31',
     notes: {
