@@ -17,6 +17,7 @@ function cfg(over: Partial<ExportMonthCfg>): ExportMonthCfg {
     useElevation: false,
     lehumra: false,
     includeCandles: true,
+    includeFasts: true,
     personalDates: EMPTY_PERSONAL_DATES,
     cellItemKeys: [],
     labels: {
@@ -101,6 +102,18 @@ describe('buildExportMonth cell items', () => {
   });
 });
 
+describe('buildExportMonth fast times', () => {
+  it('drops both fast rows when they are turned off', () => {
+    // March 2024 holds Ta'anit Esther (a dawn-to-nightfall fast).
+    const data = buildExportMonth(DateTime.fromISO('2024-03-15'), 'gregorian', cfg({ includeFasts: false }));
+    const types = new Set(data.cells.flatMap((c) => c.events.map((e) => e.type)));
+    expect(types.has('fastStart')).toBe(false);
+    expect(types.has('fastEnd')).toBe(false);
+    // The other switch is untouched — candle lighting still shows.
+    expect(types.has('candle')).toBe(true);
+  });
+});
+
 describe('buildExportMonth candle lighting', () => {
   const eventTypes = (month: string, over: Partial<ExportMonthCfg> = {}) =>
     new Set(buildExportMonth(DateTime.fromISO(month), 'gregorian', cfg(over)).cells.flatMap((c) => c.events.map((e) => e.type)));
@@ -145,5 +158,11 @@ describe('buildExportMonth candle lighting', () => {
     expect(hidden.eve.events).toEqual([]);
     // Same time as the havdala row above, now labelled as the fast's end.
     expect(hidden.day.events).toEqual([{ type: 'fastEnd', time: shown.day.events[0].time }]);
+
+    // …but only while fasts are shown at all. With both switches off there is
+    // no row left to rescue it into, and with only fasts off the time stays a
+    // havdala row, which is what the reader asked to keep.
+    expect(yomKippur({ includeCandles: false, includeFasts: false }).day.events).toEqual([]);
+    expect(yomKippur({ includeFasts: false }).day.events.map((e) => e.type)).toEqual(['havdalah']);
   });
 });

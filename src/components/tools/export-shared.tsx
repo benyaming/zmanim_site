@@ -38,7 +38,7 @@ export function useReportLocale(initial?: string): { reportLocale: string; field
     <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
       <span className={EXPORT_FIELD_LABEL}>{tLang('label')}</span>
       <Select value={reportLocale} onValueChange={setReportLocale}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger className="w-full" aria-label={tLang('label')}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -84,7 +84,7 @@ export function useExportLocation(initialId?: string): {
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
         <span className={EXPORT_FIELD_LABEL}>{t('location')}</span>
         <Select value={selectedId} onValueChange={setSelectedId}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full" aria-label={t('location')}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

@@ -115,8 +115,8 @@ function observedShift(jc: JewishCalendar): DayInfo['observedShift'] {
 
 /**
  * Days Yizkor is recited — the memorial prayer said after the Torah reading on
- * four festival days. Three of them are the LAST day of the festival, which is
- * a day earlier in Israel than in the diaspora (one day of Yom Tov, not two):
+ * four festival days. Two of them land on a different Hebrew date in Israel,
+ * where a festival's last day comes a day earlier (one day of Yom Tov, not two):
  *
  * - Yom Kippur — 10 Tishrei, everywhere.
  * - Shemini Atzeret — 22 Tishrei, everywhere (in Israel the same day as Simchat Torah).

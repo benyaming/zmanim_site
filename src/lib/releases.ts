@@ -27,15 +27,15 @@ export const RELEASES: readonly Release[] = [
     notes: {
       en: [
         'The day panel marks the days Yizkor is recited.',
-        'The calendar export can leave out candle lighting and havdala.',
+        'The calendar export can leave out candle lighting, havdala and fast times.',
       ],
       he: [
         'לוח היום מציין את הימים שאומרים בהם יזכור.',
-        'בייצוא לוח השנה אפשר להשמיט הדלקת נרות והבדלה.',
+        'בייצוא לוח השנה אפשר להשמיט הדלקת נרות, הבדלה וזמני צום.',
       ],
       ru: [
         'Панель дня отмечает дни, когда читают Изкор.',
-        'В экспорте календаря можно убрать зажигание свечей и авдалу.',
+        'В экспорте календаря можно убрать зажигание свечей, авдалу и времена постов.',
       ],
     },
   },

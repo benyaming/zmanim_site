@@ -186,6 +186,7 @@ export function ExportCalendarTool() {
   const { fontScale: appFontScale } = useAccessibility();
   const [includePersonalDates, setIncludePersonalDates] = useState(true);
   const [includeCandles, setIncludeCandles] = useState(true);
+  const [includeFasts, setIncludeFasts] = useState(true);
   // Zmanim and/or learnings shown inside each day cell — up to MAX_CELL_ITEMS,
   // any opinion; kept in canonical order (zmanim first, then learnings).
   const [cellItems, setCellItems] = useState<string[]>([]);
@@ -223,6 +224,7 @@ export function ExportCalendarTool() {
     useElevation,
     lehumra,
     includeCandles,
+    includeFasts,
     personalDates: includePersonalDates ? personalDates : EMPTY_PERSONAL_DATES,
     cellItemKeys: cellItems,
     labels: {
@@ -355,13 +357,17 @@ export function ExportCalendarTool() {
         </div>
       </div>
 
-      {/* Elevation + lehumra, then the grid's own content switch — one block of
-          checkboxes rather than three separated groups. */}
+      {/* Elevation + lehumra, then the grid's own content switches — one block
+          of checkboxes rather than several separated groups. */}
       <div className="space-y-1.5">
         {computeField}
         <label htmlFor="export-candles" className="flex cursor-pointer items-center gap-2">
           <Checkbox id="export-candles" checked={includeCandles} onCheckedChange={(v) => setIncludeCandles(v === true)} />
           <span className="text-sm">{t('includeCandles')}</span>
+        </label>
+        <label htmlFor="export-fasts" className="flex cursor-pointer items-center gap-2">
+          <Checkbox id="export-fasts" checked={includeFasts} onCheckedChange={(v) => setIncludeFasts(v === true)} />
+          <span className="text-sm">{t('includeFasts')}</span>
         </label>
       </div>
 

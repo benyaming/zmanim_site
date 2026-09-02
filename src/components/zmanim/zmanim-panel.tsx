@@ -374,8 +374,8 @@ export function ZmanimPanel() {
             {tPanel(info.observedShift === 'postponed' ? 'observedPostponed' : 'observedAdvanced')}
           </p>
         )}
-        {/* Yizkor: the memorial prayer is said on four festival days (three of
-            them a day earlier in Israel), and people plan around it. */}
+        {/* Yizkor: the memorial prayer is said on four festival days (two of
+            them on a different date in Israel), and people plan around it. */}
         {info.isYizkor && (
           <p className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
             <ScrollText className="size-3.5 shrink-0 text-slate-500 dark:text-slate-400" />
