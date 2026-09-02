@@ -1,5 +1,6 @@
 'use client';
 
+import { JewishCalendar } from 'kosher-zmanim';
 import { BookOpen, Sparkles, Utensils, UtensilsCrossed } from 'lucide-react';
 import type { DateTime } from 'luxon';
 import type { ComponentType } from 'react';
@@ -64,6 +65,12 @@ export interface ExportMonthCfg {
   havdalahOpinion: HavdalahOpinion;
   useElevation: boolean;
   lehumra: boolean;
+  /**
+   * Show candle lighting and havdala in the cells. Fast start/end rows stay
+   * either way — including Yom Kippur's end, which the day events carry as the
+   * havdala row and which is kept (as a fast end) when this is off.
+   */
+  includeCandles: boolean;
   /** Personal dates to overlay on the grid (empty unless the user opted in). */
   personalDates: PersonalDatesData;
   /** Zmanim and/or learning cycles to show in each day cell (≤ MAX_CELL_ITEMS). */
@@ -191,7 +198,23 @@ export function buildExportMonth(monthDate: DateTime, mode: CalendarMode, cfg: E
     // night the degree opinions are null and the fixed-minute fallback wins).
     const fastEnds = allEvents.filter((e) => e.type === 'fastEnd');
     const chosenFastEnd = fastEnds.find((e) => e.time) ?? fastEnds[0];
-    const rawEvents = allEvents.filter((e) => e.type !== 'fastEnd' || e === chosenFastEnd);
+    const dayEvents = allEvents.filter((e) => e.type !== 'fastEnd' || e === chosenFastEnd);
+    // Candle lighting and havdala are dropped AFTER the walk, not before it:
+    // the fast rows are read off the same event list. Yom Kippur is the one
+    // fast that is also a rest day, so getDayEvents carries its end as the
+    // havdala row rather than a fastEnd — keep that row, relabelled, instead of
+    // letting the option take a fast's end time with it. The onset has no such
+    // stand-in (the fast starts at shkia, not at the eve's candle lighting), so
+    // the candle row simply goes. Relabelling before lehumra is safe: havdala
+    // and fast-end round the same direction.
+    const isYomKippur = info.yomTovIndex === JewishCalendar.YOM_KIPPUR;
+    const rawEvents = cfg.includeCandles
+      ? dayEvents
+      : dayEvents.flatMap((e) => {
+          if (e.type === 'candle') return [];
+          if (e.type !== 'havdalah') return [e];
+          return isYomKippur ? [{ ...e, type: 'fastEnd' as const }] : [];
+        });
     const events = (cfg.lehumra ? applyLehumraToEvents(rawEvents) : rawEvents).map((e) => ({
       type: e.type,
       time: formatTime(e.time, locale),

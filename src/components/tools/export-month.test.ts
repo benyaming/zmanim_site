@@ -16,6 +16,7 @@ function cfg(over: Partial<ExportMonthCfg>): ExportMonthCfg {
     havdalahOpinion: DEFAULT_HAVDALAH_OPINION,
     useElevation: false,
     lehumra: false,
+    includeCandles: true,
     personalDates: EMPTY_PERSONAL_DATES,
     cellItemKeys: [],
     labels: {
@@ -97,5 +98,52 @@ describe('buildExportMonth cell items', () => {
   it('has no conditions note when neither option is on', () => {
     const data = buildExportMonth(DateTime.fromISO('2024-03-15'), 'gregorian', cfg({}));
     expect(data.conditions).toBeNull();
+  });
+});
+
+describe('buildExportMonth candle lighting', () => {
+  const eventTypes = (month: string, over: Partial<ExportMonthCfg> = {}) =>
+    new Set(buildExportMonth(DateTime.fromISO(month), 'gregorian', cfg(over)).cells.flatMap((c) => c.events.map((e) => e.type)));
+
+  it('shows candle lighting and havdala by default', () => {
+    const types = eventTypes('2024-03-15');
+    expect(types.has('candle')).toBe(true);
+    expect(types.has('havdalah')).toBe(true);
+  });
+
+  it('drops both when they are turned off', () => {
+    const types = eventTypes('2024-03-15', { includeCandles: false });
+    expect(types.has('candle')).toBe(false);
+    expect(types.has('havdalah')).toBe(false);
+  });
+
+  it('keeps a minor fast whole — it owns its own start/end rows', () => {
+    // March 2024 holds Ta'anit Esther (a dawn-to-nightfall fast).
+    const types = eventTypes('2024-03-15', { includeCandles: false });
+    expect(types.has('fastStart')).toBe(true);
+    expect(types.has('fastEnd')).toBe(true);
+  });
+
+  // Yom Kippur is the one fast that is also a rest day, so its end arrives as
+  // the havdala row: hiding candle lighting must not take the fast's end with
+  // it. Its onset genuinely has no row of its own (the eve's candle lighting is
+  // 18 min before shkia, not the fast's start), so the eve does go blank.
+  it("keeps Yom Kippur's end, which rides on the havdala row", () => {
+    const yomKippur = (over: Partial<ExportMonthCfg>) => {
+      const data = buildExportMonth(DateTime.fromISO('2025-10-15'), 'gregorian', cfg(over));
+      return {
+        eve: data.cells.find((c) => c.iso === '2025-10-01')!, // Erev Yom Kippur
+        day: data.cells.find((c) => c.iso === '2025-10-02')!, // Yom Kippur
+      };
+    };
+
+    const shown = yomKippur({});
+    expect(shown.eve.events.map((e) => e.type)).toEqual(['candle']);
+    expect(shown.day.events.map((e) => e.type)).toEqual(['havdalah']);
+
+    const hidden = yomKippur({ includeCandles: false });
+    expect(hidden.eve.events).toEqual([]);
+    // Same time as the havdala row above, now labelled as the fast's end.
+    expect(hidden.day.events).toEqual([{ type: 'fastEnd', time: shown.day.events[0].time }]);
   });
 });

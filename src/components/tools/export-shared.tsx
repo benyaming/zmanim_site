@@ -13,6 +13,14 @@ import { resolveSavedLocation, savedLocationDisplayName } from '@/lib/saved-loca
 import { REPORT_LOCALES } from './export-i18n';
 
 /**
+ * The label cell of an export tool's field row. A FIXED width (not a minimum)
+ * so every row's control starts at the same x — a long translation like
+ * "Размер текста" wraps inside the cell instead of pushing its control out of
+ * the column. rem-based, so it follows the accessibility text scale.
+ */
+export const EXPORT_FIELD_LABEL = 'text-muted-foreground w-[5.5rem] text-xs';
+
+/**
  * Report-language choice: defaults to the UI language, exports can use any.
  * The option names come from the language switcher's catalog entries.
  *
@@ -28,7 +36,7 @@ export function useReportLocale(initial?: string): { reportLocale: string; field
 
   const field = (
     <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-      <span className="text-muted-foreground min-w-[3.75rem] text-xs">{tLang('label')}</span>
+      <span className={EXPORT_FIELD_LABEL}>{tLang('label')}</span>
       <Select value={reportLocale} onValueChange={setReportLocale}>
         <SelectTrigger className="w-full">
           <SelectValue />
@@ -74,7 +82,7 @@ export function useExportLocation(initialId?: string): {
   const field =
     savedLocations.length > 0 ? (
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-        <span className="text-muted-foreground min-w-[3.75rem] text-xs">{t('location')}</span>
+        <span className={EXPORT_FIELD_LABEL}>{t('location')}</span>
         <Select value={selectedId} onValueChange={setSelectedId}>
           <SelectTrigger className="w-full">
             <SelectValue />
@@ -94,7 +102,7 @@ export function useExportLocation(initialId?: string): {
     ) : (
       <div className="space-y-1">
         <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-          <span className="text-muted-foreground min-w-[3.75rem] text-xs">{t('location')}</span>
+          <span className={EXPORT_FIELD_LABEL}>{t('location')}</span>
           <span className="flex min-w-0 items-center gap-1.5 text-sm">
             <MapPin className="text-muted-foreground size-3.5 shrink-0" />
             <span className="truncate">{currentLabel}</span>
