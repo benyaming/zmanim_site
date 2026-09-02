@@ -56,6 +56,8 @@ export interface DayInfo {
    * days): 'postponed' = kept later, 'advanced' = kept earlier. Null otherwise.
    */
   observedShift: 'postponed' | 'advanced' | null;
+  /** True on the four days Yizkor is recited (Israel vs. diaspora differ on three). */
+  isYizkor: boolean;
   /** Hebrew day-of-month number (1-30). */
   hebrewDayOfMonth: number;
   /** Formatted Hebrew month name. */

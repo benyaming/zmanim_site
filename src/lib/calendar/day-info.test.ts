@@ -105,6 +105,39 @@ describe('getDayInfo', () => {
     expect(getDayInfo(DateTime.fromISO('2024-06-18')).molad).toBeNull(); // plain Tuesday
   });
 
+  describe('isYizkor', () => {
+    // Yom Kippur and Shemini Atzeret are the same date everywhere; the Pesach
+    // and Shavuot Yizkor fall on the festival's last day, a day earlier in
+    // Israel (one day of Yom Tov) than in the diaspora.
+    it.each([
+      ['2025-10-02', 'Yom Kippur (10 Tishrei)'],
+      ['2025-10-14', 'Shemini Atzeret (22 Tishrei)'],
+    ])('marks %s — %s — in both Israel and the diaspora', (iso) => {
+      const date = DateTime.fromISO(iso);
+      expect(getDayInfo(date, undefined, 'en', true).isYizkor).toBe(true);
+      expect(getDayInfo(date, undefined, 'en', false).isYizkor).toBe(true);
+    });
+
+    it.each([
+      ['2026-04-08', '2026-04-09', 'the last day of Pesach (21 vs. 22 Nissan)'],
+      ['2026-05-22', '2026-05-23', 'Shavuot (6 vs. 7 Sivan)'],
+    ])('keeps %s for Israel and %s for the diaspora — %s', (israelIso, diasporaIso) => {
+      const israel = DateTime.fromISO(israelIso);
+      const diaspora = DateTime.fromISO(diasporaIso);
+      expect(getDayInfo(israel, undefined, 'en', true).isYizkor).toBe(true);
+      expect(getDayInfo(israel, undefined, 'en', false).isYizkor).toBe(false);
+      expect(getDayInfo(diaspora, undefined, 'en', false).isYizkor).toBe(true);
+      expect(getDayInfo(diaspora, undefined, 'en', true).isYizkor).toBe(false);
+    });
+
+    it('is false on the other festival days and on plain days', () => {
+      expect(getDayInfo(DateTime.fromISO('2026-04-02')).isYizkor).toBe(false); // 1st day Pesach
+      expect(getDayInfo(DateTime.fromISO('2025-10-07')).isYizkor).toBe(false); // 1st day Sukkot
+      expect(getDayInfo(DateTime.fromISO('2025-10-15')).isYizkor).toBe(false); // Simchat Torah (diaspora)
+      expect(getDayInfo(DateTime.fromISO('2026-06-18')).isYizkor).toBe(false); // plain Thursday
+    });
+  });
+
   it('detects Erev Pesach (14 Nissan) for the chametz deadlines', () => {
     expect(isErevPesach(DateTime.fromISO('2024-04-22'))).toBe(true);
     expect(isErevPesach(DateTime.fromISO('2024-04-23'))).toBe(false); // Pesach itself

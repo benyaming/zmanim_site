@@ -8,6 +8,7 @@ import {
   Clock,
   Flame,
   Moon,
+  ScrollText,
   Sparkles,
   Utensils,
   UtensilsCrossed,
@@ -371,6 +372,15 @@ export function ZmanimPanel() {
           <p className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
             <CalendarClock className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
             {tPanel(info.observedShift === 'postponed' ? 'observedPostponed' : 'observedAdvanced')}
+          </p>
+        )}
+        {/* Yizkor: the memorial prayer is said on four festival days (three of
+            them a day earlier in Israel), and people plan around it. */}
+        {info.isYizkor && (
+          <p className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
+            <ScrollText className="size-3.5 shrink-0 text-slate-500 dark:text-slate-400" />
+            {tPanel('yizkor')}
+            <InfoHint detail={tPanel('yizkorDetail')} label={tPanel('yizkorLabel')} />
           </p>
         )}
         {info.molad && (

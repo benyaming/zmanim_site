@@ -356,7 +356,10 @@
     "lehumraNote": "Times are rounded to the stringent whole minute (lehumra).",
     "lehumraDetail": "Every displayed time is rounded to a whole minute in the stricter direction — by less than a minute, and only in the display; the underlying calculation stays exact.\nRounded DOWN (deadlines — no later than): sof zman Shema and Tefila, the chametz deadlines, shkia, candle lighting before Shabbat and Yom Tov, and the start of a fast.\nRounded UP (onsets — no earlier than): alot ha-shachar, misheyakir, hanetz, chatzot, mincha gedola and ketana, plag ha-mincha, tzeit ha-kochavim, havdala, the end of a fast, and candle lighting after nightfall (2nd Yom Tov night, Motzei Shabbat).",
     "observedPostponed": "Observed later this year because of Shabbat.",
-    "observedAdvanced": "Observed earlier this year because of Shabbat."
+    "observedAdvanced": "Observed earlier this year because of Shabbat.",
+    "yizkorLabel": "Yizkor",
+    "yizkor": "Yizkor is recited.",
+    "yizkorDetail": "Yizkor, the memorial prayer for departed relatives, is said in the synagogue after the Torah reading on four days: Yom Kippur, Shemini Atzeret, the last day of Pesach and Shavuot. In Israel those are the seventh day of Pesach and Shavuot itself; in the diaspora, where the festivals run a day longer, they are the eighth day of Pesach and the second day of Shavuot."
   },
   "learning": {
     "abbr": {
