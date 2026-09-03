@@ -36,6 +36,7 @@ describe('releasesSince', () => {
   it('returns only the releases newer than the last seen version', () => {
     const unseen = releasesSince('1.12');
     expect(unseen.map((r) => r.version)).toEqual([
+      '1.29',
       '1.28',
       '1.27',
       '1.26',
