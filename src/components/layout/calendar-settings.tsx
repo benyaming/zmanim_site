@@ -96,6 +96,19 @@ export function CalendarSettingsBody() {
     return `${tName(key)} · ${tShita(key)}`;
   };
 
+  // The candle-offset field holds a draft string while it is being edited, so a
+  // transiently empty or out-of-range field survives. Bound straight to the
+  // number, a controlled input snaps the value back the instant the field goes
+  // empty, which left the leading digit un-erasable and made any offset below
+  // 10 nearly untypable on a touchscreen.
+  const [offsetDraft, setOffsetDraft] = useState<string | null>(null);
+  const commitOffset = (n: number) => {
+    const clamped = Math.max(CANDLE_OFFSET_MIN, Math.min(CANDLE_OFFSET_MAX, Math.round(n)));
+    // Don't re-commit an unchanged value: setCandleLightingOffset marks the
+    // offset as touched for the session, which holds off the bot profile.
+    if (clamped !== candleLightingOffset) setCandleLightingOffset(clamped);
+  };
+
   // Which multi-shita bases are expanded in the picker. All collapsed by
   // default so the list stays one row per zman; the shown/total count conveys
   // state without opening them.
@@ -129,14 +142,24 @@ export function CalendarSettingsBody() {
             inputMode="numeric"
             min={CANDLE_OFFSET_MIN}
             max={CANDLE_OFFSET_MAX}
-            value={candleLightingOffset}
+            value={offsetDraft ?? String(candleLightingOffset)}
             onChange={(e) => {
-              // Ignore an empty field instead of letting Number('') collapse it to 0.
-              if (e.target.value === '') return;
-              const n = Number(e.target.value);
-              if (Number.isFinite(n)) {
-                setCandleLightingOffset(Math.max(CANDLE_OFFSET_MIN, Math.min(CANDLE_OFFSET_MAX, Math.round(n))));
+              const raw = e.target.value;
+              setOffsetDraft(raw);
+              // Only an already-in-range value takes effect as it is typed;
+              // empty, half-typed and too-large ones wait for blur to be
+              // clamped, so the field can pass through them on the way.
+              const n = Number(raw);
+              if (raw !== '' && Number.isInteger(n) && n >= CANDLE_OFFSET_MIN && n <= CANDLE_OFFSET_MAX) {
+                commitOffset(n);
               }
+            }}
+            onBlur={(e) => {
+              const n = Number(e.target.value);
+              if (e.target.value !== '' && Number.isFinite(n)) commitOffset(n);
+              // Dropping the draft falls the field back to the committed value,
+              // so an abandoned empty field shows the offset still in effect.
+              setOffsetDraft(null);
             }}
             className="w-24"
           />
