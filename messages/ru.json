@@ -332,6 +332,8 @@
     "fastEnd": "Окончание поста",
     "candleOffset": "{minutes} мин до заката",
     "candleAfterNightfall": "не раньше выхода звёзд",
+    "eventDay": "{weekday} {day}",
+    "blockHeading": "{name} · {from} – {to}",
     "fastEndKinds": {
       "gmarTaanis": "Малые посты · три средние звезды",
       "nightfall": "Все посты · три малые звезды"

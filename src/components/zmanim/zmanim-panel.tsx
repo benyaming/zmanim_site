@@ -33,10 +33,13 @@ import {
   getDayEvents,
   getDayInfo,
   isErevPesach,
+  isYomTovRestDay,
   localizedHolidayLabel,
+  restBlockFor,
   type DayEvent,
   type DayEventType,
   type DayInfo,
+  type RestBlock,
 } from '@/lib/calendar';
 import { type Observance, observancesOn } from '@/lib/personal-dates';
 import { observanceChipText, type PersonalDatesTranslator } from '@/components/tools/personal-dates-labels';
@@ -63,13 +66,12 @@ const EVENT_META: Record<DayEventType, { Icon: ComponentType<{ className?: strin
   fastEnd: { Icon: Utensils, className: 'text-emerald-600 dark:text-emerald-400' },
 };
 
-/** Is this a Shabbat or a work-prohibited Yom Tov (a "rest day")? */
-function isRestDay(date: DateTime, inIsrael: boolean): boolean {
-  if (date.weekday === 6) return true; // Saturday
-  const jc = new JewishCalendar(date);
-  jc.setInIsrael(inIsrael);
-  return jc.isYomTovAssurBemelacha();
-}
+/**
+ * A day event tagged with the civil date it belongs to. The panel lists the
+ * whole rest block's bookends on every day of it (see buildDayTimes), so a row
+ * often belongs to a different date than the selected one and has to say so.
+ */
+type DatedEvent = DayEvent & { date: DateTime };
 
 /** Candle/havdalah/fast events for a specific date (computes that date's zmanim). */
 function dayEventsFor(
@@ -79,7 +81,7 @@ function dayEventsFor(
   havdalahOpinion: HavdalahOpinion,
   useElevation: boolean,
   hiddenFastEnd: readonly string[] = DEFAULT_HIDDEN_FAST_END,
-): DayEvent[] {
+): DatedEvent[] {
   const z = computeZmanim({
     lat: location.lat,
     lng: location.lng,
@@ -92,7 +94,7 @@ function dayEventsFor(
     keys: dayEventZmanKeys(havdalahZmanKey(havdalahOpinion)),
   });
   const byKey = Object.fromEntries(z.map((x) => [x.key, x.time]));
-  return getDayEvents(
+  const events = getDayEvents(
     date,
     {
       candleLighting: byKey.candleLighting,
@@ -103,6 +105,22 @@ function dayEventsFor(
     location.inIsrael,
     hiddenFastEnd,
   );
+  return events.map((e) => ({ ...e, date }));
+}
+
+/** The times of one rest block, plus the block itself when it spans several nights. */
+interface DayTimes {
+  events: DatedEvent[];
+  /**
+   * Set only for a rest block of more than one day (a 2-day Yom Tov, Yom Tov
+   * next to Shabbat): the eve that lights the first candles, plus the rest days
+   * themselves (which name the block). Such a block lights candles more than
+   * once — one per night a further rest day begins — so the rows are grouped
+   * under a heading naming the block and each says which night it is;
+   * otherwise identical "Candle lighting" rows sit next to each other with
+   * nothing to tell them apart.
+   */
+  block: RestBlock | null;
 }
 
 /**
@@ -117,39 +135,29 @@ function buildDayTimes(
   havdalahOpinion: HavdalahOpinion,
   useElevation: boolean,
   hiddenFastEnd: readonly string[],
-): DayEvent[] {
+): DayTimes {
   const inIsrael = location.inIsrael;
-  const bookends: DayEvent[] = [];
+  const bookends: DatedEvent[] = [];
 
-  // Find the contiguous rest block the selected day is in, or the one starting tomorrow.
-  let firstRest: DateTime | null = null;
-  let lastRest: DateTime | null = null;
-  if (isRestDay(selectedDay, inIsrael)) {
-    firstRest = selectedDay;
-    while (isRestDay(firstRest.minus({ days: 1 }), inIsrael)) firstRest = firstRest.minus({ days: 1 });
-    lastRest = selectedDay;
-    while (isRestDay(lastRest.plus({ days: 1 }), inIsrael)) lastRest = lastRest.plus({ days: 1 });
-  } else if (isRestDay(selectedDay.plus({ days: 1 }), inIsrael)) {
-    firstRest = selectedDay.plus({ days: 1 });
-    lastRest = firstRest;
-    while (isRestDay(lastRest.plus({ days: 1 }), inIsrael)) lastRest = lastRest.plus({ days: 1 });
-  }
+  // The rest block the selected day is in, or the one starting tomorrow.
+  const block = restBlockFor(selectedDay, inIsrael);
 
-  if (firstRest && lastRest) {
-    const erev = firstRest.minus({ days: 1 });
-    const candle = dayEventsFor(erev, location, candleLightingOffset, havdalahOpinion, useElevation).find((e) => e.type === 'candle');
+  if (block) {
+    const candle = dayEventsFor(block.erev, location, candleLightingOffset, havdalahOpinion, useElevation).find(
+      (e) => e.type === 'candle',
+    );
     if (candle) bookends.push(candle);
     // Lightings INSIDE a multi-day block — one per night a further rest day
     // begins: the 2nd Yom Tov night (after nightfall), Yom Tov on Motzei
     // Shabbat (after nightfall), or Shabbat after a Friday Yom Tov (regular
     // pre-sunset time). Chronological between the erev candle and havdalah.
-    for (let day = firstRest; day.toMillis() < lastRest.toMillis(); day = day.plus({ days: 1 })) {
+    for (let day = block.firstRest; day.toMillis() < block.lastRest.toMillis(); day = day.plus({ days: 1 })) {
       const nightCandle = dayEventsFor(day, location, candleLightingOffset, havdalahOpinion, useElevation).find(
         (e) => e.type === 'candle',
       );
       if (nightCandle) bookends.push(nightCandle);
     }
-    const havdalah = dayEventsFor(lastRest, location, candleLightingOffset, havdalahOpinion, useElevation).find(
+    const havdalah = dayEventsFor(block.lastRest, location, candleLightingOffset, havdalahOpinion, useElevation).find(
       (e) => e.type === 'havdalah',
     );
     if (havdalah) bookends.push(havdalah);
@@ -193,7 +201,9 @@ function buildDayTimes(
     fasts = [...fasts, ...day.filter((e) => e.type === 'fastEnd')];
   }
 
-  return [...bookends, ...fasts];
+  // Only a multi-day block needs the grouping: a lone Shabbat has one candle
+  // lighting and one havdalah, which name themselves.
+  return { events: [...bookends, ...fasts], block: block?.multiDay ? block : null };
 }
 
 interface Chip {
@@ -253,6 +263,45 @@ function buildDayChips(info: DayInfo, locale: string, t: { cat: Translator; pane
   return chips;
 }
 
+/**
+ * "Fri 11" — which night a bookend row belongs to. Composed through the catalog
+ * so each locale sets the order (the weekday itself comes from Luxon).
+ */
+function dayLabel(date: DateTime, locale: string, t: Translator): string {
+  return t('eventDay', { weekday: date.setLocale(locale).toLocaleString({ weekday: 'short' }), day: date.day });
+}
+
+/**
+ * What to call a multi-day rest block: the distinct significant-day names of
+ * its days — "Rosh Hashana" for the two-day chag, "Shabbat · Shavuot" when a
+ * Yom Tov abuts Shabbat. A Shabbat that is itself Yom Tov is named by the
+ * festival alone, not twice.
+ *
+ * The festival name is taken only when the day is a work-prohibited Yom Tov.
+ * `info.label` is the formatter's significant-day name, which also fires on
+ * Erev Yom Tov, Chol Hamoed and Isru Chag — inside a rest block those days are
+ * always Shabbatot, and naming them by the neighbouring festival would print
+ * "Erev Pesach · Pesach", or a Shabbat as "Isru Chag", and never say Shabbat.
+ */
+function restBlockName(
+  firstRest: DateTime,
+  lastRest: DateTime,
+  locale: string,
+  inIsrael: boolean,
+  tCat: Translator,
+): string {
+  const names: string[] = [];
+  for (let d = firstRest; d.toMillis() <= lastRest.toMillis(); d = d.plus({ days: 1 })) {
+    const info = getDayInfo(d, undefined, locale, inIsrael);
+    const festival = isYomTovRestDay(d, inIsrael)
+      ? localizedHolidayLabel(locale, info.label, info.yomTovIndex, info.dayOfChanukah)
+      : null;
+    const name = festival ?? (info.isShabbos ? tCat('shabbos') : null);
+    if (name && !names.includes(name)) names.push(name);
+  }
+  return names.join(' · ');
+}
+
 /** A masthead chip for a personal-date observance on the selected day. */
 function observanceToChip(obs: Observance, t: PersonalDatesTranslator): Chip {
   return { key: `pd-${obs.sourceId}-${obs.kind}`, label: observanceChipText(obs, t), tone: 'custom', Icon: CalendarHeart };
@@ -302,7 +351,7 @@ export function ZmanimPanel() {
   // plus any fast times for the selected day. Lehumra rounds per event type
   // (fast start DOWN although its clock time is alot, which rounds up as a
   // zman row), so it applies here rather than inside computeZmanim.
-  const rawEvents = buildDayTimes(
+  const { events: rawEvents, block } = buildDayTimes(
     selectedDay,
     location,
     candleLightingOffset,
@@ -311,10 +360,13 @@ export function ZmanimPanel() {
     hiddenFastEnd,
   );
   const events = lehumra ? applyLehumraToEvents(rawEvents) : rawEvents;
-  // The fast end arrives once per tzeit opinion — render those as one grouped
-  // block instead of repeating the "Fast ends" row three times.
+  // The rest block's bookends, then the fast rows. A multi-day block's bookends
+  // are grouped under a heading and dated (repeated candle lightings otherwise
+  // look like duplicates); the fast end arrives once per tzeit opinion and gets its
+  // own grouped block instead of repeating the "Fast ends" row three times.
+  const bookendEvents = events.filter((e) => e.type === 'candle' || e.type === 'havdalah');
+  const fastStartEvents = events.filter((e) => e.type === 'fastStart');
   const fastEndEvents = events.filter((e) => e.type === 'fastEnd');
-  const singleEvents = events.filter((e) => e.type !== 'fastEnd');
 
   // Candle lighting now lives in the events strip above, so keep it out of the
   // zmanim list to avoid showing the same time twice. User-hidden zmanim are
@@ -336,6 +388,45 @@ export function ZmanimPanel() {
       group: tGroup,
     },
   );
+
+  /**
+   * One event row: icon, the night it belongs to (only inside a multi-day
+   * block, where rows span several days), name, how the time is derived, time.
+   */
+  const renderEvent = (event: DatedEvent, key: string, showDate: boolean) => {
+    const { Icon, className } = EVENT_META[event.type];
+    return (
+      <div key={key} className="flex items-center justify-between gap-3 text-sm">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 font-medium">
+          <Icon className={cn('size-4 shrink-0', className)} />
+          {showDate && (
+            <span className="text-muted-foreground text-xs font-normal">{dayLabel(event.date, locale, tEvents)}</span>
+          )}
+          {tEvents(event.type)}
+          {event.type === 'candle' && (
+            <Badge variant="secondary" className="font-normal tabular-nums">
+              {event.afterNightfall
+                ? tEvents('candleAfterNightfall')
+                : tEvents('candleOffset', { minutes: candleLightingOffset })}
+            </Badge>
+          )}
+          {event.type === 'havdalah' && (
+            <Badge variant="secondary" className="font-normal tabular-nums">
+              {tShita(havdalahZmanKey(havdalahOpinion))}
+            </Badge>
+          )}
+          {/* Which dawn the fast starts at — usually 16.1°, but the
+              fixed-72-minute one where the sun never reaches 16.1°. */}
+          {event.type === 'fastStart' && event.zmanKey && (
+            <Badge variant="secondary" className="font-normal tabular-nums">
+              {tShita(event.zmanKey)}
+            </Badge>
+          )}
+        </span>
+        <time className="shrink-0 font-mono font-medium tabular-nums">{formatTime(event.time, locale)}</time>
+      </div>
+    );
+  };
 
   return (
     <Card className="gap-0 py-0 lg:h-full">
@@ -391,37 +482,29 @@ export function ZmanimPanel() {
         )}
         {events.length > 0 && (
           <div className="mt-1.5 flex flex-col gap-1.5">
-            {singleEvents.map((event, i) => {
-              const { Icon, className } = EVENT_META[event.type];
-              return (
-                <div key={`${event.type}-${i}`} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="flex items-center gap-2 font-medium">
-                    <Icon className={cn('size-4 shrink-0', className)} />
-                    {tEvents(event.type)}
-                    {event.type === 'candle' && (
-                      <Badge variant="secondary" className="font-normal tabular-nums">
-                        {event.afterNightfall
-                          ? tEvents('candleAfterNightfall')
-                          : tEvents('candleOffset', { minutes: candleLightingOffset })}
-                      </Badge>
-                    )}
-                    {event.type === 'havdalah' && (
-                      <Badge variant="secondary" className="font-normal tabular-nums">
-                        {tShita(havdalahZmanKey(havdalahOpinion))}
-                      </Badge>
-                    )}
-                    {/* Which dawn the fast starts at — usually 16.1°, but the
-                        fixed-72-minute one where the sun never reaches 16.1°. */}
-                    {event.type === 'fastStart' && event.zmanKey && (
-                      <Badge variant="secondary" className="font-normal tabular-nums">
-                        {tShita(event.zmanKey)}
-                      </Badge>
-                    )}
-                  </span>
-                  <time className="font-mono font-medium tabular-nums">{formatTime(event.time, locale)}</time>
+            {/* A rest block of several nights lights candles once per night a
+                further rest day begins — the 2nd Yom Tov night, Shabbat after a
+                Friday Yom Tov, or both (three lightings on a Thu+Fri Yom Tov
+                running into Shabbat). Grouping the bookends under the block's
+                name and dating each row says which night is which; a lone
+                Shabbat needs neither. */}
+            {block ? (
+              <div>
+                <span className="text-muted-foreground text-xs font-medium">
+                  {tEvents('blockHeading', {
+                    name: restBlockName(block.firstRest, block.lastRest, locale, location.inIsrael, tCat),
+                    from: dayLabel(block.erev, locale, tEvents),
+                    to: dayLabel(block.lastRest, locale, tEvents),
+                  })}
+                </span>
+                <div className="border-border mt-1 flex flex-col gap-1.5 border-s ps-2.5">
+                  {bookendEvents.map((event, i) => renderEvent(event, `${event.type}-${i}`, true))}
                 </div>
-              );
-            })}
+              </div>
+            ) : (
+              bookendEvents.map((event, i) => renderEvent(event, `${event.type}-${i}`, false))
+            )}
+            {fastStartEvents.map((event, i) => renderEvent(event, `fastStart-${i}`, false))}
             {/* Fast end comes once per tzeit opinion — one labeled block with a
                 compact row per opinion, like a multi-shita zman in the list. */}
             {fastEndEvents.length > 0 && (
