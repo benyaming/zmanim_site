@@ -22,6 +22,24 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.29',
+    date: '2026-09-03',
+    notes: {
+      en: [
+        'On a multi-day chag the day panel says which night each candle lighting belongs to.',
+        'The calendar header keeps the month navigation usable on a narrow screen.',
+      ],
+      he: [
+        'בחג רב-יומי לוח היום מציין לאיזה לילה שייכת כל הדלקת נרות.',
+        'כותרת הלוח שומרת על ניווט החודשים שמיש גם במסך צר.',
+      ],
+      ru: [
+        'В многодневный праздник панель дня показывает, к какой ночи относится каждое зажигание свечей.',
+        'Заголовок календаря сохраняет навигацию по месяцам на узком экране.',
+      ],
+    },
+  },
+  {
     version: '1.28',
     date: '2026-09-02',
     notes: {
