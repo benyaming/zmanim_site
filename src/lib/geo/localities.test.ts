@@ -34,10 +34,13 @@ describe('LOCALITIES data', () => {
     }
   });
 
-  it('never lets two claiming localities overlap their own centers', () => {
-    // A center that falls inside another entry's radius would make the label at
-    // that spot depend on which of the two is closer — fine — but a center
-    // *closer to a neighbor than to itself* would be a data error.
+  it('gives every claiming locality its own center, so no two share coordinates', () => {
+    // An entry cannot lose its own center to a neighbour's reach: nearestLocality
+    // ranks claimants by distance and an entry is 0km from itself, the global
+    // minimum. What this does catch is two entries at the same coordinates —
+    // then the strict `d < bestKm` tie keeps whichever comes first in the file
+    // and the other is unreachable by name at its own spot, which is a data
+    // error. Overlap resolution proper is the `einat` case below.
     const claiming = LOCALITIES.filter((l) => l.bounds || (l.radiusKm ?? DEFAULT_CLAIM_KM) > 0);
     for (const l of claiming) {
       expect(nearestLocality(l.lat, l.lng)?.slug).toBe(l.slug);
