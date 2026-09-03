@@ -339,6 +339,8 @@
     "fastEnd": "סיום הצום",
     "candleOffset": "{minutes} דק׳ לפני השקיעה",
     "candleAfterNightfall": "לא לפני צאת הכוכבים",
+    "eventDay": "{weekday} {day}",
+    "blockHeading": "{name} · {from} – {to}",
     "fastEndKinds": {
       "gmarTaanis": "תעניות קלות · שלושה כוכבים בינוניים",
       "nightfall": "כל התעניות · שלושה כוכבים קטנים"

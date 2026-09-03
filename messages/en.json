@@ -339,6 +339,8 @@
     "fastEnd": "Fast ends",
     "candleOffset": "{minutes} min before sunset",
     "candleAfterNightfall": "not before nightfall",
+    "eventDay": "{weekday} {day}",
+    "blockHeading": "{name} · {from} – {to}",
     "fastEndKinds": {
       "gmarTaanis": "Minor fasts · three medium stars",
       "nightfall": "All fasts · three small stars"
