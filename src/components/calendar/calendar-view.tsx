@@ -1,7 +1,7 @@
 'use client';
 
 import { JewishDate } from 'kosher-zmanim';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
@@ -10,6 +10,8 @@ import { useAppState } from '@/components/providers/app-state';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useCalendarNavStage } from '@/hooks/use-calendar-nav-stage';
+import { useCoarsePointer } from '@/hooks/use-coarse-pointer';
 import { createHebrewFormatter, jewishToLocalDay, monthAnchor, nextMonth, nextYear, prevMonth, prevYear } from '@/lib/calendar';
 import { dirForLocale } from '@/i18n/routing';
 
@@ -65,6 +67,15 @@ export function CalendarView() {
   const alternateMonths = useAlternateMonths();
   const rtl = dirForLocale(locale) === 'rtl';
   const [pickerOpen, setPickerOpen] = useState(false);
+  // How much of the nav fits beside the title, measured; and — when only one
+  // arrow pair fits — which pair is worth keeping.
+  const { rowRef, stage } = useCalendarNavStage();
+  const touch = useCoarsePointer();
+  // The month is swipeable on touch, so there the year jumps are the pair that
+  // earns the space; driving a narrow window with a mouse (a Telegram mini app
+  // on the desktop client, a small browser window) it is the month arrows.
+  const showYears = stage < 2 || touch;
+  const showMonths = stage < 2 || !touch;
 
   // In RTL the visual "previous" sits on the right, so swap the chevrons.
   const PrevIcon = rtl ? ChevronRight : ChevronLeft;
@@ -84,11 +95,12 @@ export function CalendarView() {
           nav (filling what used to be an empty top-right corner), then the
           calendar-system toggle as a full-width segmented control. ≥sm puts it
           all on one line: title left, toggle + full nav hugging the right. */}
-      <div className="flex flex-wrap items-start gap-2 sm:gap-3">
+      <div ref={rowRef} className="flex flex-wrap items-start gap-2 sm:gap-3">
         <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
           <PopoverTrigger asChild>
             <button
               type="button"
+              data-cal="title"
               className="flex flex-col items-start gap-0.5 text-xl font-semibold tracking-tight hover:opacity-80 sm:text-2xl"
             >
               <span className="flex items-center gap-1.5 capitalize">
@@ -115,6 +127,7 @@ export function CalendarView() {
           onValueChange={(v) => v && setMode(v as 'gregorian' | 'hebrew')}
           variant="outline"
           size="sm"
+          data-cal="toggle"
           className="order-last w-full sm:order-none sm:ms-auto sm:w-fit"
         >
           <ToggleGroupItem value="gregorian" className="flex-1 sm:flex-initial">
@@ -125,38 +138,66 @@ export function CalendarView() {
           </ToggleGroupItem>
         </ToggleGroup>
 
-        {/* ms-auto pins the nav to the title's right on mobile. Month stepping
-            there is by swipe (see CalendarGrid's swipe hint), so the ‹ › month
-            arrows are hidden on mobile — only the year jumps and Today show; the
-            full set returns on ≥sm where there's room. */}
-        <div className="ms-auto flex items-center gap-1 sm:ms-0">
-          <Button variant="outline" size="icon" aria-label={t('prevYear')} onClick={() => setMonthDate(prevYear(monthDate, mode))}>
-            <PrevYearIcon className="size-4" />
-          </Button>
+        {/* ms-auto pins the nav to the title's right until the row is wide
+            enough to seat the toggle there too. What the nav shows is decided
+            by measurement, not a breakpoint — see useCalendarNavStage. */}
+        <div data-cal="nav" className="ms-auto flex items-center gap-1 sm:ms-0">
+          {showYears && (
+            <Button
+              variant="outline"
+              size="icon"
+              data-cal="arrow"
+              aria-label={t('prevYear')}
+              onClick={() => setMonthDate(prevYear(monthDate, mode))}
+            >
+              <PrevYearIcon className="size-4" />
+            </Button>
+          )}
+          {showMonths && (
+            <Button
+              variant="outline"
+              size="icon"
+              data-cal="arrow"
+              aria-label={t('prevMonth')}
+              onClick={() => setMonthDate(prevMonth(monthDate, mode))}
+            >
+              <PrevIcon className="size-4" />
+            </Button>
+          )}
+          {/* The word costs ~25px (~40 in Russian) in the one row where the nav
+              competes with the title, so it is the first thing to go; the label
+              stays as the accessible name. */}
           <Button
             variant="outline"
-            size="icon"
-            aria-label={t('prevMonth')}
-            onClick={() => setMonthDate(prevMonth(monthDate, mode))}
-            className="hidden sm:inline-flex"
+            size={stage === 0 ? 'sm' : 'icon'}
+            data-cal="today"
+            aria-label={t('today')}
+            onClick={goToday}
           >
-            <PrevIcon className="size-4" />
+            {stage === 0 ? t('today') : <CalendarDays className="size-4" />}
           </Button>
-          <Button variant="outline" size="sm" onClick={goToday}>
-            {t('today')}
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label={t('nextMonth')}
-            onClick={() => setMonthDate(nextMonth(monthDate, mode))}
-            className="hidden sm:inline-flex"
-          >
-            <NextIcon className="size-4" />
-          </Button>
-          <Button variant="outline" size="icon" aria-label={t('nextYear')} onClick={() => setMonthDate(nextYear(monthDate, mode))}>
-            <NextYearIcon className="size-4" />
-          </Button>
+          {showMonths && (
+            <Button
+              variant="outline"
+              size="icon"
+              data-cal="arrow"
+              aria-label={t('nextMonth')}
+              onClick={() => setMonthDate(nextMonth(monthDate, mode))}
+            >
+              <NextIcon className="size-4" />
+            </Button>
+          )}
+          {showYears && (
+            <Button
+              variant="outline"
+              size="icon"
+              data-cal="arrow"
+              aria-label={t('nextYear')}
+              onClick={() => setMonthDate(nextYear(monthDate, mode))}
+            >
+              <NextYearIcon className="size-4" />
+            </Button>
+          )}
         </div>
       </div>
     </section>

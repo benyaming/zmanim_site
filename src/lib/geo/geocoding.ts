@@ -26,7 +26,7 @@ export interface Place {
   lat: number;
   lng: number;
   /** Meters above sea level, when the source provides it (Open-Meteo results
-   *  do; settlement matches don't — those are backfilled from the elevation
+   *  do; locality matches don't — those are backfilled from the elevation
    *  API by the app-state effect). */
   elevation?: number;
 }
