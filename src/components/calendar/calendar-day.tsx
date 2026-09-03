@@ -75,9 +75,14 @@ export function CalendarDay({
   const tPanel = useTranslations('panel');
   const tPersonal = useTranslations('personalDates');
   const primary = mode === 'hebrew' ? info.hebrewDayOfMonth : date.day;
+  // Hebrew mode only: outside `full` the civil date has at most a narrow cell's
+  // width to itself, and a spelled-out month truncates there ("Septembe"). The
+  // abbreviated form fits: "Sep 24" / "24 сент." / "24 בספט׳". The civil-mode arm
+  // below is deliberately not abbreviated — Hebrew month names have no standard
+  // short form — so "29 Cheshvan" can still clip in the narrowest cells.
   const secondary =
     mode === 'hebrew'
-      ? date.setLocale(locale).toLocaleString({ day: 'numeric', month: 'long' })
+      ? date.setLocale(locale).toLocaleString({ day: 'numeric', month: density === 'full' ? 'long' : 'short' })
       : `${info.hebrewDayOfMonth} ${info.hebrewMonth}`;
 
   // The dot mirrors its chip's color; a Chanukah label keeps its Chanukah tone.
