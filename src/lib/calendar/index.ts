@@ -11,6 +11,7 @@ export {
   sanitizeHiddenFastEnd,
 } from './fast-end';
 export { getMolad, type MoladInfo } from './molad';
+export { isRestDay, isYomTovRestDay, type RestBlock, restBlockFor } from './rest-block';
 export { localizedHolidayLabel, ruHolidayLabel } from './holidays-ru';
 export { RU_MONTHS, RU_MONTHS_GENITIVE } from './months-ru';
 export { RU_PARSHIYOS } from './parshiyos-ru';
