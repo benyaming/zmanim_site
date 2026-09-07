@@ -42,6 +42,13 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [ci, e2e]
     runs-on: ubuntu-latest
+    # Two merges close together each start a run, and `latest` is whichever
+    # finishes last — not whichever is newest. That has already published an
+    # older build over a newer one. Serialising on the ref and cancelling the
+    # superseded run means the newest commit is the one that publishes.
+    concurrency:
+      group: image-${{ github.ref }}
+      cancel-in-progress: true
     permissions:
       contents: read
       packages: write
@@ -67,6 +74,7 @@ jobs:
             type=sha
 
       - name: Build & push
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -81,6 +89,22 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Report the immutable reference
+        run: |
+          {
+            echo "### Image published"
+            echo
+            echo "Deploy this exact build by digest — it names one image forever,"
+            echo "where \`latest\` names whichever build most recently claimed it:"
+            echo
+            echo '```'
+            echo "ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}"
+            echo '```'
+            echo
+            echo "Commit \`${{ github.sha }}\` · also tagged \`latest\` and \`sha-$(echo ${{ github.sha }} | cut -c1-7)\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       # No deploy step: the image is published to GHCR
-      # (ghcr.io/${{ github.repository }}:latest and :sha). Pull it and update
-      # the compose stack on the server manually.
+      # (ghcr.io/${{ github.repository }}:latest, :sha-<short> and the digest
+      # printed in the run summary). Pull it and update the compose stack on the
+      # server manually — prefer the digest, which cannot be reassigned.
