@@ -16,7 +16,6 @@ import { buildCalendarEvents, type CalendarExport, type CalendarExportOptions } 
 import { icsBlob } from '@/lib/export/ics';
 import {
   DEFAULT_ICS_CATEGORIES,
-  fitIcsRangeEnd,
   ICS_ALL_DAY_ALERTS,
   ICS_CATEGORIES,
   ICS_DAILY_ZMAN_KEYS,
@@ -24,12 +23,12 @@ import {
   type IcsAlerts,
   type IcsAllDayAlert,
   type IcsCategory,
-  icsRangeLatestEnd,
   type IcsTimedAlert,
   MAX_ICS_DAILY_ZMANIM,
   MAX_ICS_DAYS,
   NO_ICS_ALERTS,
 } from '@/lib/export/ics-preset';
+import { fitRangeEnd, rangeLatestEnd } from '@/lib/export/range';
 import { formatTime } from '@/lib/format';
 import { OBSERVANCE_KINDS, type ObservanceKind } from '@/lib/personal-dates';
 
@@ -300,7 +299,7 @@ export function ExportIcsTool() {
             onChange={(iso) => {
               setError(null);
               setStartIso(iso);
-              setEndIso(fitIcsRangeEnd(iso, endIso, rangeDays));
+              setEndIso(fitRangeEnd(iso, endIso, rangeDays, MAX_ICS_DAYS));
             }}
             aria-label={t('from')}
           />
@@ -319,7 +318,7 @@ export function ExportIcsTool() {
               setEndIso(iso);
             }}
             min={startIso}
-            max={icsRangeLatestEnd(startIso)}
+            max={rangeLatestEnd(startIso, MAX_ICS_DAYS)}
             aria-label={t('to')}
           />
         </div>

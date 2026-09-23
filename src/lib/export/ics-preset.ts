@@ -20,8 +20,6 @@
  *   none — sanitizing never turns an emptied selection back into all-on.
  */
 
-import { DateTime } from 'luxon';
-
 import { routing } from '@/i18n/routing';
 import { OBSERVANCE_KINDS, type ObservanceKind } from '@/lib/personal-dates';
 import { CONFIGURABLE_ZMANIM } from '@/lib/zmanim';
@@ -70,28 +68,6 @@ export interface IcsAlerts {
 }
 
 export const NO_ICS_ALERTS: IcsAlerts = { timed: null, allDay: null };
-
-/** The last end date the range allows for a start (an ISO date), or '' for an invalid start. */
-export function icsRangeLatestEnd(startIso: string): string {
-  const start = DateTime.fromISO(startIso);
-  return start.isValid ? (start.plus({ days: MAX_ICS_DAYS - 1 }).toISODate() ?? '') : '';
-}
-
-/**
- * The end date once the start has moved: unchanged while it still fits
- * (not before the start, within MAX_ICS_DAYS); otherwise the range keeps its
- * previous length from the new start, within the cap. The pickers can then
- * never hold a reversed or over-long range.
- */
-export function fitIcsRangeEnd(startIso: string, endIso: string, previousDays: number): string {
-  const start = DateTime.fromISO(startIso);
-  if (!start.isValid) return endIso;
-  const end = DateTime.fromISO(endIso);
-  const latest = start.plus({ days: MAX_ICS_DAYS - 1 });
-  if (end.isValid && end >= start && end <= latest) return endIso;
-  const days = Math.min(Math.max(previousDays, 1), MAX_ICS_DAYS);
-  return start.plus({ days: days - 1 }).toISODate() ?? endIso;
-}
 
 /**
  * The zman keys a daily-zman event may use: the configurable zmanim minus the

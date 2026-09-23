@@ -20,11 +20,14 @@ import {
   type ExportHeader,
   exportTableToCsv,
   exportTableToExcel,
+  fitRangeEnd,
   hebrewMonthSpan,
   MAX_TABLE_DAYS,
   pagesToPdf,
+  rangeLatestEnd,
   tableDayCount,
   transposeExportGrid,
+  wholeMonthEndWithin,
 } from '@/lib/export';
 import { LEARNING_CYCLE_KEYS, type LearningCycleKey } from '@/lib/learning';
 import { SITE_HOST } from '@/lib/site';
@@ -364,7 +367,11 @@ export function ExportZmanimTool() {
               id="export-table-start"
               mode={hebrewMonths && !transpose ? 'hebrew' : 'gregorian'}
               value={startIso}
-              onChange={setStartIso}
+              onChange={(iso) => {
+                setError(null);
+                setStartIso(iso);
+                setEndIso(fitRangeEnd(iso, endIso, rangeDays, MAX_TABLE_DAYS));
+              }}
               aria-label={t('from')}
             />
           </div>
@@ -372,11 +379,18 @@ export function ExportZmanimTool() {
             <label htmlFor="export-table-end" className={EXPORT_FIELD_LABEL}>
               {t('to')}
             </label>
+            {/* Only days from the start to the cap are selectable, so the range
+                can't be reversed or too long. */}
             <DatePicker
               id="export-table-end"
               mode={hebrewMonths && !transpose ? 'hebrew' : 'gregorian'}
               value={endIso}
-              onChange={setEndIso}
+              onChange={(iso) => {
+                setError(null);
+                setEndIso(iso);
+              }}
+              min={startIso}
+              max={rangeLatestEnd(startIso, MAX_TABLE_DAYS)}
               aria-label={t('to')}
             />
           </div>
@@ -418,8 +432,13 @@ export function ExportZmanimTool() {
                   // Snap the range to the new calendar's month boundaries, so
                   // the sheets come out as whole months instead of stubs.
                   if (start.isValid && end.isValid) {
-                    const from = on ? hebrewMonthSpan(start).start : start.startOf('month');
-                    const to = on ? hebrewMonthSpan(end).end : end.endOf('month');
+                    const span = on
+                      ? hebrewMonthSpan
+                      : (d: DateTime) => ({ start: d.startOf('month'), end: d.endOf('month').startOf('day') });
+                    const from = span(start).start;
+                    // Snapping outward can overshoot the cap by up to a month:
+                    // keep the last whole month that still fits.
+                    const to = wholeMonthEndWithin(from, span(end).end, MAX_TABLE_DAYS, span);
                     setStartIso(from.toISODate() ?? startIso);
                     setEndIso(to.toISODate() ?? endIso);
                   }
