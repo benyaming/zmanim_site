@@ -257,11 +257,11 @@ describe('buildCalendarEvents — day labels', () => {
   });
 
   it('dates follow the location, not the device, zone', () => {
-    // Far from the device's zone in both directions. (Not Sydney or Auckland:
-    // kosher-zmanim 0.9 rolls their date forward a day — an app-wide issue
-    // tracked separately, which this export inherits rather than hides.)
+    // Far from the device's zone in both directions, including Auckland, which
+    // kosher-zmanim 0.9 used to move to the next day (see calculator.ts).
     const places: AppLocation[] = [
       { lat: 35.68, lng: 139.69, timeZoneId: 'Asia/Tokyo', inIsrael: false, label: 'Tokyo' },
+      { lat: -36.85, lng: 174.76, timeZoneId: 'Pacific/Auckland', inIsrael: false, label: 'Auckland' },
       { lat: 21.31, lng: -157.86, timeZoneId: 'Pacific/Honolulu', inIsrael: false, label: 'Honolulu' },
     ];
     for (const location of places) {

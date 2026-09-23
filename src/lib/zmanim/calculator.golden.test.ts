@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
 
-import { computeZmanim } from './calculator';
+import { computeZmanim, standardOffsetMillis } from './calculator';
 
 /**
  * Golden regression fixtures. Each expected value is the local wall-clock time
@@ -207,5 +207,121 @@ describe('computeZmanim golden values', () => {
       expect(zman, `missing zman ${key}`).toBeDefined();
       expect(zman.time ? zman.time.toFormat('HH:mm:ss') : null, key).toBe(want);
     }
+  });
+});
+
+/**
+ * Zones near the date line. kosher-zmanim 0.9 negated the standard offset of
+ * every DST zone, so its antimeridian test moved Sydney, all of New Zealand,
+ * Lord Howe and Norfolk to the NEXT day, Adak to the previous one, and dropped
+ * Chatham's genuine adjustment (see StandardOffsetGeoLocation in calculator.ts).
+ *
+ * Each value is cross-checked against the Hebcal API (sec=1, fetched
+ * 2026-09-23): every one agrees within Hebcal's rounding to the nearest second
+ * (ours truncates). Chatzot is left out: this app uses the solar transit,
+ * Hebcal the sunrise–sunset midpoint. Apia and Kiritimati are controls that
+ * always needed — and still get — the adjustment.
+ */
+const DATE_LINE: (GoldenCase & { tz: string })[] = [
+  {
+    name: 'Sydney (spring, before DST)',
+    lat: -33.8688,
+    lng: 151.2093,
+    tz: 'Australia/Sydney',
+    date: '2026-10-02',
+    expected: { alosHashachar: '04:16:46', sunrise: '05:31:29', sofZmanShmaGRA: '08:38:12', sunset: '17:58:20', tzais: '18:35:38', tzais72: '19:10:20' },
+  },
+  {
+    name: 'Sydney (winter)',
+    lat: -33.8688,
+    lng: 151.2093,
+    tz: 'Australia/Sydney',
+    date: '2026-06-19',
+    expected: { alosHashachar: '05:39:35', sunrise: '06:59:27', sofZmanShmaGRA: '09:27:57', sunset: '16:53:26', tzais: '17:34:17', tzais72: '18:05:26' },
+  },
+  {
+    name: 'Auckland (DST on)',
+    lat: -36.8485,
+    lng: 174.7633,
+    tz: 'Pacific/Auckland',
+    date: '2026-10-02',
+    expected: { alosHashachar: '05:38:23', sunrise: '06:56:09', sofZmanShmaGRA: '10:03:27', sunset: '19:25:21', tzais: '20:04:06', tzais72: '20:37:21' },
+  },
+  {
+    name: 'Adak (used to go back a day)',
+    lat: 51.88,
+    lng: -176.6581,
+    tz: 'America/Adak',
+    date: '2026-10-02',
+    expected: { alosHashachar: '07:09:55', sunrise: '08:49:49', sofZmanShmaGRA: '11:42:35', sunset: '20:20:52', tzais: '21:10:32', tzais72: '21:32:52' },
+  },
+  {
+    name: 'Chatham (needs the adjustment)',
+    lat: -43.95,
+    lng: -176.55,
+    tz: 'Pacific/Chatham',
+    date: '2026-10-02',
+    expected: { alosHashachar: '05:35:45', sunrise: '07:03:03', sofZmanShmaGRA: '10:12:05', sunset: '19:39:09', tzais: '20:22:25', tzais72: '20:51:09' },
+  },
+  {
+    name: 'Lord Howe (half-hour DST)',
+    lat: -31.55,
+    lng: 159.0833,
+    tz: 'Australia/Lord_Howe',
+    date: '2026-10-02',
+    expected: { alosHashachar: '04:18:15', sunrise: '05:30:55', sofZmanShmaGRA: '08:37:09', sunset: '17:55:53', tzais: '18:32:11', tzais72: '19:07:53' },
+  },
+  {
+    name: 'Norfolk',
+    lat: -29.04,
+    lng: 167.95,
+    tz: 'Pacific/Norfolk',
+    date: '2026-10-02',
+    expected: { alosHashachar: '04:15:41', sunrise: '05:26:23', sofZmanShmaGRA: '08:32:09', sunset: '17:49:27', tzais: '18:24:48', tzais72: '19:01:27' },
+  },
+  {
+    name: 'Apia (control: across the date line, no DST)',
+    lat: -13.8333,
+    lng: -171.7667,
+    tz: 'Pacific/Apia',
+    date: '2026-10-02',
+    expected: { alosHashachar: '05:06:42', sunrise: '06:09:53', sofZmanShmaGRA: '09:13:17', sunset: '18:23:28', tzais: '18:55:10', tzais72: '19:35:28' },
+  },
+  {
+    name: 'Kiritimati (control: UTC+14)',
+    lat: 1.8721,
+    lng: -157.4278,
+    tz: 'Pacific/Kiritimati',
+    date: '2026-10-02',
+    expected: { alosHashachar: '05:15:14', sunrise: '06:16:25', sofZmanShmaGRA: '09:17:49', sunset: '18:22:02', tzais: '18:52:46', tzais72: '19:34:02' },
+  },
+];
+
+describe('computeZmanim near the date line (Hebcal-checked)', () => {
+  for (const c of DATE_LINE) {
+    it(`${c.name}: the requested day's times`, () => {
+      const zmanim = computeZmanim({ lat: c.lat, lng: c.lng, date: DateTime.fromISO(c.date), timeZoneId: c.tz });
+      const byKey = Object.fromEntries(zmanim.map((z) => [z.key, z]));
+      for (const [key, want] of Object.entries(c.expected)) {
+        const time = byKey[key]?.time;
+        expect(time?.toISODate(), `${c.name} :: ${key} date`).toBe(c.date);
+        expect(time?.toFormat('HH:mm:ss'), `${c.name} :: ${key}`).toBe(want);
+      }
+    });
+  }
+});
+
+describe('standardOffsetMillis', () => {
+  it("is each zone's non-DST offset, in both hemispheres and at half and quarter hours", () => {
+    const hours = (tz: string) => standardOffsetMillis(tz, 2026) / 3_600_000;
+    expect(hours('Australia/Sydney')).toBe(10);
+    expect(hours('Pacific/Auckland')).toBe(12);
+    expect(hours('Pacific/Chatham')).toBe(12.75);
+    expect(hours('Australia/Lord_Howe')).toBe(10.5);
+    expect(hours('America/Adak')).toBe(-10);
+    expect(hours('America/New_York')).toBe(-5);
+    expect(hours('Asia/Jerusalem')).toBe(2);
+    expect(hours('Asia/Tokyo')).toBe(9);
+    expect(hours('Europe/London')).toBe(0);
   });
 });

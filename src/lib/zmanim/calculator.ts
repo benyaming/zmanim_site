@@ -6,6 +6,49 @@ import { ZMANIM } from './definitions';
 import type { ComputedZman, ComputeZmanimInput } from './types';
 
 /**
+ * A zone's standard (non-daylight-saving) UTC offset in a given year, in ms:
+ * the smaller of its January and July offsets, since DST only ever adds time.
+ * Taken for the calculation's own year, so historical and future zone rules
+ * apply as they did then.
+ */
+export function standardOffsetMillis(timeZoneId: string, year: number): number {
+  const jan = DateTime.fromObject({ year, month: 1, day: 1, hour: 12 }, { zone: timeZoneId }).offset;
+  const jul = DateTime.fromObject({ year, month: 7, day: 1, hour: 12 }, { zone: timeZoneId }).offset;
+  return Math.min(jan, jul) * 60_000;
+}
+
+/**
+ * GeoLocation with a correct antimeridian test.
+ *
+ * KosherJava rolls the calculation date a day when a place's longitude and its
+ * zone's STANDARD offset disagree by 20 hours or more — the Samoa / Chatham
+ * case, a zone across the date line from its longitude. kosher-zmanim 0.9's
+ * TimeZone.getRawOffset polyfill gets that offset wrong for every zone with
+ * daylight saving: it returns the negated standard offset (-10 h for Sydney,
+ * -12 h for Auckland, +9 h for Adak). Sydney's 151.2°E then scored
+ * 10.08 − (−10) = 20.08 h, and every zman was computed for the NEXT day — the
+ * wrong day's sun, not just a wrong date label. All of New Zealand, Lord Howe
+ * and Norfolk went forward a day the same way, Adak went back a day, and
+ * Chatham lost the adjustment it genuinely needs.
+ *
+ * Overriding the one method the test reads (GeoLocation.getLocalMeanTimeOffset,
+ * via getAntimeridianAdjustment and AstronomicalCalendar.getAdjustedDate)
+ * restores KosherJava's behavior without patching the library globally.
+ */
+class StandardOffsetGeoLocation extends GeoLocation {
+  private readonly year: number;
+
+  constructor(lat: number, lng: number, elevation: number, timeZoneId: string, year: number) {
+    super(null, lat, lng, elevation, timeZoneId);
+    this.year = year;
+  }
+
+  override getLocalMeanTimeOffset(): number {
+    return this.getLongitude() * 4 * 60_000 - standardOffsetMillis(this.getTimeZone(), this.year);
+  }
+}
+
+/**
  * Compute the full set of zmanim for a location and date.
  *
  * Important: kosher-zmanim returns every time as a UTC `DateTime`. We convert
@@ -25,7 +68,7 @@ export function computeZmanim(input: ComputeZmanimInput): ComputedZman[] {
   // (Dead Sea basin) also clamp to sea level: GeoLocation rejects them, and
   // the horizon-dip adjustment is only defined for an elevated observer.
   const effectiveElevation = useElevation ? Math.max(0, elevation) : 0;
-  const geo = new GeoLocation(null, lat, lng, effectiveElevation, timeZoneId);
+  const geo = new StandardOffsetGeoLocation(lat, lng, effectiveElevation, timeZoneId, date.year);
   const calendar = new ComplexZmanimCalendar(geo);
   // With the flag on, sunrise/sunset (and fixed-minute zmanim measured from
   // them, e.g. alos 72 / tzais 72) become elevation-adjusted. Degree-based
