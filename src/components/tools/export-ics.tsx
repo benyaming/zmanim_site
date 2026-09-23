@@ -15,9 +15,11 @@ import { buildCalendarEvents, type CalendarExport, type CalendarExportOptions } 
 import { icsBlob } from '@/lib/export/ics';
 import {
   DEFAULT_ICS_CATEGORIES,
+  fitIcsRangeEnd,
   ICS_CATEGORIES,
   ICS_DAILY_ZMAN_KEYS,
   type IcsCategory,
+  icsRangeLatestEnd,
   MAX_ICS_DAILY_ZMANIM,
   MAX_ICS_DAYS,
 } from '@/lib/export/ics-preset';
@@ -277,13 +279,34 @@ export function ExportIcsTool() {
           <label htmlFor="export-ics-start" className={EXPORT_FIELD_LABEL}>
             {t('from')}
           </label>
-          <DatePicker id="export-ics-start" value={startIso} onChange={setStartIso} aria-label={t('from')} />
+          <DatePicker
+            id="export-ics-start"
+            value={startIso}
+            onChange={(iso) => {
+              setError(null);
+              setStartIso(iso);
+              setEndIso(fitIcsRangeEnd(iso, endIso, rangeDays));
+            }}
+            aria-label={t('from')}
+          />
         </div>
         <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
           <label htmlFor="export-ics-end" className={EXPORT_FIELD_LABEL}>
             {t('to')}
           </label>
-          <DatePicker id="export-ics-end" value={endIso} onChange={setEndIso} aria-label={t('to')} />
+          {/* Only days from the start to the cap are selectable, so the range
+              can't be reversed or too long. */}
+          <DatePicker
+            id="export-ics-end"
+            value={endIso}
+            onChange={(iso) => {
+              setError(null);
+              setEndIso(iso);
+            }}
+            min={startIso}
+            max={icsRangeLatestEnd(startIso)}
+            aria-label={t('to')}
+          />
         </div>
         {locationField}
         {languageField}

@@ -1,13 +1,39 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  fitIcsRangeEnd,
   ICS_DAILY_ZMAN_KEYS,
+  icsRangeLatestEnd,
   MAX_ICS_DAILY_ZMANIM,
   MAX_ICS_DAYS,
   sanitizeIcsExportPreset,
   sanitizeIcsZmanKeys,
   sanitizeObservanceKinds,
 } from './ics-preset';
+
+describe('the range pickers', () => {
+  it('allow an end up to MAX_ICS_DAYS days from the start, counting both', () => {
+    expect(MAX_ICS_DAYS).toBe(732);
+    expect(icsRangeLatestEnd('2026-09-01')).toBe('2028-09-01'); // 2026-09-01 + 731 days (2028 is a leap year)
+    expect(icsRangeLatestEnd('garbage')).toBe('');
+  });
+
+  it('keep the end while it still fits after the start moves', () => {
+    expect(fitIcsRangeEnd('2026-10-01', '2027-08-31', 365)).toBe('2027-08-31');
+    expect(fitIcsRangeEnd('2026-10-01', '2026-10-01', 365)).toBe('2026-10-01'); // a one-day range
+  });
+
+  it('move a reversed end so the range keeps its length', () => {
+    // Start moved past the end: a 31-day range stays 31 days long.
+    expect(fitIcsRangeEnd('2027-02-01', '2026-10-31', 31)).toBe('2027-03-03');
+  });
+
+  it('pull an over-long end back within the cap', () => {
+    // Start moved back two years: the old end would make the range too long.
+    expect(fitIcsRangeEnd('2025-01-01', '2027-08-31', 365)).toBe('2025-12-31');
+    expect(fitIcsRangeEnd('2025-01-01', '2028-01-01', MAX_ICS_DAYS + 50)).toBe(icsRangeLatestEnd('2025-01-01'));
+  });
+});
 
 describe('ICS_DAILY_ZMAN_KEYS', () => {
   it('offers moments only: no durations, no candle lighting, no Erev Pesach deadlines', () => {
