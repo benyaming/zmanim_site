@@ -527,7 +527,16 @@
     "icsNoteSnapshot": "The file is a one-time copy. Imported events never update — not when you change your settings, and not if a calculation is corrected later. Export again to refresh them.",
     "icsNotePlace": "Every time is for {place}. When your device is in another time zone — say, while travelling — your calendar shows the same moments in local time; they are still {place}'s zmanim, not those of where you are.",
     "icsNoteImport": "Import into a separate calendar, so the events are easy to remove or replace; importing a file twice can duplicate them.",
-    "icsNoteDayLabels": "Holidays and parsha are all-day labels; Shabbat and holidays begin the evening before."
+    "icsNoteDayLabels": "Holidays and parsha are all-day labels; Shabbat and holidays begin the evening before.",
+    "icsAlerts": "Alerts",
+    "icsAlertTimed": "Timed events",
+    "icsAlertAllDay": "All-day events",
+    "icsAlertNone": "No alert",
+    "icsAlertAtTime": "At the time",
+    "icsAlertMinutes": "{minutes, plural, =60 {1 hour before} other {# min before}}",
+    "icsAlertDayBefore": "The day before, {time}",
+    "icsAlertDayOf": "On the day, {time}",
+    "icsAlertHint": "Your calendar app may ignore alerts in an imported file, or add its own default ones; both can be changed in its notification settings."
   },
   "sync": {
     "telegramTitle": "Telegram sync",

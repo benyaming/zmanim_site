@@ -91,7 +91,9 @@ describe('ExportIcsTool', () => {
       categories: { candles: true, fasts: true, holidays: false, parsha: true },
       zmanKeys: [],
     });
-    // Rounding and elevation are never remembered.
+    // No alerts unless chosen; rounding and elevation are never remembered.
+    expect(setIcsExportPreset.mock.calls[0][0].alerts).toEqual({ timed: null, allDay: null });
+    expect(await (blob as Blob).text()).not.toContain('VALARM');
     expect(setIcsExportPreset.mock.calls[0][0]).not.toHaveProperty('lehumra');
     expect(setIcsExportPreset.mock.calls[0][0]).not.toHaveProperty('useElevation');
   });

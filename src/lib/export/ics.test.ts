@@ -3,7 +3,7 @@ import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
 
 import type { CalendarEvent } from './calendar-events';
-import { escapeIcsText, foldIcsLine, serializeIcs } from './ics';
+import { escapeIcsText, foldIcsLine, icsDuration, serializeIcs } from './ics';
 
 const octets = (s: string) => new TextEncoder().encode(s).length;
 const unfold = (s: string) => s.replace(/\r\n /g, '');
@@ -119,5 +119,38 @@ describe('serializeIcs', () => {
         expect(event.startDate.toString()).toBe(expected.date);
       }
     });
+  });
+});
+
+describe('alerts', () => {
+  it('writes RFC 5545 durations', () => {
+    expect(icsDuration(0)).toBe('PT0M');
+    expect(icsDuration(-10)).toBe('-PT10M');
+    expect(icsDuration(-60)).toBe('-PT1H');
+    expect(icsDuration(-720)).toBe('-PT12H');
+    expect(icsDuration(540)).toBe('PT9H');
+    expect(icsDuration(-90)).toBe('-PT1H30M');
+  });
+
+  it('attaches one DISPLAY alarm per event, by kind, and none when none is chosen', () => {
+    const text = serializeIcs({ name: 'Z', events: EVENTS, stamp: STAMP, alerts: { timed: 10, allDay: 'dayBefore18' } });
+    const vevents = new ICAL.Component(ICAL.parse(text)).getAllSubcomponents('vevent');
+    const triggers = vevents.map((v) => {
+      const alarms = v.getAllSubcomponents('valarm');
+      expect(alarms).toHaveLength(1);
+      expect(alarms[0].getFirstPropertyValue('action')).toBe('DISPLAY');
+      expect(alarms[0].getFirstPropertyValue('description')).toBe(new ICAL.Event(v).summary);
+      return String(alarms[0].getFirstPropertyValue('trigger'));
+    });
+    // The timed candle lighting 10 minutes before; the two all-day labels at
+    // 18:00 the evening before (6 hours before their midnight start).
+    expect(triggers).toEqual(['-PT10M', '-PT6H', '-PT6H']);
+
+    const timedOnly = serializeIcs({ name: 'Z', events: EVENTS, stamp: STAMP, alerts: { timed: 0, allDay: null } });
+    expect(timedOnly.match(/BEGIN:VALARM/g)).toHaveLength(1);
+    expect(timedOnly).toContain('TRIGGER:PT0M');
+
+    const none = serializeIcs({ name: 'Z', events: EVENTS, stamp: STAMP, alerts: { timed: null, allDay: null } });
+    expect(none).not.toContain('VALARM');
   });
 });

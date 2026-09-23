@@ -79,6 +79,12 @@ describe('sanitizeIcsExportPreset', () => {
     expect(absent).not.toHaveProperty('personalKinds');
   });
 
+  it('keeps known alert choices and turns unknown ones into none', () => {
+    expect(sanitizeIcsExportPreset({ alerts: { timed: 15, allDay: 'dayOf9' } })).toEqual({ alerts: { timed: 15, allDay: 'dayOf9' } });
+    expect(sanitizeIcsExportPreset({ alerts: { timed: 7, allDay: 'whenever' } })).toEqual({ alerts: { timed: null, allDay: null } });
+    expect(sanitizeIcsExportPreset({ alerts: { timed: 0 } })).toEqual({ alerts: { timed: 0, allDay: null } });
+  });
+
   it('bounds the range and validates every field', () => {
     expect(sanitizeIcsExportPreset({ rangeDays: 1 })?.rangeDays).toBe(1);
     expect(sanitizeIcsExportPreset({ rangeDays: MAX_ICS_DAYS })?.rangeDays).toBe(MAX_ICS_DAYS);

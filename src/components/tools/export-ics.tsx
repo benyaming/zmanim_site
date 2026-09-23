@@ -2,13 +2,14 @@
 
 import { CalendarPlus } from 'lucide-react';
 import { DateTime } from 'luxon';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useDeferredValue, useState } from 'react';
 
 import { useAppState } from '@/components/providers/app-state';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ZMAN_PICKER_SECTIONS, ZmanBaseControl } from '@/components/zmanim/zman-picker';
 import { downloadBlob, tableDayCount } from '@/lib/export';
 import { buildCalendarEvents, type CalendarExport, type CalendarExportOptions } from '@/lib/export/calendar-events';
@@ -16,12 +17,18 @@ import { icsBlob } from '@/lib/export/ics';
 import {
   DEFAULT_ICS_CATEGORIES,
   fitIcsRangeEnd,
+  ICS_ALL_DAY_ALERTS,
   ICS_CATEGORIES,
   ICS_DAILY_ZMAN_KEYS,
+  ICS_TIMED_ALERTS,
+  type IcsAlerts,
+  type IcsAllDayAlert,
   type IcsCategory,
   icsRangeLatestEnd,
+  type IcsTimedAlert,
   MAX_ICS_DAILY_ZMANIM,
   MAX_ICS_DAYS,
+  NO_ICS_ALERTS,
 } from '@/lib/export/ics-preset';
 import { formatTime } from '@/lib/format';
 import { OBSERVANCE_KINDS, type ObservanceKind } from '@/lib/personal-dates';
@@ -98,6 +105,7 @@ export function ExportIcsTool() {
   const tShita = useTranslations('zmanim.shitot');
   const tGroup = useTranslations('zmanim.groups');
   const tPd = useTranslations('personalDates');
+  const uiLocale = useLocale();
   const { candleLightingOffset, havdalahOpinion, hiddenFastEnd, personalDates, icsExportPreset, setIcsExportPreset } =
     useAppState();
   // Seeds only, read on the first render: the tools dialog mounts this tool
@@ -133,6 +141,7 @@ export function ExportIcsTool() {
   const hasDates = personalDates.occasions.length > 0 || personalDates.people.some((p) => p.events.length > 0);
   const [includePersonal, setIncludePersonal] = useState(preset?.personal ?? true);
   const [kinds, setKinds] = useState<Set<ObservanceKind>>(() => new Set(preset?.personalKinds ?? OBSERVANCE_KINDS));
+  const [alerts, setAlerts] = useState<IcsAlerts>(() => preset?.alerts ?? NO_ICS_ALERTS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -244,7 +253,12 @@ export function ExportIcsTool() {
         setError(t('icsNothing'));
         return;
       }
-      const blob = icsBlob({ name: tr('export.icsCalendarName', { place: placeLabel }), events: built.events, stamp: DateTime.utc() });
+      const blob = icsBlob({
+        name: tr('export.icsCalendarName', { place: placeLabel }),
+        events: built.events,
+        stamp: DateTime.utc(),
+        alerts,
+      });
       if (blob.size > MAX_RELAY_BYTES) {
         setError(t('icsTooLarge', { mb: (blob.size / 1024 / 1024).toFixed(1) }));
         return;
@@ -261,6 +275,7 @@ export function ExportIcsTool() {
         personalKinds: OBSERVANCE_KINDS.filter((k) => kinds.has(k)),
         locationId,
         reportLocale,
+        alerts,
       });
     } catch {
       setError(t('failed'));
@@ -420,6 +435,57 @@ export function ExportIcsTool() {
             <p className="text-muted-foreground text-xs">{t('icsPersonalNone')}</p>
           </>
         )}
+      </div>
+
+      <div className="space-y-2">
+        <span className="text-sm font-medium">{t('icsAlerts')}</span>
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+          <span className={EXPORT_FIELD_LABEL}>{t('icsAlertTimed')}</span>
+          <Select
+            value={alerts.timed === null ? 'none' : String(alerts.timed)}
+            onValueChange={(v) =>
+              setAlerts((prev) => ({ ...prev, timed: v === 'none' ? null : (Number(v) as IcsTimedAlert) }))
+            }
+          >
+            <SelectTrigger className="w-full" aria-label={t('icsAlertTimed')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">{t('icsAlertNone')}</SelectItem>
+              {ICS_TIMED_ALERTS.map((minutes) => (
+                <SelectItem key={minutes} value={String(minutes)}>
+                  {minutes === 0 ? t('icsAlertAtTime') : t('icsAlertMinutes', { minutes })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+          <span className={EXPORT_FIELD_LABEL}>{t('icsAlertAllDay')}</span>
+          <Select
+            value={alerts.allDay ?? 'none'}
+            onValueChange={(v) => setAlerts((prev) => ({ ...prev, allDay: v === 'none' ? null : (v as IcsAllDayAlert) }))}
+          >
+            <SelectTrigger className="w-full" aria-label={t('icsAlertAllDay')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">{t('icsAlertNone')}</SelectItem>
+              {(Object.keys(ICS_ALL_DAY_ALERTS) as IcsAllDayAlert[]).map((key) => {
+                const offset = ICS_ALL_DAY_ALERTS[key];
+                const at = DateTime.fromObject({ hour: ((offset / 60) % 24 + 24) % 24 })
+                  .setLocale(uiLocale)
+                  .toLocaleString(DateTime.TIME_SIMPLE);
+                return (
+                  <SelectItem key={key} value={key}>
+                    {offset < 0 ? t('icsAlertDayBefore', { time: at }) : t('icsAlertDayOf', { time: at })}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+        <p className="text-muted-foreground text-xs">{t('icsAlertHint')}</p>
       </div>
 
       <div className={`space-y-1.5 rounded-lg border p-3 transition-opacity ${stale ? 'opacity-60' : ''}`} aria-live="polite">

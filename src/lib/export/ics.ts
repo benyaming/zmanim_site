@@ -9,7 +9,10 @@
  *   file has no revision history.
  * - No DTEND on timed events: each is a point in time. DTEND equal to DTSTART
  *   is not allowed (§3.8.2.2), so it is omitted rather than faked.
- * - No VALARM: reminders are the user's to add.
+ *
+ * Alerts are the user's choice, one for timed events and one for all-day
+ * events; with none chosen the file carries no VALARM at all — though the
+ * calendar app may still apply its own default notifications.
  */
 
 import type { DateTime } from 'luxon';
@@ -17,6 +20,7 @@ import type { DateTime } from 'luxon';
 import { SITE_HOST } from '@/lib/site';
 
 import type { CalendarEvent } from './calendar-events';
+import { ICS_ALL_DAY_ALERTS, type IcsAlerts, NO_ICS_ALERTS } from './ics-preset';
 
 export interface IcsDocument {
   /** Suggested calendar name (X-WR-CALNAME); clients may ignore it. */
@@ -24,6 +28,22 @@ export interface IcsDocument {
   events: readonly CalendarEvent[];
   /** DTSTAMP for every event: the export time for a download. */
   stamp: DateTime;
+  /** Alerts to attach; absent = none. */
+  alerts?: IcsAlerts;
+}
+
+/** An RFC 5545 DURATION for a signed number of minutes: -10 → -PT10M, 540 → PT9H, 0 → PT0M. */
+export function icsDuration(minutes: number): string {
+  const abs = Math.abs(minutes);
+  const hours = Math.floor(abs / 60);
+  const rest = abs % 60;
+  return `${minutes < 0 ? '-' : ''}PT${hours ? `${hours}H` : ''}${rest || !hours ? `${rest}M` : ''}`;
+}
+
+/** The alert TRIGGER for an event (relative to its start), or null for none. */
+function alertTrigger(event: CalendarEvent, alerts: IcsAlerts): string | null {
+  if (event.allDay) return alerts.allDay ? icsDuration(ICS_ALL_DAY_ALERTS[alerts.allDay]) : null;
+  return alerts.timed === null ? null : icsDuration(-alerts.timed);
 }
 
 /** The longest content line, in octets, before folding (RFC 5545 §3.1). */
@@ -103,12 +123,13 @@ export function serializeIcs(doc: IcsDocument): string {
     } else {
       lines.push(`DTSTART:${utcValue(e.start)}`);
     }
-    lines.push(
-      `SUMMARY:${escapeIcsText(e.title)}`,
-      `DESCRIPTION:${escapeIcsText(e.description)}`,
-      'TRANSP:TRANSPARENT',
-      'END:VEVENT',
-    );
+    lines.push(`SUMMARY:${escapeIcsText(e.title)}`, `DESCRIPTION:${escapeIcsText(e.description)}`, 'TRANSP:TRANSPARENT');
+    const trigger = alertTrigger(e, doc.alerts ?? NO_ICS_ALERTS);
+    if (trigger) {
+      // A DISPLAY alarm needs ACTION, TRIGGER and DESCRIPTION (RFC 5545 §3.6.6).
+      lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${escapeIcsText(e.title)}`, `TRIGGER:${trigger}`, 'END:VALARM');
+    }
+    lines.push('END:VEVENT');
   }
   lines.push('END:VCALENDAR');
   return lines.map(foldIcsLine).join('\r\n') + '\r\n';

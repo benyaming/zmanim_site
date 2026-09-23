@@ -50,6 +50,27 @@ export const MAX_ICS_DAILY_ZMANIM = 6;
 /** The longest range one file may cover — the table export's cap. */
 export const MAX_ICS_DAYS = MAX_TABLE_DAYS;
 
+/** Alert choices for timed events: minutes before the event (0 = at the time). */
+export const ICS_TIMED_ALERTS = [0, 5, 10, 15, 30, 60] as const;
+export type IcsTimedAlert = (typeof ICS_TIMED_ALERTS)[number];
+
+/**
+ * Alert choices for all-day events, as an offset in minutes from the start of
+ * the day (local midnight): the day before at 12:00 or 18:00, or the day itself
+ * at 9:00. Shabbat, holidays and yahrzeits begin the evening before, so the
+ * day-before choices are the useful ones for them.
+ */
+export const ICS_ALL_DAY_ALERTS = { dayBefore12: -12 * 60, dayBefore18: -6 * 60, dayOf9: 9 * 60 } as const;
+export type IcsAllDayAlert = keyof typeof ICS_ALL_DAY_ALERTS;
+
+/** Alerts to write into the file; null = none (the calendar app's own defaults may still apply). */
+export interface IcsAlerts {
+  timed: IcsTimedAlert | null;
+  allDay: IcsAllDayAlert | null;
+}
+
+export const NO_ICS_ALERTS: IcsAlerts = { timed: null, allDay: null };
+
 /** The last end date the range allows for a start (an ISO date), or '' for an invalid start. */
 export function icsRangeLatestEnd(startIso: string): string {
   const start = DateTime.fromISO(startIso);
@@ -97,6 +118,8 @@ export interface IcsExportPreset {
   locationId?: string;
   /** Report language. Absent = follow the UI language. */
   reportLocale?: string;
+  /** Alerts. Absent (or null inside) = none. */
+  alerts?: IcsAlerts;
 }
 
 /**
@@ -138,6 +161,15 @@ export function sanitizeIcsExportPreset(value: unknown): IcsExportPreset | null 
   if (typeof p.locationId === 'string' && p.locationId.length > 0 && p.locationId.length <= 200) out.locationId = p.locationId;
   if (typeof p.reportLocale === 'string' && (routing.locales as readonly string[]).includes(p.reportLocale)) {
     out.reportLocale = p.reportLocale;
+  }
+  if (p.alerts && typeof p.alerts === 'object' && !Array.isArray(p.alerts)) {
+    const raw = p.alerts as Record<string, unknown>;
+    const timed = (ICS_TIMED_ALERTS as readonly unknown[]).includes(raw.timed) ? (raw.timed as IcsTimedAlert) : null;
+    const allDay =
+      typeof raw.allDay === 'string' && Object.keys(ICS_ALL_DAY_ALERTS).includes(raw.allDay)
+        ? (raw.allDay as IcsAllDayAlert)
+        : null;
+    out.alerts = { timed, allDay };
   }
 
   return Object.keys(out).length > 0 ? out : null;
