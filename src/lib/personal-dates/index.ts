@@ -24,6 +24,7 @@ export {
   MAX_PEOPLE,
   type MilestoneKey,
   type Observance,
+  OBSERVANCE_KINDS,
   type ObservanceKind,
   type Person,
   type PersonalDatesData,

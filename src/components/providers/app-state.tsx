@@ -23,6 +23,7 @@ import {
 // Straight from the module, not the `@/lib/export` barrel: that barrel also
 // re-exports the writers (PDF rasterizer, workbook builder), and this provider
 // is in the main bundle — nothing here should be able to drag those in.
+import { type IcsExportPreset, sanitizeIcsExportPreset } from '@/lib/export/ics-preset';
 import { type ExportPreset, sanitizeExportPreset } from '@/lib/export/preset';
 import { browserGeolocate } from '@/lib/geo/browser-location';
 import { fetchElevation } from '@/lib/geo/elevation';
@@ -150,6 +151,10 @@ interface AppStateValue {
   exportPreset: ExportPreset | null;
   /** Remember this selection as the last export. Called when an export succeeds. */
   setExportPreset: (preset: ExportPreset) => void;
+  /** The calendar (.ics) export's last-used selection, or null before its first export. */
+  icsExportPreset: IcsExportPreset | null;
+  /** Remember the calendar export's selection. Called once a file has been generated. */
+  setIcsExportPreset: (preset: IcsExportPreset) => void;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -204,6 +209,8 @@ interface PersistedPrefs {
   customDates?: unknown;
   /** The zmanim-table export's last-used selection (see lib/export/preset.ts). */
   export?: unknown;
+  /** The calendar (.ics) export's last-used selection (see lib/export/ics-preset.ts). */
+  icsExport?: unknown;
 }
 
 function loadPrefs(): PersistedPrefs | null {
@@ -496,6 +503,7 @@ export function AppStateProvider({
     setPersonalDates((prev) => ({ ...prev, occasions: prev.occasions.filter((o) => o.id !== id) }));
 
   const [exportPreset, setExportPreset] = useState<ExportPreset | null>(null);
+  const [icsExportPreset, setIcsExportPreset] = useState<IcsExportPreset | null>(null);
 
   // Gates persistence: it flips true only after the load effect has read
   // localStorage, so a pre-hydration render (initial mount, an HMR remount, or
@@ -563,6 +571,8 @@ export function AppStateProvider({
     // exported" — the tool then uses its live defaults instead of a stale copy.
     const savedExport = sanitizeExportPreset(prefs.export);
     if (savedExport) setExportPreset(savedExport);
+    const savedIcsExport = sanitizeIcsExportPreset(prefs.icsExport);
+    if (savedIcsExport) setIcsExportPreset(savedIcsExport);
     // A location from the URL (deep link) takes precedence over the saved one.
     // Ignore a persisted *default* (eager-persisted, not a real choice) so it
     // doesn't lock out auto-detection. inIsrael is always derived from the
@@ -700,12 +710,13 @@ export function AppStateProvider({
           // Omitted entirely until an export has actually been made, so a device
           // that never used the tool doesn't push an empty object at sync.
           ...(exportPreset ? { export: exportPreset } : {}),
+          ...(icsExportPreset ? { icsExport: icsExportPreset } : {}),
         }),
       );
     } catch {
       // Ignore storage errors (private mode, quota, etc.).
     }
-  }, [hydrated, location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, lehumraCustomized, hiddenZmanim, zmanimCustomized, hiddenLearning, learningCustomized, hiddenFastEnd, fastEndCustomized, personalDates, exportPreset]);
+  }, [hydrated, location, savedLocations, candleLightingOffset, useElevation, havdalahOpinion, lehumra, lehumraCustomized, hiddenZmanim, zmanimCustomized, hiddenLearning, learningCustomized, hiddenFastEnd, fastEndCustomized, personalDates, exportPreset, icsExportPreset]);
 
   // Restore calendar state (mode + selected day + viewed month) from the URL on
   // mount, so a shared link reopens the same view. Read post-mount to stay
@@ -812,6 +823,8 @@ export function AppStateProvider({
     removeOccasion,
     exportPreset,
     setExportPreset,
+    icsExportPreset,
+    setIcsExportPreset,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

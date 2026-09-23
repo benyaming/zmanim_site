@@ -93,10 +93,36 @@ export type ObservanceKind =
   | 'hebrewAnniversary'
   | 'civilAnniversary';
 
+/** Every observance kind, in the panel's order — for pickers and sanitizers. */
+export const OBSERVANCE_KINDS: readonly ObservanceKind[] = [
+  'hebrewBirthday',
+  'civilBirthday',
+  'bris',
+  'barMitzvah',
+  'batMitzvah',
+  'yahrzeit',
+  'civilDeathAnniversary',
+  'shiva',
+  'shloshim',
+  'hebrewAnniversary',
+  'civilAnniversary',
+];
+
 /** One observance falling on a specific Gregorian day. */
 export interface Observance {
   /** The owning person or occasion id — for chip keys and the calendar day-cache. */
   sourceId: string;
+  /**
+   * Whether `sourceId` names a person or a standalone occasion. The two id
+   * spaces are separate, so identity across exports needs both.
+   */
+  sourceType: 'person' | 'occasion';
+  /**
+   * The anchor event the observance derives from: the `PersonEvent` id for a
+   * person (one person can own several weddings or custom dates), the
+   * occasion's own id for an occasion.
+   */
+  eventId: string;
   /** The person / occasion name (may be empty; callers fall back to a kind label). */
   label: string;
   kind: ObservanceKind;
