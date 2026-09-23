@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
 
-import { computeZmanim, standardOffsetMillis } from './calculator';
+import { computeZmanim } from './calculator';
 
 /**
  * Golden regression fixtures. Each expected value is the local wall-clock time
@@ -311,17 +311,26 @@ describe('computeZmanim near the date line (Hebcal-checked)', () => {
   }
 });
 
-describe('standardOffsetMillis', () => {
-  it("is each zone's non-DST offset, in both hemispheres and at half and quarter hours", () => {
-    const hours = (tz: string) => standardOffsetMillis(tz, 2026) / 3_600_000;
-    expect(hours('Australia/Sydney')).toBe(10);
-    expect(hours('Pacific/Auckland')).toBe(12);
-    expect(hours('Pacific/Chatham')).toBe(12.75);
-    expect(hours('Australia/Lord_Howe')).toBe(10.5);
-    expect(hours('America/Adak')).toBe(-10);
-    expect(hours('America/New_York')).toBe(-5);
-    expect(hours('Asia/Jerusalem')).toBe(2);
-    expect(hours('Asia/Tokyo')).toBe(9);
-    expect(hours('Europe/London')).toBe(0);
-  });
+describe('computeZmanim across a date-line regime change', () => {
+  // Kwajalein moved from UTC−12 to UTC+12 in August 1993. Each day must be
+  // judged by the offset in effect THAT day: before the switch it computes
+  // exactly like a fixed UTC−12 zone, after it like a fixed UTC+12 zone (the
+  // Etc/GMT names are sign-inverted). A whole-year offset sample got the
+  // October days wrong.
+  const at = (tz: string, iso: string) =>
+    computeZmanim({ lat: 8.7167, lng: 167.7333, date: DateTime.fromISO(iso), timeZoneId: tz, keys: ['sunrise', 'sunset'] });
+
+  for (const [iso, fixed] of [
+    ['1993-08-10', 'Etc/GMT+12'],
+    ['1993-10-02', 'Etc/GMT-12'],
+  ] as const) {
+    it(`Kwajalein ${iso} uses the rule in effect that day`, () => {
+      const kwajalein = at('Pacific/Kwajalein', iso);
+      const reference = at(fixed, iso);
+      for (const [i, zman] of kwajalein.entries()) {
+        expect(zman.time?.toISODate(), zman.key).toBe(iso);
+        expect(zman.time?.toMillis(), zman.key).toBe(reference[i].time?.toMillis());
+      }
+    });
+  }
 });
