@@ -446,8 +446,11 @@ export function buildZmanimTable(o: ZmanimTableOptions): ZmanimTable {
     const holiday = localizedHolidayLabel(o.locale, info.label, info.yomTovIndex, info.dayOfChanukah) ?? '';
 
     // Same event set as the calendar cells — the USER's fast-end opinions, the
-    // per-event lehumra rounding directions.
-    const timeByKey = Object.fromEntries(zmanim.map((z) => [z.key, z.time]));
+    // per-event lehumra rounding directions. Built from the RAW times and
+    // rounded once, by each event's meaning: a minor fast starts at dawn, which
+    // rounds UP as a standalone zman but DOWN as a fast's start, so feeding the
+    // already-rounded dawn in left the start a minute late.
+    const timeByKey = Object.fromEntries(computed.map((z) => [z.key, z.time]));
     const allEvents = getDayEvents(
       date,
       {
