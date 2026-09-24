@@ -3,7 +3,7 @@ import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
 
 import type { CalendarEvent } from './calendar-events';
-import { escapeIcsText, foldIcsLine, icsDuration, serializeIcs } from './ics';
+import { escapeIcsText, foldIcsLine, icsDuration, MAX_EVENTS_PER_PART, serializeIcs, splitIcsParts } from './ics';
 
 const octets = (s: string) => new TextEncoder().encode(s).length;
 const unfold = (s: string) => s.replace(/\r\n /g, '');
@@ -119,6 +119,51 @@ describe('serializeIcs', () => {
         expect(event.startDate.toString()).toBe(expected.date);
       }
     });
+  });
+});
+
+describe('splitIcsParts', () => {
+  /** `perDay` events on each of `days` consecutive days, in order. */
+  const eventsOver = (days: number, perDay: (i: number) => number) =>
+    Array.from({ length: days }, (_, i) => {
+      const date = DateTime.fromISO('2026-09-01').plus({ days: i }).toISODate()!;
+      return Array.from({ length: perDay(i) }, (_, j) => ({ date, n: `${i}-${j}` }));
+    }).flat();
+
+  const check = (events: { date: string }[], parts: { date: string }[][]) => {
+    expect(parts.flat()).toEqual(events); // nothing lost, reordered or duplicated
+    for (const part of parts) expect(part.length).toBeLessThanOrEqual(MAX_EVENTS_PER_PART);
+    for (let i = 1; i < parts.length; i++) expect(parts[i][0].date > parts[i - 1].at(-1)!.date).toBe(true); // no split day
+  };
+
+  it('keeps a file at the limit whole', () => {
+    const events = eventsOver(200, () => 1);
+    expect(splitIcsParts(events)).toHaveLength(1);
+  });
+
+  it('splits 240 events into two even parts, not 200 + 40', () => {
+    const events = eventsOver(240, () => 1);
+    const parts = splitIcsParts(events);
+    check(events, parts);
+    expect(parts.map((p) => p.length)).toEqual([120, 120]);
+  });
+
+  it('never splits a day, and uses the fewest parts whole days allow', () => {
+    // ~4,700 events: six daily zmanim, nine on the Shabbat-eve days.
+    const events = eventsOver(732, (i) => (i % 7 === 5 ? 9 : 6));
+    const parts = splitIcsParts(events);
+    check(events, parts);
+    // The fewest possible: whole days packed up to the cap, one after another.
+    let fewest = 1;
+    let fill = 0;
+    for (const size of Array.from({ length: 732 }, (_, i) => (i % 7 === 5 ? 9 : 6))) {
+      if (fill + size > MAX_EVENTS_PER_PART) {
+        fewest++;
+        fill = 0;
+      }
+      fill += size;
+    }
+    expect(parts).toHaveLength(fewest);
   });
 });
 

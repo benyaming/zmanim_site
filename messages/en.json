@@ -536,7 +536,10 @@
     "icsAlertMinutes": "{minutes, plural, =60 {1 hour before} other {# min before}}",
     "icsAlertDayBefore": "The day before, {time}",
     "icsAlertDayOf": "On the day, {time}",
-    "icsAlertHint": "Your calendar app may ignore alerts in an imported file, or add its own default ones; both can be changed in its notification settings."
+    "icsAlertHint": "Your calendar app may ignore alerts in an imported file, or add its own default ones; both can be changed in its notification settings.",
+    "icsPartsNote": "Google Calendar on a phone adds only the first {max} events of a file, and this one has {count}. Download it in {parts} parts and open each one — or use the single file on a computer, or in Apple or Outlook calendar.",
+    "icsPart": "Part {n} of {total} · {range} ({count})",
+    "icsDownloadWhole": "Download as one file"
   },
   "sync": {
     "telegramTitle": "Telegram sync",

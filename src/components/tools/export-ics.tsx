@@ -12,8 +12,13 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ZMAN_PICKER_SECTIONS, ZmanBaseControl } from '@/components/zmanim/zman-picker';
 import { downloadBlob, tableDayCount } from '@/lib/export';
-import { buildCalendarEvents, type CalendarExport, type CalendarExportOptions } from '@/lib/export/calendar-events';
-import { icsBlob } from '@/lib/export/ics';
+import {
+  buildCalendarEvents,
+  type CalendarEvent,
+  type CalendarExport,
+  type CalendarExportOptions,
+} from '@/lib/export/calendar-events';
+import { icsBlob, MAX_EVENTS_PER_PART, splitIcsParts } from '@/lib/export/ics';
 import {
   DEFAULT_ICS_CATEGORIES,
   ICS_ALL_DAY_ALERTS,
@@ -238,7 +243,20 @@ export function ExportIcsTool() {
         ? builtFor(deferredKey)
         : buildFor(deferredKey, () => buildCalendarEvents(options!));
 
-  const download = async () => {
+  // A file over the phone-import limit is also offered in parts (see
+  // MAX_EVENTS_PER_PART). Labels come from the preview; the download itself
+  // re-splits the CURRENT build, so a part is never taken from a stale one.
+  const parts = preview ? splitIcsParts(preview.events) : [];
+  // Exact dates: parts usually meet mid-month, and month names alone would
+  // make two parts look like they overlap.
+  const partLabel = (events: readonly CalendarEvent[]) => {
+    const day = (iso: string) => DateTime.fromISO(iso).setLocale(uiLocale).toLocaleString(DateTime.DATE_MED);
+    const [from, to] = [day(events[0].date), day(events.at(-1)!.date)];
+    return from === to ? from : `${from} – ${to}`;
+  };
+
+  /** Download the whole file, or (with `part`) one part of it, 0-based. */
+  const download = async (part?: number) => {
     setError(null);
     if (!options || !buildKey) {
       setError(rangeError);
@@ -252,9 +270,12 @@ export function ExportIcsTool() {
         setError(t('icsNothing'));
         return;
       }
+      const split = part === undefined ? null : splitIcsParts(built.events);
+      const events = split ? split[part!] : built.events;
+      if (!events) return;
       const blob = icsBlob({
         name: tr('export.icsCalendarName', { place: placeLabel }),
-        events: built.events,
+        events,
         stamp: DateTime.utc(),
         alerts,
       });
@@ -262,7 +283,8 @@ export function ExportIcsTool() {
         setError(t('icsTooLarge', { mb: (blob.size / 1024 / 1024).toFixed(1) }));
         return;
       }
-      await downloadBlob(blob, `zmanim-calendar-${startIso.slice(0, 7)}.ics`);
+      const suffix = split ? `-part${part! + 1}-of-${split.length}` : '';
+      await downloadBlob(blob, `zmanim-calendar-${startIso.slice(0, 7)}${suffix}.ics`);
       // Remembered once a file exists, never per checkbox — one prefs (and
       // sync) write per export. With no dates the personal switch was never
       // shown, so an earlier explicit choice is carried over untouched.
@@ -526,10 +548,35 @@ export function ExportIcsTool() {
       </div>
 
       {error && <p className="text-destructive text-xs">{error}</p>}
-      <Button onClick={download} disabled={busy || !options} className="w-full" variant="outline">
-        <CalendarPlus className="size-4" />
-        {busy ? t('generating') : t('icsDownload')}
-      </Button>
+      {parts.length > 1 ? (
+        // Over the phone-import limit: one button per part (phones often block
+        // several downloads at once), and the whole file for everything else.
+        <div className="space-y-2">
+          <p className="text-xs">
+            {t('icsPartsNote', { max: MAX_EVENTS_PER_PART, count: preview!.events.length, parts: parts.length })}
+          </p>
+          {parts.map((events, i) => (
+            <Button
+              key={`${i}-${events[0].date}`}
+              onClick={() => download(i)}
+              disabled={busy || !options || stale}
+              className="h-auto min-h-9 w-full py-2 whitespace-normal"
+              variant="outline"
+            >
+              <CalendarPlus className="size-4" />
+              {t('icsPart', { n: i + 1, total: parts.length, range: partLabel(events), count: events.length })}
+            </Button>
+          ))}
+          <Button onClick={() => download()} disabled={busy || !options} className="w-full" variant="ghost">
+            {busy ? t('generating') : t('icsDownloadWhole')}
+          </Button>
+        </div>
+      ) : (
+        <Button onClick={() => download()} disabled={busy || !options} className="w-full" variant="outline">
+          <CalendarPlus className="size-4" />
+          {busy ? t('generating') : t('icsDownload')}
+        </Button>
+      )}
     </div>
   );
 }

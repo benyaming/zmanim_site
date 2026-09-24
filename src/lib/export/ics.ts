@@ -135,6 +135,46 @@ export function serializeIcs(doc: IcsDocument): string {
   return lines.map(foldIcsLine).join('\r\n') + '\r\n';
 }
 
+/**
+ * The most events one file should hold: Google Calendar on a phone adds only
+ * the first 200 events of an opened .ics file and silently drops the rest.
+ */
+export const MAX_EVENTS_PER_PART = 200;
+
+/**
+ * Split date-ordered events into the fewest parts of at most `max` events,
+ * each a continuous run of whole days, and as even as whole days allow (240
+ * events become 2 × ~120, not 200 + 40). A day is never split between parts.
+ */
+export function splitIcsParts<T extends { date: string }>(events: readonly T[], max = MAX_EVENTS_PER_PART): T[][] {
+  if (events.length <= max) return [events.slice()];
+  // Whole days, in order.
+  const days: T[][] = [];
+  for (const e of events) {
+    const last = days.at(-1);
+    if (last && last[0].date === e.date) last.push(e);
+    else days.push([e]);
+  }
+  const pack = (cap: number): T[][] => {
+    const parts: T[][] = [];
+    let current: T[] = [];
+    for (const day of days) {
+      if (current.length > 0 && current.length + day.length > cap) {
+        parts.push(current);
+        current = [];
+      }
+      current.push(...day);
+    }
+    if (current.length > 0) parts.push(current);
+    return parts;
+  };
+  // Packing whole days up to the hard cap gives the fewest parts possible;
+  // then even them out at that count, if whole days allow.
+  const fewest = pack(max);
+  const even = pack(Math.ceil(events.length / fewest.length));
+  return even.length === fewest.length ? even : fewest;
+}
+
 /** The file as a Blob, typed for calendar apps. */
 export function icsBlob(doc: IcsDocument): Blob {
   return new Blob([serializeIcs(doc)], { type: 'text/calendar;charset=utf-8' });

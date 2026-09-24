@@ -12,7 +12,11 @@ import { DEFAULT_HAVDALAH_OPINION } from '@/lib/zmanim';
 
 const JERUSALEM: AppLocation = { lat: 31.7683, lng: 35.2137, timeZoneId: 'Asia/Jerusalem', inIsrael: true, label: 'Jerusalem' };
 const setIcsExportPreset = vi.fn<(preset: IcsExportPreset) => void>();
-const app = vi.hoisted(() => ({ personalDates: { people: [], occasions: [] } as PersonalDatesData }));
+const app = vi.hoisted(() => ({
+  personalDates: { people: [], occasions: [] } as PersonalDatesData,
+  // A short remembered range keeps each build quick.
+  preset: { rangeDays: 31 } as IcsExportPreset,
+}));
 
 vi.mock('@/components/providers/app-state', () => ({
   useAppState: () => ({
@@ -24,8 +28,7 @@ vi.mock('@/components/providers/app-state', () => ({
     personalDates: app.personalDates,
     useElevation: false,
     lehumra: false,
-    // A short remembered range keeps each build quick.
-    icsExportPreset: { rangeDays: 31 },
+    icsExportPreset: app.preset,
     setIcsExportPreset,
   }),
 }));
@@ -44,6 +47,7 @@ const builds = () => vi.mocked(buildCalendarEvents).mock.calls.length;
 afterEach(() => {
   vi.clearAllMocks();
   app.personalDates = { people: [], occasions: [] };
+  app.preset = { rangeDays: 31 };
 });
 
 const show = () =>
@@ -131,5 +135,38 @@ describe('ExportIcsTool', () => {
     const after = await personalUids(1);
     expect(after).toHaveLength(before.length);
     expect(after.filter((uid) => before.includes(uid))).toEqual([]);
+  });
+
+  it('offers a file over the phone-import limit in parts, each within it, plus the whole file', async () => {
+    app.preset = { rangeDays: 400 }; // ~270 default events in Jerusalem
+    show();
+    const count = await screen.findByText(/^\d+ events$/);
+    const total = Number(count.textContent!.split(' ')[0]);
+    expect(total).toBeGreaterThan(200);
+
+    const partButtons = await screen.findAllByRole('button', { name: /^Part \d of 2 · / });
+    expect(partButtons).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: 'Download .ics' })).toBeNull();
+
+    const vevents = async (n: number) =>
+      ((await (vi.mocked(downloadBlob).mock.calls[n][0] as Blob).text()).match(/BEGIN:VEVENT/g) ?? []).length;
+    await act(async () => {
+      fireEvent.click(partButtons[0]);
+    });
+    await act(async () => {
+      fireEvent.click(partButtons[1]);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Download as one file' }));
+    });
+    const names = vi.mocked(downloadBlob).mock.calls.map((call) => call[1]);
+    expect(names[0]).toMatch(/-part1-of-2\.ics$/);
+    expect(names[1]).toMatch(/-part2-of-2\.ics$/);
+    expect(names[2]).toMatch(/^zmanim-calendar-\d{4}-\d{2}\.ics$/);
+    const [first, second, whole] = [await vevents(0), await vevents(1), await vevents(2)];
+    expect(first).toBeLessThanOrEqual(200);
+    expect(second).toBeLessThanOrEqual(200);
+    expect(first + second).toBe(whole);
+    expect(whole).toBe(total);
   });
 });
