@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarPlus } from 'lucide-react';
+import { CalendarPlus, ChevronDown } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useLocale, useTranslations } from 'next-intl';
 import { useDeferredValue, useState } from 'react';
@@ -36,6 +36,7 @@ import {
 import { fitRangeEnd, rangeLatestEnd } from '@/lib/export/range';
 import { formatTime } from '@/lib/format';
 import { OBSERVANCE_KINDS, type ObservanceKind } from '@/lib/personal-dates';
+import { cn } from '@/lib/utils';
 
 import { reportTranslator } from './export-i18n';
 import { EXPORT_FIELD_LABEL, useExportComputeOptions, useExportLocation, useReportLocale } from './export-shared';
@@ -146,6 +147,7 @@ export function ExportIcsTool() {
   const [includePersonal, setIncludePersonal] = useState(preset?.personal ?? true);
   const [kinds, setKinds] = useState<Set<ObservanceKind>>(() => new Set(preset?.personalKinds ?? OBSERVANCE_KINDS));
   const [alerts, setAlerts] = useState<IcsAlerts>(() => preset?.alerts ?? NO_ICS_ALERTS);
+  const [showParts, setShowParts] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -548,34 +550,47 @@ export function ExportIcsTool() {
       </div>
 
       {error && <p className="text-destructive text-xs">{error}</p>}
-      {parts.length > 1 ? (
-        // Over the phone-import limit: one button per part (phones often block
-        // several downloads at once), and the whole file for everything else.
+      <Button onClick={() => download()} disabled={busy || !options} className="w-full" variant="outline">
+        <CalendarPlus className="size-4" />
+        {busy ? t('generating') : t('icsDownload')}
+      </Button>
+      {parts.length > 1 && (
+        // Over the phone-import limit: the parts wait behind a disclosure, one
+        // button each (phones often block several downloads at once).
         <div className="space-y-2">
-          <p className="text-xs">
-            {t('icsPartsNote', { max: MAX_EVENTS_PER_PART, count: preview!.events.length, parts: parts.length })}
-          </p>
-          {parts.map((events, i) => (
-            <Button
-              key={`${i}-${events[0].date}`}
-              onClick={() => download(i)}
-              disabled={busy || !options || stale}
-              className="h-auto min-h-9 w-full py-2 whitespace-normal"
-              variant="outline"
-            >
-              <CalendarPlus className="size-4" />
-              {t('icsPart', { n: i + 1, total: parts.length, range: partLabel(events), count: events.length })}
-            </Button>
-          ))}
-          <Button onClick={() => download()} disabled={busy || !options} className="w-full" variant="ghost">
-            {busy ? t('generating') : t('icsDownloadWhole')}
-          </Button>
+          <button
+            type="button"
+            aria-expanded={showParts}
+            aria-controls="export-ics-parts"
+            onClick={() => setShowParts((open) => !open)}
+            className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between gap-2 text-start text-xs"
+          >
+            <span>{t('icsPartsToggle', { parts: parts.length })}</span>
+            <ChevronDown
+              aria-hidden
+              className={cn('size-4 shrink-0 transition-transform', !showParts && '-rotate-90 rtl:rotate-90')}
+            />
+          </button>
+          {showParts && (
+            <div id="export-ics-parts" className="space-y-2">
+              <p className="text-muted-foreground text-xs">
+                {t('icsPartsNote', { max: MAX_EVENTS_PER_PART, count: preview!.events.length })}
+              </p>
+              {parts.map((events, i) => (
+                <Button
+                  key={`${i}-${events[0].date}`}
+                  onClick={() => download(i)}
+                  disabled={busy || !options || stale}
+                  className="h-auto min-h-8 w-full py-1.5 whitespace-normal"
+                  size="sm"
+                  variant="outline"
+                >
+                  {t('icsPart', { n: i + 1, total: parts.length, range: partLabel(events), count: events.length })}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
-      ) : (
-        <Button onClick={() => download()} disabled={busy || !options} className="w-full" variant="outline">
-          <CalendarPlus className="size-4" />
-          {busy ? t('generating') : t('icsDownload')}
-        </Button>
       )}
     </div>
   );

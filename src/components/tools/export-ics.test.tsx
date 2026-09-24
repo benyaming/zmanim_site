@@ -137,16 +137,22 @@ describe('ExportIcsTool', () => {
     expect(after.filter((uid) => before.includes(uid))).toEqual([]);
   });
 
-  it('offers a file over the phone-import limit in parts, each within it, plus the whole file', async () => {
+  it('offers a file over the phone-import limit in parts, each within it, behind a disclosure', async () => {
     app.preset = { rangeDays: 400 }; // ~270 default events in Jerusalem
     show();
     const count = await screen.findByText(/^\d+ events$/);
     const total = Number(count.textContent!.split(' ')[0]);
     expect(total).toBeGreaterThan(200);
 
-    const partButtons = await screen.findAllByRole('button', { name: /^Part \d of 2 · / });
+    // The whole file stays the main action; the parts wait behind a toggle.
+    expect(screen.getByRole('button', { name: 'Download .ics' })).toBeInTheDocument();
+    expect(screen.queryAllByRole('button', { name: /^Part \d of 2 · / })).toHaveLength(0);
+    const toggle = screen.getByRole('button', { name: /Download in 2 parts/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    const partButtons = screen.getAllByRole('button', { name: /^Part \d of 2 · / });
     expect(partButtons).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: 'Download .ics' })).toBeNull();
 
     const vevents = async (n: number) =>
       ((await (vi.mocked(downloadBlob).mock.calls[n][0] as Blob).text()).match(/BEGIN:VEVENT/g) ?? []).length;
@@ -157,7 +163,7 @@ describe('ExportIcsTool', () => {
       fireEvent.click(partButtons[1]);
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Download as one file' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Download .ics' }));
     });
     const names = vi.mocked(downloadBlob).mock.calls.map((call) => call[1]);
     expect(names[0]).toMatch(/-part1-of-2\.ics$/);
