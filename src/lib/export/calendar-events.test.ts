@@ -1,6 +1,12 @@
 import { JewishCalendar } from 'kosher-zmanim';
 import { DateTime } from 'luxon';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// A pass-through spy: every test still gets the real calculation.
+vi.mock('@/lib/zmanim', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/zmanim')>();
+  return { ...actual, computeZmanim: vi.fn(actual.computeZmanim) };
+});
 
 import { reportTranslator } from '@/components/tools/export-i18n';
 import { observanceChipText } from '@/components/tools/personal-dates-labels';
@@ -410,6 +416,19 @@ describe('buildCalendarEvents — personal dates', () => {
   it('an empty kind selection means no personal dates', () => {
     const { events } = build({ categories: NONE, startIso: '2026-01-01', days: 400, personalDates: personal, personalKinds: [] });
     expect(events).toHaveLength(0);
+  });
+});
+
+describe('buildCalendarEvents — work', () => {
+  it('computes no zmanim when nothing timed is selected', () => {
+    vi.mocked(computeZmanim).mockClear();
+    build({ categories: { ...NONE, holidays: true, parsha: true }, days: 30 });
+    expect(computeZmanim).not.toHaveBeenCalled();
+    build({ categories: { ...NONE, candles: true }, days: 30 });
+    expect(computeZmanim).toHaveBeenCalledTimes(30);
+    vi.mocked(computeZmanim).mockClear();
+    build({ categories: NONE, zmanKeys: ['sunrise'], days: 30 });
+    expect(computeZmanim).toHaveBeenCalledTimes(30);
   });
 });
 

@@ -11,13 +11,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ZMAN_PICKER_SECTIONS, ZmanBaseControl } from '@/components/zmanim/zman-picker';
-import { downloadBlob, tableDayCount } from '@/lib/export';
 import {
   buildCalendarEvents,
   type CalendarEvent,
   type CalendarExport,
   type CalendarExportOptions,
 } from '@/lib/export/calendar-events';
+import { downloadBlob } from '@/lib/export/download';
 import { icsBlob, MAX_EVENTS_PER_PART, splitIcsParts } from '@/lib/export/ics';
 import {
   DEFAULT_ICS_CATEGORIES,
@@ -35,15 +35,17 @@ import {
   sanitizeIcsZmanKeys,
 } from '@/lib/export/ics-preset';
 import { fitRangeEnd, rangeLatestEnd } from '@/lib/export/range';
+import { tableDayCount } from '@/lib/export/table';
 import { formatTime } from '@/lib/format';
 import { OBSERVANCE_KINDS, type ObservanceKind } from '@/lib/personal-dates';
+import { isTelegramMiniApp } from '@/lib/telegram/mini-app';
 import { cn } from '@/lib/utils';
 
 import { reportTranslator } from './export-i18n';
 import { EXPORT_FIELD_LABEL, useExportComputeOptions, useExportLocation, useReportLocale } from './export-shared';
 import { observanceChipText } from './personal-dates-labels';
 
-/** The bot relays files up to this size (zmanim_bot's MAX_EXPORT_BYTES). */
+/** Inside Telegram the bot relays the file, up to this size (zmanim_bot's MAX_EXPORT_BYTES). */
 const MAX_RELAY_BYTES = 30 * 1024 * 1024;
 
 /** How many events the preview lists before "…and N more". */
@@ -282,7 +284,7 @@ export function ExportIcsTool() {
         stamp: DateTime.utc(),
         alerts,
       });
-      if (blob.size > MAX_RELAY_BYTES) {
+      if (isTelegramMiniApp() && blob.size > MAX_RELAY_BYTES) {
         setError(t('icsTooLarge', { mb: (blob.size / 1024 / 1024).toFixed(1) }));
         return;
       }

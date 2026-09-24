@@ -166,17 +166,21 @@ describe('splitIcsParts', () => {
     expect(fiveParts.map((p) => p.length).sort()).toEqual([100, 105]);
   });
 
-  it('keeps ordinary parts within the cap when one day alone exceeds it', () => {
-    // One 600-event day, then 300 one-event days. The big day must stand alone
-    // (a day is never split); the rest must still be split within 200 each —
-    // not merged into a 300-event part.
+  it('cuts a day that alone exceeds the cap, so no part does', () => {
+    // One 600-event day (only crafted personal data gets there), then 300
+    // one-event days: the big day becomes three even pieces of 200, and the
+    // rest still splits evenly within the limit.
     const events = [
       ...Array.from({ length: 600 }, (_, j) => ({ date: '2026-09-01', n: `big-${j}` })),
       ...eventsOver(300, () => 1).map((e) => ({ ...e, date: DateTime.fromISO(e.date).plus({ days: 1 }).toISODate()! })),
     ];
     const parts = splitIcsParts(events);
     expect(parts.flat()).toEqual(events);
-    expect(parts.map((p) => p.length)).toEqual([600, 150, 150]);
+    expect(parts.map((p) => p.length)).toEqual([200, 200, 200, 150, 150]);
+
+    // A file whose one day holds 250 events is still offered in parts.
+    const oneDay = Array.from({ length: 250 }, (_, j) => ({ date: '2026-09-01', n: `d-${j}` }));
+    expect(splitIcsParts(oneDay).map((p) => p.length)).toEqual([125, 125]);
   });
 
   it('never splits a day, and uses the fewest parts whole days allow', () => {

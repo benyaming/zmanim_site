@@ -144,39 +144,48 @@ export const MAX_EVENTS_PER_PART = 200;
 /**
  * Split date-ordered events into the fewest parts of at most `max` events,
  * each a continuous run of whole days, with the largest part as small as whole
- * days allow (240 events become 2 × ~120, not 200 + 40). A day is never split
- * between parts.
+ * days allow (240 events become 2 × ~120, not 200 + 40). A day is split
+ * between parts only when it alone holds more than `max` events.
  */
 export function splitIcsParts<T extends { date: string }>(events: readonly T[], max = MAX_EVENTS_PER_PART): T[][] {
   if (events.length <= max) return [events.slice()];
-  // Whole days, in order.
+  // Whole days, in order — the units parts are packed from.
   const days: T[][] = [];
   for (const e of events) {
     const last = days.at(-1);
     if (last && last[0].date === e.date) last.push(e);
     else days.push([e]);
   }
+  // A day that alone holds more than `max` events (only crafted personal data
+  // gets there) is cut into as few even pieces as fit: a part over the limit
+  // is exactly what Google on a phone would truncate, so the whole-day rule
+  // gives way rather than the limit.
+  const units: T[][] = [];
+  for (const day of days) {
+    if (day.length <= max) {
+      units.push(day);
+      continue;
+    }
+    const size = Math.ceil(day.length / Math.ceil(day.length / max));
+    for (let i = 0; i < day.length; i += size) units.push(day.slice(i, i + size));
+  }
   const pack = (cap: number): T[][] => {
     const parts: T[][] = [];
     let current: T[] = [];
-    for (const day of days) {
-      if (current.length > 0 && current.length + day.length > cap) {
+    for (const unit of units) {
+      if (current.length > 0 && current.length + unit.length > cap) {
         parts.push(current);
         current = [];
       }
-      current.push(...day);
+      current.push(...unit);
     }
     if (current.length > 0) parts.push(current);
     return parts;
   };
-  // Packing whole days up to the hard cap gives the fewest parts possible.
-  // Then find the smallest cap that still needs no more parts than that: it
-  // gives the most even split at that count, since packing at a larger cap
-  // never needs more parts. The search spans every cap up to the hard one: a
-  // day holding more than `max` events (only crafted data gets there) sits in
-  // a part of its own whatever the cap, so no shortcut lower bound such as the
-  // equal share is safe — one could start the search above `max` and pack
-  // ordinary days past it.
+  // Packing up to the hard cap gives the fewest parts possible. Then find the
+  // smallest cap that still needs no more parts than that: it gives the most
+  // even split at that count, since packing at a larger cap never needs more
+  // parts. Every unit fits in `max`, so every part does too.
   const fewest = pack(max).length;
   let lo = 1;
   let hi = max;

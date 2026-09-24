@@ -194,6 +194,7 @@ export function buildCalendarEvents(o: CalendarExportOptions): CalendarExport {
   const wantPersonal =
     personalKinds.size > 0 && (o.personalDates.people.length > 0 || o.personalDates.occasions.length > 0);
   const { candles, fasts, holidays, parsha } = o.categories;
+  const needTimes = candles || fasts || zmanKeys.length > 0;
 
   const footer = tr('export.generatedBy', { site: SITE_HOST });
   const elevationNote =
@@ -235,16 +236,20 @@ export function buildCalendarEvents(o: CalendarExportOptions): CalendarExport {
     const iso = noon.toISODate() ?? '';
     const compact = iso.replaceAll('-', '');
 
-    const computed = computeZmanim({
-      lat: o.location.lat,
-      lng: o.location.lng,
-      date: noon,
-      elevation: o.location.elevation,
-      useElevation: o.useElevation,
-      timeZoneId: tz,
-      candleLightingOffset: o.candleLightingOffset,
-      keys: computeKeys,
-    });
+    // Day labels and personal dates need no times: skip the solar work when
+    // nothing timed is selected.
+    const computed = needTimes
+      ? computeZmanim({
+          lat: o.location.lat,
+          lng: o.location.lng,
+          date: noon,
+          elevation: o.location.elevation,
+          useElevation: o.useElevation,
+          timeZoneId: tz,
+          candleLightingOffset: o.candleLightingOffset,
+          keys: computeKeys,
+        })
+      : [];
     const timeByKey: Record<string, DateTime | null> = Object.fromEntries(computed.map((z) => [z.key, z.time]));
 
     // Day events from RAW times, then one meaning-aware rounding pass.
