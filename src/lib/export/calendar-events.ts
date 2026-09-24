@@ -44,7 +44,7 @@ import {
   ZMANIM,
 } from '@/lib/zmanim';
 
-import { ICS_DAILY_ZMAN_KEYS, type IcsCategory, MAX_ICS_DAYS, MAX_ICS_DAILY_ZMANIM } from './ics-preset';
+import { type IcsCategory, MAX_ICS_DAYS, sanitizeIcsZmanKeys } from './ics-preset';
 
 /** A root-scoped translator (paths begin `events.`, `zmanim.`, `export.`…). */
 export interface CalendarTranslator {
@@ -89,7 +89,7 @@ export interface CalendarExportOptions {
   /** The place's display name, used in titles. */
   placeLabel: string;
   categories: Readonly<Record<IcsCategory, boolean>>;
-  /** Daily zmanim (validated against ICS_DAILY_ZMAN_KEYS; at most MAX_ICS_DAILY_ZMANIM). */
+  /** Daily zmanim; passed through sanitizeIcsZmanKeys (valid keys, definition order, capped). */
   zmanKeys: readonly string[];
   /** Observance kinds to include; empty = no personal dates. */
   personalKinds: readonly ObservanceKind[];
@@ -152,7 +152,6 @@ export function locationFingerprint(location: Pick<AppLocation, 'lat' | 'lng' | 
 const DEF_BY_KEY = new Map(ZMANIM.map((z) => [z.key, z]));
 const BASE_KEY_COUNT = new Map<string, number>();
 for (const z of ZMANIM) BASE_KEY_COUNT.set(z.base, (BASE_KEY_COUNT.get(z.base) ?? 0) + 1);
-const DAILY_KEY_SET = new Set(ICS_DAILY_ZMAN_KEYS);
 
 /**
  * Kinds whose number-0 occurrence is the anchor event itself (born, married,
@@ -188,10 +187,7 @@ export function buildCalendarEvents(o: CalendarExportOptions): CalendarExport {
   const formatter = createHebrewFormatter(locale);
   const fingerprint = locationFingerprint(o.location);
   const inIsrael = o.location.inIsrael;
-  const zmanKeys = ICS_DAILY_ZMAN_KEYS.filter((k) => o.zmanKeys.includes(k) && DAILY_KEY_SET.has(k)).slice(
-    0,
-    MAX_ICS_DAILY_ZMANIM,
-  );
+  const zmanKeys = sanitizeIcsZmanKeys(o.zmanKeys);
   const havdalahKey = havdalahZmanKey(o.havdalahOpinion);
   const computeKeys = new Set([...dayEventZmanKeys(havdalahKey), ...zmanKeys]);
   const personalKinds = new Set(o.personalKinds);

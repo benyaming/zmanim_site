@@ -214,7 +214,8 @@ describe('computeZmanim golden values', () => {
  * Zones near the date line. kosher-zmanim 0.9 negated the standard offset of
  * every DST zone, so its antimeridian test moved Sydney, all of New Zealand,
  * Lord Howe and Norfolk to the NEXT day, Adak to the previous one, and dropped
- * Chatham's genuine adjustment (see StandardOffsetGeoLocation in calculator.ts).
+ * Chatham's genuine adjustment (see DateLineSafeGeoLocation in calculator.ts,
+ * which judges each day by the offset in effect at its local noon).
  *
  * Each value is cross-checked against the Hebcal API (sec=1, fetched
  * 2026-09-23): every one agrees within Hebcal's rounding to the nearest second

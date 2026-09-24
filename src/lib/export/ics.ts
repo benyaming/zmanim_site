@@ -143,8 +143,9 @@ export const MAX_EVENTS_PER_PART = 200;
 
 /**
  * Split date-ordered events into the fewest parts of at most `max` events,
- * each a continuous run of whole days, and as even as whole days allow (240
- * events become 2 × ~120, not 200 + 40). A day is never split between parts.
+ * each a continuous run of whole days, with the largest part as small as whole
+ * days allow (240 events become 2 × ~120, not 200 + 40). A day is never split
+ * between parts.
  */
 export function splitIcsParts<T extends { date: string }>(events: readonly T[], max = MAX_EVENTS_PER_PART): T[][] {
   if (events.length <= max) return [events.slice()];
@@ -168,11 +169,20 @@ export function splitIcsParts<T extends { date: string }>(events: readonly T[], 
     if (current.length > 0) parts.push(current);
     return parts;
   };
-  // Packing whole days up to the hard cap gives the fewest parts possible;
-  // then even them out at that count, if whole days allow.
-  const fewest = pack(max);
-  const even = pack(Math.ceil(events.length / fewest.length));
-  return even.length === fewest.length ? even : fewest;
+  // Packing whole days up to the hard cap gives the fewest parts possible.
+  // Then find the smallest cap that still needs no more parts than that: it
+  // gives the most even split at that count, since packing at a larger cap
+  // never needs more parts. Several events a day can make the equal-share cap
+  // itself one part too many, so it is a lower bound, not the answer.
+  const fewest = pack(max).length;
+  let lo = Math.ceil(events.length / fewest);
+  let hi = max;
+  while (lo < hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (pack(mid).length <= fewest) hi = mid;
+    else lo = mid + 1;
+  }
+  return pack(lo);
 }
 
 /** The file as a Blob, typed for calendar apps. */

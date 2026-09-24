@@ -148,6 +148,24 @@ describe('splitIcsParts', () => {
     expect(parts.map((p) => p.length)).toEqual([120, 120]);
   });
 
+  it('stays even when days hold several events each', () => {
+    // Six daily zmanim, nine on the Friday-like days: 33 days are 210 events.
+    // Packing at the equal share (105) needs a third part here, which once fell
+    // back to 198 + 12.
+    const zmanim = eventsOver(33, (i) => (i % 7 === 5 ? 9 : 6));
+    const zmanimParts = splitIcsParts(zmanim);
+    check(zmanim, zmanimParts);
+    expect(zmanimParts).toHaveLength(2);
+    const [a, b] = zmanimParts.map((p) => p.length);
+    expect(Math.abs(a - b)).toBeLessThanOrEqual(9); // at most one day apart
+
+    // 41 days of five events: 205, once 200 + 5.
+    const fives = eventsOver(41, () => 5);
+    const fiveParts = splitIcsParts(fives);
+    check(fives, fiveParts);
+    expect(fiveParts.map((p) => p.length).sort()).toEqual([100, 105]);
+  });
+
   it('never splits a day, and uses the fewest parts whole days allow', () => {
     // ~4,700 events: six daily zmanim, nine on the Shabbat-eve days.
     const events = eventsOver(732, (i) => (i % 7 === 5 ? 9 : 6));

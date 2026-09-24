@@ -32,6 +32,7 @@ import {
   MAX_ICS_DAILY_ZMANIM,
   MAX_ICS_DAYS,
   NO_ICS_ALERTS,
+  sanitizeIcsZmanKeys,
 } from '@/lib/export/ics-preset';
 import { fitRangeEnd, rangeLatestEnd } from '@/lib/export/range';
 import { formatTime } from '@/lib/format';
@@ -196,7 +197,7 @@ export function ExportIcsTool() {
         location,
         placeLabel,
         categories,
-        zmanKeys: ICS_DAILY_ZMAN_KEYS.filter((k) => zmanKeys.has(k)),
+        zmanKeys: sanitizeIcsZmanKeys([...zmanKeys]),
         personalKinds,
         personalDates,
         candleLightingOffset,
@@ -293,7 +294,7 @@ export function ExportIcsTool() {
       setIcsExportPreset({
         rangeDays,
         categories,
-        zmanKeys: ICS_DAILY_ZMAN_KEYS.filter((k) => zmanKeys.has(k)),
+        zmanKeys: sanitizeIcsZmanKeys([...zmanKeys]),
         ...(hasDates ? { personal: includePersonal } : preset?.personal !== undefined ? { personal: preset.personal } : {}),
         personalKinds: OBSERVANCE_KINDS.filter((k) => kinds.has(k)),
         locationId,
