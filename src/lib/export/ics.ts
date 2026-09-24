@@ -172,10 +172,13 @@ export function splitIcsParts<T extends { date: string }>(events: readonly T[], 
   // Packing whole days up to the hard cap gives the fewest parts possible.
   // Then find the smallest cap that still needs no more parts than that: it
   // gives the most even split at that count, since packing at a larger cap
-  // never needs more parts. Several events a day can make the equal-share cap
-  // itself one part too many, so it is a lower bound, not the answer.
+  // never needs more parts. The search spans every cap up to the hard one: a
+  // day holding more than `max` events (only crafted data gets there) sits in
+  // a part of its own whatever the cap, so no shortcut lower bound such as the
+  // equal share is safe — one could start the search above `max` and pack
+  // ordinary days past it.
   const fewest = pack(max).length;
-  let lo = Math.ceil(events.length / fewest);
+  let lo = 1;
   let hi = max;
   while (lo < hi) {
     const mid = Math.floor((lo + hi) / 2);

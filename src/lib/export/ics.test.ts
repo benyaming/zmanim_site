@@ -166,6 +166,19 @@ describe('splitIcsParts', () => {
     expect(fiveParts.map((p) => p.length).sort()).toEqual([100, 105]);
   });
 
+  it('keeps ordinary parts within the cap when one day alone exceeds it', () => {
+    // One 600-event day, then 300 one-event days. The big day must stand alone
+    // (a day is never split); the rest must still be split within 200 each —
+    // not merged into a 300-event part.
+    const events = [
+      ...Array.from({ length: 600 }, (_, j) => ({ date: '2026-09-01', n: `big-${j}` })),
+      ...eventsOver(300, () => 1).map((e) => ({ ...e, date: DateTime.fromISO(e.date).plus({ days: 1 }).toISODate()! })),
+    ];
+    const parts = splitIcsParts(events);
+    expect(parts.flat()).toEqual(events);
+    expect(parts.map((p) => p.length)).toEqual([600, 150, 150]);
+  });
+
   it('never splits a day, and uses the fewest parts whole days allow', () => {
     // ~4,700 events: six daily zmanim, nine on the Shabbat-eve days.
     const events = eventsOver(732, (i) => (i % 7 === 5 ? 9 : 6));
