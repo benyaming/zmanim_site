@@ -1,18 +1,25 @@
 'use client';
 
-import { ArrowDownToLine, ArrowLeft, CalendarHeart, CalendarRange, ChevronRight, LayoutGrid, Table2 } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeft, CalendarHeart, CalendarPlus, CalendarRange, ChevronRight, LayoutGrid, Table2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useState, type ComponentType } from 'react';
 
 import { PersonalDatesTool } from '@/components/tools/personal-dates';
 import { ExportCalendarTool } from '@/components/tools/export-calendar';
 import { ExportZmanimTool } from '@/components/tools/export-zmanim';
+
+// Loaded when opened: the event builder and the serializer stay out of the
+// main bundle, which every visitor downloads.
+const ExportIcsTool = dynamic(() => import('@/components/tools/export-ics').then((m) => m.ExportIcsTool), {
+  ssr: false,
+});
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-type ToolKey = 'calendar' | 'zmanim' | 'personalDates';
+type ToolKey = 'calendar' | 'zmanim' | 'ics' | 'personalDates';
 
 interface ToolEntry {
   key: ToolKey;
@@ -42,6 +49,7 @@ const TOOLS: ToolEntry[] = [
     dialogClass: 'sm:max-w-lg lg:max-h-[94dvh] lg:max-w-[min(96rem,calc(100vw-3rem),calc(24rem+118dvh))]',
     download: true,
   },
+  { key: 'ics', Icon: CalendarPlus, Tool: ExportIcsTool, nameKey: 'icsName', descKey: 'icsDesc', dialogClass: 'sm:max-w-lg', download: true },
   { key: 'personalDates', Icon: CalendarHeart, Tool: PersonalDatesTool, nameKey: 'personalDatesName', descKey: 'personalDatesDesc', dialogClass: 'sm:max-w-lg', download: false },
 ];
 

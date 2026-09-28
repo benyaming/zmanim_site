@@ -151,6 +151,51 @@ describe('observancesOn — standalone occasions', () => {
   });
 });
 
+describe('observancesOn — provenance', () => {
+  it('names the owner type and the anchor event, so one person\'s two dates stay distinct', () => {
+    // One person with two custom dates on the same civil day, and an occasion
+    // that happens to share the person's id — the calendar export's UIDs rely
+    // on (sourceType, sourceId, eventId) telling all three apart.
+    const anchor = anchorOn('2015-03-10');
+    const p: Person = {
+      id: 'x1',
+      name: 'Dana',
+      events: [
+        { id: 'ev-a', kind: 'custom', label: 'Aliyah', anchor },
+        { id: 'ev-b', kind: 'custom', label: 'Graduation', anchor },
+      ],
+    };
+    const occ: StandaloneDate = { id: 'x1', kind: 'custom', label: 'Shop opened', anchor };
+    const obs = on('2026-03-10', data([p], [occ])).filter((o) => o.kind === 'civilAnniversary');
+    expect(obs.map((o) => [o.sourceType, o.sourceId, o.eventId])).toEqual([
+      ['person', 'x1', 'ev-a'],
+      ['person', 'x1', 'ev-b'],
+      ['occasion', 'x1', 'x1'],
+    ]);
+  });
+
+  it('carries the anchor event\'s kind, and a custom date\'s own name', () => {
+    const anchor = anchorOn('2015-03-10');
+    const p: Person = {
+      id: 'p',
+      name: 'Dana',
+      events: [
+        { id: 'w', kind: 'wedding', anchor },
+        { id: 'c', kind: 'custom', label: 'Aliyah', anchor },
+        { id: 'u', kind: 'custom', anchor },
+      ],
+    };
+    const occ: StandaloneDate = { id: 'o', kind: 'anniversary', label: 'Shop opened', anchor };
+    const obs = on('2026-03-10', data([p], [occ])).filter((o) => o.kind === 'civilAnniversary');
+    expect(obs.map((o) => [o.eventId, o.eventKind, o.eventLabel, o.label])).toEqual([
+      ['w', 'wedding', undefined, 'Dana'],
+      ['c', 'custom', 'Aliyah', 'Dana'],
+      ['u', 'custom', '', 'Dana'],
+      ['o', 'anniversary', undefined, 'Shop opened'],
+    ]);
+  });
+});
+
 describe('observancesOn — a passing ends birthdays and future milestones', () => {
   const born = anchorOn('2000-01-01');
 

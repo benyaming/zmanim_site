@@ -119,6 +119,22 @@ describe('buildZmanimTable', () => {
     expect(fast.candleLighting).toBe('');
   });
 
+  it('rounds a minor fast start DOWN from raw dawn under lehumra, never from an already-rounded dawn', () => {
+    // Tzom Gedaliah 2026 (14 Sep), Jerusalem. Dawn rounds UP as a standalone
+    // zman but DOWN as a fast's start; rounding it twice printed a minute late.
+    const date = DateTime.fromISO('2026-09-14');
+    const row = buildZmanimTable({ ...BASE_OPTS, lehumra: true, start: date, end: date, keys: [] }).rows[0];
+    const dawn = computeZmanim({
+      lat: DEFAULT_LOCATION.lat,
+      lng: DEFAULT_LOCATION.lng,
+      date,
+      timeZoneId: DEFAULT_LOCATION.timeZoneId,
+      keys: ['alosHashachar'],
+    })[0].time!;
+    expect(dawn.second).not.toBe(0); // the bug only bites off a whole minute
+    expect(row.fastStart).toBe(formatTime(dawn.startOf('minute'), 'en'));
+  });
+
   it('appends the special-Shabbat name to the parsha via the provided label', () => {
     // 2026-03-14 is Shabbat Parashat Vayakhel — Shabbat Parah 5786.
     const parah = buildZmanimTable({

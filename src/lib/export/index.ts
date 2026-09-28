@@ -41,6 +41,7 @@ export {
   weekdayHeaders,
 } from './months';
 export { pagesToPdf } from './pdf';
+export { fitRangeEnd, rangeLatestEnd, wholeMonthEndWithin } from './range';
 export {
   COLUMN_KEYS,
   DEFAULT_EXPORT_RANGE_DAYS,

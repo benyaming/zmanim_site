@@ -296,6 +296,7 @@ describe('prefsHoldUserData (legacy connect-gate content check)', () => {
     expect(prefsHoldUserData({ hiddenFastEnd: ['some-opinion'] })).toBe(true);
     expect(prefsHoldUserData({ location: { lat: 32.08, lng: 34.78 } })).toBe(true); // not the default city
     expect(prefsHoldUserData({ export: { rangeDays: 31, keys: [] } })).toBe(true); // written only by a real export
+    expect(prefsHoldUserData({ icsExport: { rangeDays: 365 } })).toBe(true); // likewise the calendar export's
   });
 });
 

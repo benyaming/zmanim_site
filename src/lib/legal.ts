@@ -33,7 +33,7 @@ export interface LegalDoc {
 }
 
 /** ISO date both documents were last changed; rendered per locale. */
-export const LEGAL_UPDATED = '2026-07-22';
+export const LEGAL_UPDATED = '2026-09-23';
 
 /** Where users can reach a human — the same channels as the footer. */
 export const LEGAL_CONTACT_TELEGRAM = 'https://t.me/benyomin';
@@ -72,6 +72,13 @@ export const PRIVACY: Record<LegalLocale, LegalDoc> = {
           'Searching for a place queries Open-Meteo; turning coordinates into a place name queries BigDataCloud; elevation for a location comes from Open-Meteo. Those requests carry the text you typed or the coordinates being resolved, and are subject to each provider’s own privacy policy.',
           'The “detect my location” button asks your browser for GPS, and only after you allow it. The coordinates stay on your device and are used solely for the lookups above and to compute your times.',
           'Daily-learning entries link to Sefaria; Sefaria is contacted only if you follow such a link.',
+        ],
+      },
+      {
+        heading: 'Exported files',
+        body: [
+          'Exports — PDF, spreadsheet and calendar (.ics) files — are made in your browser and downloaded to your device. Inside the Telegram Mini App, which cannot download files, the file is sent through zmanim_bot to your chat with the bot instead; a calendar file includes the personal dates you chose to export, names included.',
+          'What happens to a file after that — importing it into a calendar service, sharing it — is up to you and that service.',
         ],
       },
       {
@@ -133,6 +140,13 @@ export const PRIVACY: Record<LegalLocale, LegalDoc> = {
         ],
       },
       {
+        heading: 'קבצים מיוצאים',
+        body: [
+          'ייצוא — קובצי PDF, גיליונות וקובצי יומן (‎.ics) — נוצר בדפדפן שלכם ויורד למכשיר. בתוך המיני-אפליקציה של טלגרם, שאינה יכולה להוריד קבצים, הקובץ נשלח במקום זאת דרך zmanim_bot לצ׳אט שלכם עם הבוט; קובץ יומן כולל את התאריכים האישיים שבחרתם לייצא, כולל שמות.',
+          'מה שקורה לקובץ לאחר מכן — ייבוא לשירות יומן או שיתוף — תלוי בכם ובאותו שירות.',
+        ],
+      },
+      {
         heading: 'עוגיות, מדידה ויומני שרת',
         body: [
           'האתר אינו מציב עוגיות פרסום או מעקב ואינו מפעיל כלי אנליטיקה כלשהו. עוגייה אחת, NEXT_LOCALE, זוכרת את השפה שבחרתם.',
@@ -188,6 +202,13 @@ export const PRIVACY: Record<LegalLocale, LegalDoc> = {
           'Поиск места обращается к Open-Meteo; определение названия по координатам — к BigDataCloud; высота над уровнем моря — к Open-Meteo. Эти запросы содержат введённый текст или проверяемые координаты и подчиняются политикам конфиденциальности соответствующих сервисов.',
           'Кнопка определения местоположения запрашивает у браузера GPS и только после вашего разрешения. Координаты остаются на устройстве и используются лишь для перечисленных запросов и расчёта времён.',
           'Записи ежедневного изучения ссылаются на Sefaria; обращение к Sefaria происходит, только если вы перейдёте по такой ссылке.',
+        ],
+      },
+      {
+        heading: 'Экспортируемые файлы',
+        body: [
+          'Экспорт — PDF, таблицы и файлы календаря (.ics) — создаётся в вашем браузере и скачивается на устройство. В мини-приложении Telegram, которое не умеет скачивать файлы, файл вместо этого отправляется через zmanim_bot в ваш чат с ботом; файл календаря содержит выбранные вами для экспорта личные даты, включая имена.',
+          'Что происходит с файлом дальше — импорт в календарный сервис, пересылка — зависит от вас и этого сервиса.',
         ],
       },
       {

@@ -22,6 +22,24 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: '1.30',
+    date: '2026-09-23',
+    notes: {
+      en: [
+        'Add candle lighting, fasts, holidays, chosen zmanim and your personal dates to Google, Apple or Outlook calendar.',
+        'Sydney and New Zealand get the right day’s times; the zmanim table rounds fast starts correctly.',
+      ],
+      he: [
+        'הוספת הדלקת נרות, צומות, חגים, זמנים נבחרים והתאריכים האישיים ליומן Google, Apple או Outlook.',
+        'סידני וניו זילנד מקבלות את זמני היום הנכון; טבלת הזמנים מעגלת נכון את תחילת הצומות.',
+      ],
+      ru: [
+        'Зажигание свечей, посты, праздники, выбранные зманим и личные даты — в календарь Google, Apple или Outlook.',
+        'Сидней и Новая Зеландия получают времена своего дня; таблица зманим верно округляет начало постов.',
+      ],
+    },
+  },
+  {
     version: '1.29',
     date: '2026-09-03',
     notes: {
