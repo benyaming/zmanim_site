@@ -304,7 +304,12 @@ function restBlockName(
 
 /** A masthead chip for a personal-date observance on the selected day. */
 function observanceToChip(obs: Observance, t: PersonalDatesTranslator): Chip {
-  return { key: `pd-${obs.sourceId}-${obs.kind}`, label: observanceChipText(obs, t), tone: 'custom', Icon: CalendarHeart };
+  return {
+    key: `pd-${obs.sourceType}-${obs.sourceId}-${obs.eventId}-${obs.kind}`,
+    label: observanceChipText(obs, t),
+    tone: 'custom',
+    Icon: CalendarHeart,
+  };
 }
 
 export function ZmanimPanel() {

@@ -346,7 +346,13 @@ describe('buildCalendarEvents — personal dates', () => {
     expect(new Set(all.map((e) => e.uid)).size).toBe(all.length);
     // Two civil birthdays in two years; three anniversary owners on each 10 March.
     expect(all.filter((e) => e.key === 'civilBirthday').map((e) => e.date)).toEqual(['2026-03-10', '2027-03-10']);
-    expect(all.filter((e) => e.key === 'civilAnniversary' && e.date === '2026-03-10')).toHaveLength(3);
+    const anniversaries = all.filter((e) => e.key === 'civilAnniversary' && e.date === '2026-03-10');
+    // Each custom date keeps its own name, so the two are not the same entry.
+    expect(anniversaries.map((e) => e.title).sort()).toEqual([
+      'Dana · Aliyah · 11th anniversary · civil',
+      'Dana · Graduation · 11th anniversary · civil',
+      'Our wedding · 11th anniversary · civil',
+    ]);
     expect(all.some((e) => e.key === 'hebrewBirthday')).toBe(false);
   });
 

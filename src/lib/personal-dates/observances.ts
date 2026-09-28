@@ -169,7 +169,17 @@ function personObservancesOn(person: Person, date: DateTime, hyear: number, hmon
   const pushFor =
     (ev: PersonEvent): Push =>
     (kind, calendar, number) =>
-      out.push({ sourceId: person.id, sourceType: 'person', eventId: ev.id, label: person.name, kind, calendar, number });
+      out.push({
+        sourceId: person.id,
+        sourceType: 'person',
+        eventId: ev.id,
+        eventKind: ev.kind,
+        ...(ev.kind === 'custom' ? { eventLabel: ev.label ?? '' } : {}),
+        label: person.name,
+        kind,
+        calendar,
+        number,
+      });
   // The earliest death gates the person's birthdays and milestones.
   let deathDay: DateTime | null = null;
   for (const ev of person.events) {
@@ -187,7 +197,16 @@ function personObservancesOn(person: Person, date: DateTime, hyear: number, hmon
 
 function occasionObservancesOn(occasion: StandaloneDate, date: DateTime, hyear: number, hmonth: number, hday: number, out: Observance[]): void {
   const push: Push = (kind, calendar, number) =>
-    out.push({ sourceId: occasion.id, sourceType: 'occasion', eventId: occasion.id, label: occasion.label, kind, calendar, number });
+    out.push({
+      sourceId: occasion.id,
+      sourceType: 'occasion',
+      eventId: occasion.id,
+      eventKind: occasion.kind,
+      label: occasion.label,
+      kind,
+      calendar,
+      number,
+    });
   anniversaryObservances(occasion.anchor, date, hyear, hmonth, hday, push);
 }
 

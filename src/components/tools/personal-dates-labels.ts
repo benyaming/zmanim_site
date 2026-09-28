@@ -24,6 +24,20 @@ export function observanceName(obs: Observance, t: PersonalDatesTranslator): str
 }
 
 /**
+ * What an anniversary is of: a wedding is the owner's name alone ("Dana ·
+ * married"); a person's custom date adds its own name, so two of them on one
+ * day stay apart ("Dana · Aliyah"); an occasion's name already says what it is.
+ */
+function anniversaryName(obs: Observance, t: PersonalDatesTranslator): string {
+  if (obs.eventKind === 'wedding') return observanceName(obs, t);
+  const custom = obs.eventKind === 'custom' ? t('eventCustom') : t('kindAnniversary');
+  if (obs.sourceType === 'occasion') return obs.label.trim() || custom;
+  const own = obs.eventLabel?.trim() || custom;
+  const owner = obs.label.trim();
+  return owner ? `${owner} · ${own}` : own;
+}
+
+/**
  * Kinds that exist on both calendars (or whose Hebrew/civil twin does), so the
  * panel chip must say which calendar this particular day belongs to. The
  * inherently-Hebrew milestones (bris, bar/bat mitzvah, shiva, shloshim) carry
@@ -66,8 +80,12 @@ export function observanceChipText(obs: Observance, t: PersonalDatesTranslator):
       case 'shloshim':
         return t('chipShloshim', { label });
       case 'hebrewAnniversary':
-      case 'civilAnniversary':
-        return n === 0 ? t('chipMarried', { label }) : t('chipAnniversary', { label, n });
+      case 'civilAnniversary': {
+        const of = anniversaryName(obs, t);
+        // Only a wedding's own day is "married"; any other date's is its name.
+        if (n === 0) return obs.eventKind === 'wedding' ? t('chipMarried', { label: of }) : of;
+        return t('chipAnniversary', { label: of, n });
+      }
     }
   })();
   // The origin day (born / married / passed away, number 0) falls on the same

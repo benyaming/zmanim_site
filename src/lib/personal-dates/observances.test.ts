@@ -173,6 +173,27 @@ describe('observancesOn — provenance', () => {
       ['occasion', 'x1', 'x1'],
     ]);
   });
+
+  it('carries the anchor event\'s kind, and a custom date\'s own name', () => {
+    const anchor = anchorOn('2015-03-10');
+    const p: Person = {
+      id: 'p',
+      name: 'Dana',
+      events: [
+        { id: 'w', kind: 'wedding', anchor },
+        { id: 'c', kind: 'custom', label: 'Aliyah', anchor },
+        { id: 'u', kind: 'custom', anchor },
+      ],
+    };
+    const occ: StandaloneDate = { id: 'o', kind: 'anniversary', label: 'Shop opened', anchor };
+    const obs = on('2026-03-10', data([p], [occ])).filter((o) => o.kind === 'civilAnniversary');
+    expect(obs.map((o) => [o.eventId, o.eventKind, o.eventLabel, o.label])).toEqual([
+      ['w', 'wedding', undefined, 'Dana'],
+      ['c', 'custom', 'Aliyah', 'Dana'],
+      ['u', 'custom', '', 'Dana'],
+      ['o', 'anniversary', undefined, 'Shop opened'],
+    ]);
+  });
 });
 
 describe('observancesOn — a passing ends birthdays and future milestones', () => {

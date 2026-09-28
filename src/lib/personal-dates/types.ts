@@ -123,6 +123,10 @@ export interface Observance {
    * occasion's own id for an occasion.
    */
   eventId: string;
+  /** The anchor event's own kind — the person's event kind, or the occasion's. */
+  eventKind: PersonEventKind | StandaloneDate['kind'];
+  /** A person's custom event's own name (may be empty; absent for every other event). */
+  eventLabel?: string;
   /** The person / occasion name (may be empty; callers fall back to a kind label). */
   label: string;
   kind: ObservanceKind;
